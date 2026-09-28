@@ -84,8 +84,11 @@ export default function PermisTypesAdmin() {
         } catch (e) { setErr(e instanceof Error ? e.message : 'Erreur.') }
     }
     const toggleActive = async (ty: PType) => {
-        await fetch('/api/admin/permis-types', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ id: ty.id, is_active: !ty.is_active }) })
+        const res = await fetch('/api/admin/permis-types', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ id: ty.id, is_active: !ty.is_active }) })
+        const data = await res.json().catch(() => ({}))
         await load()
+        // Après load() (qui efface le bandeau) : l'échec reste visible.
+        if (!res.ok) setErr(data.error || `Statut non modifié (HTTP ${res.status}).`)
     }
 
     const missingPrice = types.filter(ty => ty.is_active && !(ty.price_eur && ty.price_eur > 0)).length

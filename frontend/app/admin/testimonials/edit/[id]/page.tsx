@@ -20,7 +20,9 @@ export default function TestimonialsEdit() {
         resource: "testimonials",
         id: id as string,
         redirect: "list",
-        action: "edit"
+        action: "edit",
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     });
 
     const record = query?.data?.data;

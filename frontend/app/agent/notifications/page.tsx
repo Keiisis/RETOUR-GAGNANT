@@ -29,10 +29,12 @@ export default function AgentNotificationsPage() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState<'all' | 'unread' | 'abandoned'>('all')
+    const [erreur, setErreur] = useState<string | null>(null)
 
     const fetchNotifications = async () => {
         // 1. Messages de nationalité (existant)
-        const { data: messages } = await supabase
+        const { data: { user } } = await supabase.auth.getUser()
+        const { data: messages, error: errMessages } = await supabase
             .from('messages')
             .select('*')
             .eq('type', 'nationality')
@@ -52,11 +54,18 @@ export default function AgentNotificationsPage() {
         }))
 
         // 2. Alertes commandes (paniers abandonnés + nouvelles commandes)
-        const { data: orderNotifs } = await supabase
+        // `notifications` mélange les alertes d'agence (user_id vide) et les
+        // notifications PERSONNELLES des clients (app mobile, user_id = client).
+        // Sans filtre, l'agent voyait — et pouvait marquer « lues » à la place
+        // du client — les notifications de l'application d'un client.
+        const { data: orderNotifs, error: errNotifs } = await supabase
             .from('notifications')
             .select('*')
+            .or(user ? `user_id.is.null,user_id.eq.${user.id}` : 'user_id.is.null')
             .order('created_at', { ascending: false })
             .limit(50)
+        const echec = errMessages || errNotifs
+        setErreur(echec ? `Chargement incomplet : ${echec.message}` : null)
 
         const cmdNotifs: UnifiedNotification[] = (orderNotifs || []).map(n => ({
             id: n.id,
@@ -148,6 +157,7 @@ export default function AgentNotificationsPage() {
                         <span className="text-[10px] font-bold uppercase tracking-[0.2em]"><T>Alertes Système</T></span>
                     </div>
                     <h1 className="text-3xl font-black text-white font-heading"><T>NOTIFICATIONS</T></h1>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                     {abandonedCount > 0 && (
                         <div className="flex items-center gap-2 mt-1">
                             <AlertTriangle size={14} className="text-orange-400" />

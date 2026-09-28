@@ -65,17 +65,22 @@ export default function DisponibilitesPage() {
         setSaving(false)
     }
 
+    // Erreur lue AVANT le rechargement : load() remet le bandeau à zéro.
     const toggleRule = async (r: Rule) => {
-        await fetch('/api/admin/availability', {
+        const res = await fetch('/api/admin/availability', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: r.id, is_active: !r.is_active }),
         })
-        load()
+        const data = await res.json().catch(() => ({}))
+        await load()
+        if (!res.ok) setError(data.error || `Horaire non modifié (HTTP ${res.status})`)
     }
 
     const remove = async (id: string, kind: 'rule' | 'exception') => {
-        await fetch(`/api/admin/availability?id=${id}&kind=${kind}`, { method: 'DELETE' })
-        load()
+        const res = await fetch(`/api/admin/availability?id=${id}&kind=${kind}`, { method: 'DELETE' })
+        const data = await res.json().catch(() => ({}))
+        await load()
+        if (!res.ok) setError(data.error || `Suppression impossible (HTTP ${res.status})`)
     }
 
     const parJour = useMemo(() => {
@@ -115,8 +120,8 @@ export default function DisponibilitesPage() {
 
                 {error && (
                     <div className="mb-5 rounded-2xl border px-4 py-3 text-[13px] flex items-start gap-2.5"
-                        style={{ backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)', color: '#fca5a5' }}>
-                        <AlertTriangle size={15} className="mt-0.5 shrink-0" /><span>{error}</span>
+                        style={{ backgroundColor: 'rgba(239,68,68,0.08)', borderColor: 'rgba(239,68,68,0.25)', color: 'var(--panel-text, #E5E7EB)' }}>
+                        <AlertTriangle size={15} className="mt-0.5 shrink-0" style={{ color: '#ef4444' }} /><span>{error}</span>
                     </div>
                 )}
 

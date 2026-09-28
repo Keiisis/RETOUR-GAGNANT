@@ -258,7 +258,7 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                             {erreur && (
                                 <div className="flex items-start gap-2 rounded-xl bg-red-500/10 border border-red-500/30 p-3">
                                     <WarningCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-red-300">{erreur}</p>
+                                    <p className="text-xs text-red-300 [[data-theme=light]_&]:text-red-700">{erreur}</p>
                                 </div>
                             )}
 

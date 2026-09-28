@@ -51,9 +51,11 @@ export async function POST(request: NextRequest) {
 
     // Activation initiale
     if (action === 'setup' && !totpRow.enabled) {
-        await supabase.from('totp_secrets')
+        const { error: actErr } = await supabase.from('totp_secrets')
             .update({ enabled: true, verified_at: new Date().toISOString() })
             .eq('user_id', userId)
+        // Sans ce contrôle : « 2FA activée » affiché, enabled resté à false.
+        if (actErr) return NextResponse.json({ error: actErr.message }, { status: 500 })
     }
 
     // Retourner un cookie de session 2FA (valable 8h)

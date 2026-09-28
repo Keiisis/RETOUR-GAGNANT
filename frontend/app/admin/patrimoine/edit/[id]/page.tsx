@@ -21,7 +21,9 @@ export default function PatrimonioEdit() {
         resource: "patrimoine",
         id: id as string,
         redirect: "list",
-        action: "edit"
+        action: "edit",
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     });
 
     const { query: galleryQuery } = useList<{ id: string, url?: string, image_url?: string }>({

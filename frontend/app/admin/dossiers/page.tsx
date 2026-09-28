@@ -8,26 +8,13 @@ import { MagnifyingGlass as Search, FileText, Clock, CheckCircle as CheckCircle2
 import { exportToExcel } from '@/lib/exportExcel'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
+import { DOSSIER_STATUTS, DOSSIER_VERS_MOBILE, DOSSIER_PROGRESSION, DOSSIER_STATUTS_ACTIFS, statutDossier, normaliserStatutDossier } from '@/lib/constants/statuts'
 
-const statutColors: Record<string, string> = {
-    reception: '#6b7280',
-    verification: '#3b82f6',
-    traitement: '#FCD116',
-    validation: '#f59e0b',
-    finalisation: '#008751',
-    termine: '#10b981',
-    annule: '#ef4444',
-}
-
-const statutLabels: Record<string, string> = {
-    reception: 'Réception',
-    verification: 'Vérification',
-    traitement: 'Traitement',
-    validation: 'Validation',
-    finalisation: 'Finalisation',
-    termine: 'Terminé',
-    annule: 'Annulé',
-}
+// Statuts : référence unique lib/constants/statuts. Avant, liste locale : les
+// valeurs historiques (`en_cours` écrit par la synchro boutique…) n'avaient ni
+// libellé ni couleur et le sélecteur affichait un statut faux.
+const couleurStatut = (v: unknown) => statutDossier(v as string).hex
+const libelleStatut = (v: unknown) => statutDossier(v as string).label
 
 const stepStatuses = [
     { value: 'pending', label: 'En attente', color: '#6b7280' },
@@ -140,7 +127,7 @@ export default function AdminDossiersPage() {
         if (!message.trim() || !(dossier.client_email as string)) return
         setEmailSending(prev => ({ ...prev, [threadId || dossier.id as string]: true }))
         try {
-            await fetch('/api/email/send', {
+            const res = await fetch('/api/email/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -156,7 +143,15 @@ export default function AdminDossiersPage() {
                     trackerUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/suivi-dossier`,
                 }),
             })
-        } catch (e) { console.error(e) }
+            // Avant : réponse ignorée, aucun retour ni en succès ni en échec.
+            const j = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`)
+            // Dossier sans fil : la saisie vit sous la clé dossier.id, vidée une fois l'email parti.
+            if (!threadId) setChatInput(prev => ({ ...prev, [dossier.id as string]: '' }))
+            alert(`Email envoyé à ${dossier.client_email as string}.`)
+        } catch (e) {
+            alert(`Email non envoyé : ${e instanceof Error ? e.message : 'erreur réseau'}`)
+        }
         setEmailSending(prev => ({ ...prev, [threadId || dossier.id as string]: false }))
     }
 
@@ -256,10 +251,10 @@ export default function AdminDossiersPage() {
         }
 
         const table = doc.sourceTable || 'dossier_documents';
-        const { error } = await supabase.from(table).delete().eq('id', doc.id);
-        
-        if (error) {
-            alert('Erreur lors de la suppression du document : ' + error.message);
+        const { data: supprimes, error } = await supabase.from(table).delete().eq('id', doc.id).select('id');
+
+        if (error || !supprimes?.length) {
+            alert('Erreur lors de la suppression du document : ' + (error?.message || 'aucune ligne supprimée (droits insuffisants ?)'));
         } else {
             setDossierDocs(prev => prev.filter(d => d.id !== doc.id));
         }
@@ -289,18 +284,31 @@ export default function AdminDossiersPage() {
                 }
             }
 
-            await Promise.all([
+            // Avant : résultats ignorés ; un refus RLS/clé étrangère laissait le dossier
+            // en place (ou à moitié supprimé) sans aucun message.
+            const suppressions = await Promise.all([
                 supabase.from('dossier_documents').delete().in('dossier_id', ids),
                 supabase.from('client_documents').delete().in('dossier_id', ids),
                 supabase.from('documents').delete().in('dossier_id', ids),
-                supabase.from('dossier_tracking').delete().eq('id', dossier.id),
             ]);
+            const echecsDocs = suppressions
+                .map((r, i) => r.error ? `${['dossier_documents', 'client_documents', 'documents'][i]} : ${r.error.message}` : null)
+                .filter(Boolean)
 
-            if (dossier.dossier_ref_id) {
-                await supabase.from('dossiers').delete().eq('id', dossier.dossier_ref_id);
+            const suivi = await supabase.from('dossier_tracking').delete().eq('id', dossier.id).select('id');
+            const echecs = [...echecsDocs]
+            if (suivi.error || !suivi.data?.length) {
+                echecs.push(`dossier_tracking : ${suivi.error?.message || 'aucune ligne supprimée (droits insuffisants ?)'}`)
+            } else if (dossier.dossier_ref_id) {
+                const ref = await supabase.from('dossiers').delete().eq('id', dossier.dossier_ref_id);
+                if (ref.error) echecs.push(`dossiers : ${ref.error.message}`)
             }
 
             refetch();
+            if (echecs.length) {
+                alert(`Suppression incomplète du dossier ${dossier.num_dossier} :\n${echecs.join('\n')}`)
+                return
+            }
             setExpandedId(null);
         } catch (e) {
             alert(e instanceof Error ? e.message : 'Erreur lors de la suppression complète');
@@ -347,15 +355,7 @@ export default function AdminDossiersPage() {
     })
 
     // ── Status mapping: dossier_tracking statuts → mobile dossiers statuses ──
-    const trackingToMobileStatus: Record<string, string> = {
-        reception: 'soumis',
-        verification: 'verifie',
-        traitement: 'traitement',
-        validation: 'validation',
-        finalisation: 'validation',
-        termine: 'termine',
-        annule: 'annule',
-    }
+    const trackingToMobileStatus: Record<string, string> = DOSSIER_VERS_MOBILE
 
     // Sync helper: propagate changes from dossier_tracking → dossiers (mobile table)
     const syncToMobileDossiers = async (dossierId: string, mobileStatus: string, progression: number) => {
@@ -364,7 +364,7 @@ export default function AdminDossiersPage() {
         const refId = dossier?.dossier_ref_id as string | undefined
         if (!refId) return
 
-        await supabase
+        const { error } = await supabase
             .from('dossiers')
             .update({
                 status: mobileStatus,
@@ -372,7 +372,14 @@ export default function AdminDossiersPage() {
                 updated_at: new Date().toISOString(),
             })
             .eq('id', refId)
+        // Sinon l'app mobile du client restait sur l'ancien statut sans que l'admin le sache.
+        if (error) alert(`Suivi enregistré, mais l'app mobile n'a pas été mise à jour : ${error.message}`)
     }
+
+    // Aucun notificationProvider Refine n'est branché : sans onError, un échec
+    // de useUpdate était totalement muet (le sélecteur revenait en arrière).
+    const alerteEchec = (quoi: string) => (err: unknown) =>
+        alert(`${quoi} : ${err instanceof Error ? err.message : (err as { message?: string })?.message || 'erreur'}`)
 
     const updateStep = (dossierId: string, etapes: Record<string, unknown>[], stepIndex: number, newStatus: string) => {
         const updated = [...etapes]
@@ -393,24 +400,17 @@ export default function AdminDossiersPage() {
                 refetch()
                 // Sync progression to mobile dossiers table
                 const dossier = dossiers.find((d: Record<string, unknown>) => d.id === dossierId)
-                const currentStatut = (dossier?.statut as string) || 'reception'
+                const currentStatut = normaliserStatutDossier(dossier?.statut as string) || 'reception'
                 const mobileStatus = trackingToMobileStatus[currentStatut] || 'soumis'
                 syncToMobileDossiers(dossierId, mobileStatus, progression)
-            }
+            },
+            onError: alerteEchec('Étape non enregistrée'),
         })
     }
 
     const updateStatut = (dossierId: string, newStatut: string) => {
         // Calculate progression from statut
-        const statutProgressionMap: Record<string, number> = {
-            reception: 10,
-            verification: 30,
-            traitement: 60,
-            validation: 80,
-            finalisation: 95,
-            termine: 100,
-            annule: 0,
-        }
+        const statutProgressionMap: Record<string, number> = DOSSIER_PROGRESSION
         const progression = statutProgressionMap[newStatut] ?? 10
 
         update({
@@ -423,7 +423,8 @@ export default function AdminDossiersPage() {
                 // Sync to mobile dossiers table
                 const mobileStatus = trackingToMobileStatus[newStatut] || 'soumis'
                 syncToMobileDossiers(dossierId, mobileStatus, progression)
-            }
+            },
+            onError: alerteEchec('Statut non enregistré'),
         })
     }
 
@@ -467,7 +468,7 @@ export default function AdminDossiersPage() {
             client_email: d.client_email,
             client_whatsapp: d.client_whatsapp || 'Non renseigné',
             service_type: d.service_type,
-            statut: statutLabels[d.statut as string] || d.statut,
+            statut: libelleStatut(d.statut),
             progression: d.progression,
             created_at: new Date(d.created_at as string)
         }));
@@ -542,9 +543,10 @@ export default function AdminDossiersPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                     { label: 'Total', count: dossiers.length, color: '#008751' },
-                    { label: 'En cours', count: dossiers.filter((d: Record<string, unknown>) => d.statut === 'traitement' || d.statut === 'verification').length, color: '#FCD116' },
-                    { label: 'Terminés', count: dossiers.filter((d: Record<string, unknown>) => d.statut === 'termine').length, color: '#10b981' },
-                    { label: 'Bloqués', count: dossiers.filter((d: Record<string, unknown>) => d.statut === 'annule').length, color: '#ef4444' },
+                    // Avant : seulement traitement+vérification ; réception/validation/finalisation (ouverts) n'étaient comptés nulle part.
+                    { label: 'En cours', count: dossiers.filter((d: Record<string, unknown>) => (DOSSIER_STATUTS_ACTIFS as string[]).includes(normaliserStatutDossier(d.statut as string))).length, color: '#FCD116' },
+                    { label: 'Terminés', count: dossiers.filter((d: Record<string, unknown>) => normaliserStatutDossier(d.statut as string) === 'termine').length, color: '#10b981' },
+                    { label: 'Annulés', count: dossiers.filter((d: Record<string, unknown>) => d.statut === 'annule').length, color: '#ef4444' },
                 ].map((stat) => (
                     <div key={stat.label} className="bg-white/[0.03] border border-white/5 rounded-xl p-4 text-center">
                         <p className="text-2xl font-black font-mono" style={{ color: stat.color }}>{stat.count}</p>
@@ -596,8 +598,8 @@ export default function AdminDossiersPage() {
                                     title={`Voir les détails du dossier ${dossier.num_dossier}`}
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${statutColors[dossier.statut as string] || '#6b7280'}20` }}>
-                                            <FileText size={18} style={{ color: statutColors[dossier.statut as string] || '#6b7280' }} />
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${couleurStatut(dossier.statut)}20` }}>
+                                            <FileText size={18} style={{ color: couleurStatut(dossier.statut) }} />
                                         </div>
                                         <div>
                                             <p className="font-mono font-bold text-sm tracking-wider">{dossier.num_dossier as string}</p>
@@ -608,12 +610,12 @@ export default function AdminDossiersPage() {
                                         <span
                                             className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
                                             style={{
-                                                color: statutColors[dossier.statut as string],
-                                                backgroundColor: `${statutColors[dossier.statut as string]}15`,
-                                                border: `1px solid ${statutColors[dossier.statut as string]}30`
+                                                color: couleurStatut(dossier.statut),
+                                                backgroundColor: `${couleurStatut(dossier.statut)}15`,
+                                                border: `1px solid ${couleurStatut(dossier.statut)}30`
                                             }}
                                         >
-                                            {statutLabels[dossier.statut as string] || dossier.statut as string}
+                                            {libelleStatut(dossier.statut)}
                                         </span>
                                         <span className="font-mono text-sm text-gray-400">{dossier.progression as number}%</span>
                                         {isExpanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
@@ -647,12 +649,12 @@ export default function AdminDossiersPage() {
                                                     <div>
                                                         <p className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1"><T>Statut global</T></p>
                                                         <select
-                                                            value={dossier.statut as string}
+                                                            value={normaliserStatutDossier(dossier.statut as string)}
                                                             onChange={e => updateStatut(dossier.id as string, e.target.value)}
                                                             title={t("Changer le statut du dossier")}
                                                             className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-[#008751]"
                                                         >
-                                                            {Object.entries(statutLabels).map(([val, lab]) => (
+                                                            {DOSSIER_STATUTS.map(({ value: val, label: lab }) => (
                                                                  <option key={val} value={val} className="bg-[#0a0f18]">{lab}</option>
                                                             ))}
                                                         </select>

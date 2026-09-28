@@ -51,6 +51,7 @@ const CATEGORY_META: Record<string, { label: string, icon: React.ReactNode, colo
 export default function AgentPresentationsPage() {
     const [proposals, setProposals] = useState<Proposal[]>([])
     const [loading, setLoading] = useState(true)
+    const [erreur, setErreur] = useState<string | null>(null)
     const [newModalOpen, setNewModalOpen] = useState(false)
     const [modalStep, setModalStep] = useState<ModalStep>('form')
     const router = useRouter()
@@ -113,8 +114,10 @@ export default function AgentPresentationsPage() {
 
     const fetchProposals = async () => {
         setLoading(true)
-        const res = await getProposalsList()
+        const res = await getProposalsList().catch(e => ({ success: false as const, error: e instanceof Error ? e.message : 'réseau', data: undefined }))
         if (res.success && res.data) setProposals(res.data)
+        // Échec affiché : « aucune présentation » masquait un refus ou une panne.
+        setErreur(res.success ? null : `Chargement impossible : ${res.error || 'erreur inconnue'}`)
         setLoading(false)
     }
 
@@ -234,6 +237,7 @@ export default function AgentPresentationsPage() {
                             <span className="text-[#E8112D] font-bold">BÉNIN</span>
                             {' '}-Propositions IA de conciergerie premium
                         </p>
+                        {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                     </div>
                 </div>
                 <button

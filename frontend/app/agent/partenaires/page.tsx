@@ -126,20 +126,26 @@ export default function AgentPartenairesPage() {
     // ── Fetch partners ──
     const fetchPartners = useCallback(async () => {
         setLoadingPartners(true)
-        const { data } = await supabase.from('partners').select('*').order('sort_order')
+        const { data, error } = await supabase.from('partners').select('*').order('sort_order')
         if (data) setPartners(data)
+        if (error) addToast('error', `Partenaires non chargés : ${error.message}`)
         setLoadingPartners(false)
     }, [])
 
     // ── Fetch applications ──
     const fetchApplications = useCallback(async () => {
         setLoadingApps(true)
-        const res = await fetch('/api/admin/partner-applications')
-        if (res.ok) {
-            const data = await res.json()
-            setApplications(data.applications || [])
+        // Échec affiché (403, réseau) : une liste vide passait pour « aucune candidature ».
+        try {
+            const res = await fetch('/api/admin/partner-applications')
+            const data = await res.json().catch(() => ({}))
+            if (res.ok) setApplications(data.applications || [])
+            else addToast('error', `Candidatures non chargées : ${data.error || `erreur ${res.status}`}`)
+        } catch {
+            addToast('error', 'Candidatures non chargées : réseau indisponible')
+        } finally {
+            setLoadingApps(false)
         }
-        setLoadingApps(false)
     }, [])
 
     useEffect(() => { fetchPartners(); fetchApplications() }, [fetchPartners, fetchApplications])

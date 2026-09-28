@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     }
 
     const status = failed === 0 ? 'sent' : sent === 0 ? 'failed' : 'partial'
-    await supabase.from('newsletter_campaigns').insert({
+    const { error: errHisto } = await supabase.from('newsletter_campaigns').insert({
         subject, html, status,
         recipient_count: subs.length,
         sent_count: sent,
@@ -108,6 +108,11 @@ export async function POST(request: NextRequest) {
         sent_by: auth.userId,
         sent_by_nom: profile?.full_name || null,
     })
+    // Campagne envoyée mais absente de l'historique : on le dit au panel.
+    if (errHisto) {
+        console.error('[newsletter] historique non enregistré :', errHisto.message)
+        return NextResponse.json({ success: true, recipients: subs.length, sent, failed, status, avertissement: `Historique non enregistré : ${errHisto.message}` })
+    }
 
     return NextResponse.json({ success: true, recipients: subs.length, sent, failed, status })
 }

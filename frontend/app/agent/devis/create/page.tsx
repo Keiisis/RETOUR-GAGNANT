@@ -141,9 +141,16 @@ export default function AgentCreateDocumentPage() {
                 conditions,
                 validite,
             }),
-        })
+        }).catch(() => null)
 
-        const result = await res.json()
+        if (!res) {
+            alert('Réseau indisponible : document non enregistré. Réessayez.')
+            setSaving(false)
+            return
+        }
+
+        // Réponse non-JSON (page d'erreur, WAF) : le bouton restait bloqué sur « Enregistrement… ».
+        const result = await res.json().catch(() => ({ error: `Réponse inattendue du serveur (HTTP ${res.status})` }))
 
         if (!res.ok) {
             console.error('Erreur création devis:', result)

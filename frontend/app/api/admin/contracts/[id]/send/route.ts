@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { COMPANY } from '@/lib/company'
-import { auditEntry, esc, fmtAmount, fmtDate, generateSignToken, SITE_URL, type AuditEntry, type ContractRow } from '@/lib/contracts'
+import { auditEntry, esc, fmtAmount, fmtDate, generateSignToken, nomActeur, SITE_URL, type AuditEntry, type ContractRow } from '@/lib/contracts'
 import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -90,8 +90,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     try {
         const { id } = await params
         const body = await request.json().catch(() => ({}))
-        const actor = String(body.actor || 'Admin').slice(0, 80)
         const supabase = createClient(supabaseUrl, serviceKey)
+        const actor = await nomActeur(supabase, garde.userId, body.actor)
 
         const { data: contract, error } = await supabase.from('contracts').select('*').eq('id', id).single()
         if (error || !contract) return NextResponse.json({ error: 'Contrat introuvable' }, { status: 404 })
@@ -103,7 +103,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         let token: string = contract.sign_token
         if (!token) {
             token = generateSignToken()
-            await supabase.from('contracts').update({ sign_token: token }).eq('id', id)
+            // Vérifié AVANT l'envoi : un jeton non enregistré donnait au
+            // client un lien de signature mort.
+            const { error: errJeton } = await supabase.from('contracts').update({ sign_token: token }).eq('id', id)
+            if (errJeton) return NextResponse.json({ error: `Jeton de signature non enregistré : ${errJeton.message}` }, { status: 500 })
         }
 
         const signUrl = `${SITE_URL}/contrat/${token}`
@@ -128,7 +131,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             actor,
             `Email ${resend ? 'renvoyé' : 'envoyé'} à ${contract.client_email} : compte plateforme : ${hasAccount ? 'détecté (parcours Espace Client)' : 'aucun (parcours lien sécurisé + PDF)'}`
         ))
-        await supabase.from('contracts').update({ status: 'envoye', audit_log: log }).eq('id', id)
+        const { error: errStatut } = await supabase.from('contracts').update({ status: 'envoye', audit_log: log }).eq('id', id)
+        if (errStatut) {
+            // E-mail parti : pas de 500 (renvoi en double), mais l'écart est dit.
+            console.error('[contracts send] statut non mis à jour :', errStatut.message)
+            return NextResponse.json({ success: true, hasAccount, signUrl, avertissement: `E-mail envoyé, statut non enregistré : ${errStatut.message}` })
+        }
 
         return NextResponse.json({ success: true, hasAccount, signUrl })
     } catch (err) {

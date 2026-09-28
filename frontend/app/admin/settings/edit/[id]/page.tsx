@@ -18,12 +18,15 @@ interface Setting {
 export default function SettingsEdit() {
     const { t } = useTranslation();
     const params = useParams();
-    const id = params.id as string;
+    // La table `settings` n'a PAS de colonne id : sa clé primaire est `key`.
+    // Avant, useOne/useForm filtraient sur id → lecture vide et enregistrement en échec.
+    const id = decodeURIComponent(params.id as string);
     const { list } = useNavigation();
 
     const queryResult = useOne<Setting>({
         resource: "settings",
         id,
+        meta: { idColumnName: "key" },
     });
     const queryInternal = queryResult as unknown as Record<string, unknown>
     const queryObj = (queryInternal.query ?? queryInternal) as Record<string, boolean | undefined>
@@ -37,6 +40,9 @@ export default function SettingsEdit() {
         action: "edit",
         id,
         redirect: "list",
+        meta: { idColumnName: "key" },
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Réglage non enregistré : ${err?.message || 'erreur'}`),
     });
 
     const [formData, setFormData] = useState<Partial<Setting>>({
@@ -60,7 +66,8 @@ export default function SettingsEdit() {
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
-        onFinish(formData);
+        // La clé (clé primaire) n'est pas réécrite : seule la valeur change.
+        onFinish({ value: formData.value ?? "", updated_at: new Date().toISOString() });
     };
 
     if (isFetching) {
@@ -111,7 +118,8 @@ export default function SettingsEdit() {
                             <input
                                 name="key"
                                 value={formData.key || ''}
-                                onChange={handleChange}
+                                readOnly
+                                title="Clé primaire : non modifiable"
                                 placeholder={t("ex: contact_email")}
                                 className="w-full bg-white/5 border-2 border-white/5 rounded-2xl py-5 px-6 text-white text-sm font-bold font-mono focus:outline-none focus:border-[#FCD116]/40 transition-all"
                             />

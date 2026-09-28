@@ -1210,7 +1210,7 @@ export async function middleware(request: NextRequest) {
                 if (totpRow?.enabled) {
                     const redirect2FA = new URL('/admin/2fa', request.url)
                     // next validé côté client dans /admin/2fa/page.tsx
-                    const safeNext = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(pathname) ? pathname : '/admin/dashboard'
+                    const safeNext = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(pathname) ? pathname : '/admin'
                     redirect2FA.searchParams.set('next', safeNext)
                     return redirectTo(redirect2FA)
                 }

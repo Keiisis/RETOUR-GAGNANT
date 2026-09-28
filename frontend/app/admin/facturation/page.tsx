@@ -11,6 +11,7 @@ import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 
 import { FinancialAnalytics } from '@/components/dashboard/FinancialAnalytics'
 import { CURRENCIES, asCurrency } from '@/lib/currency'
+import { DOC_FIN_STATUTS, DOC_FIN_RGB } from '@/lib/constants/statuts'
 
 interface DevisItem {
     description: string
@@ -377,14 +378,9 @@ export default function AdminFacturationPage() {
             }
 
             // ── STATUS BADGE (Dans le header, à droite en bas) ──────────────────
-            const statusLabels: Record<string, string> = {
-                brouillon: 'BROUILLON', envoye: 'ENVOYE', accepte: 'ACCEPTE',
-                refuse: 'REFUSE', paye: 'PAYE', en_retard: 'EN RETARD', annule: 'ANNULE'
-            }
-            const statusColorMap: Record<string, [number, number, number]> = {
-                brouillon: [120, 120, 120], envoye: [59, 130, 246], accepte: [0, 160, 90],
-                refuse: [220, 50, 50], paye: [16, 185, 110], en_retard: [220, 120, 20], annule: [90, 90, 90],
-            }
+            const statusLabels: Record<string, string> =
+                Object.fromEntries(DOC_FIN_STATUTS.map(d => [d.value, d.label.toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '')]))
+            const statusColorMap: Record<string, [number, number, number]> = DOC_FIN_RGB
             const sc = statusColorMap[doc.status] || [90, 90, 90]
             const statusText = statusLabels[doc.status] || doc.status.toUpperCase()
             
@@ -739,16 +735,11 @@ export default function AdminFacturationPage() {
         return matchSearch && matchType
     })
 
-    const statusConfig: Record<string, { color: string; label: string }> = {
-        brouillon: { color: 'bg-gray-500/20 text-gray-400', label: 'Brouillon' },
-        envoye: { color: 'bg-blue-500/20 text-blue-400', label: 'Envoyé' },
-        accepte: { color: 'bg-emerald-500/20 text-emerald-400', label: 'Accepté' },
-        refuse: { color: 'bg-red-500/20 text-red-400', label: 'Refusé' },
-        paye: { color: 'bg-green-500/20 text-green-400', label: 'Payé' },
-        en_retard: { color: 'bg-orange-500/20 text-orange-400', label: 'En retard' },
-        annule: { color: 'bg-zinc-500/20 text-zinc-400', label: 'Annulé' },
-        valide: { color: 'bg-orange-500/20 text-orange-400', label: 'Avoir émis' },
-    }
+    // Référence unique lib/constants/statuts. Avant : entrée `valide` (« Avoir
+    // émis ») proposée en changement manuel alors que la contrainte CHECK de
+    // documents_financiers.status la refuse → échec systématique.
+    const statusConfig: Record<string, { color: string; label: string }> =
+        Object.fromEntries(DOC_FIN_STATUTS.map(d => [d.value, { color: d.badge, label: d.label }]))
 
     if (loading) {
         return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
@@ -830,7 +821,7 @@ export default function AdminFacturationPage() {
                                         <p className="font-mono text-sm font-bold" style={{ color: 'var(--panel-text-heading, #fff)' }}>{doc.total.toLocaleString('fr-FR')} {curLabel(doc.currency)}</p>
                                     </td>
                                     <td className="py-3 px-5 text-center">
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || ''}`}>{statusConfig[doc.status]?.label}</span>
+                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || 'bg-gray-500/15 text-gray-400'}`}>{statusConfig[doc.status]?.label || doc.status}</span>
                                     </td>
                                     <td className="py-3 px-5">
                                         <p className="text-gray-400 text-xs">{doc.agent_email}</p>

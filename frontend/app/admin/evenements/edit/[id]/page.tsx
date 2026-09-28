@@ -129,20 +129,32 @@ export default function EditEventPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: newImageUrl, alt_text: '', sort_order: images.length }),
             })
+            const d = await res.json().catch(() => ({}))
             if (res.ok) {
-                const d = await res.json()
                 setImages(prev => [...prev, d.image])
                 setNewImageUrl('')
+            } else {
+                alert(`Image non ajoutée : ${d.error || `HTTP ${res.status}`}`)
             }
-        } catch { /* */ }
+        } catch (e) {
+            alert(`Image non ajoutée : ${e instanceof Error ? e.message : 'erreur réseau'}`)
+        }
         setAddingImage(false)
     }
 
     const handleDeleteImage = async (imgId: string) => {
+        // Avant : l'image disparaissait de l'écran même si la suppression était refusée.
         try {
-            await fetch(`/api/events/${id}/images?image_id=${imgId}`, { method: 'DELETE' })
+            const res = await fetch(`/api/events/${id}/images?image_id=${imgId}`, { method: 'DELETE' })
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}))
+                alert(`Image non supprimée : ${d.error || `HTTP ${res.status}`}`)
+                return
+            }
             setImages(prev => prev.filter(img => img.id !== imgId))
-        } catch { /* */ }
+        } catch (e) {
+            alert(`Image non supprimée : ${e instanceof Error ? e.message : 'erreur réseau'}`)
+        }
     }
 
     const Field = ({ label, icon: Icon, children }: { label: string; icon: typeof Calendar; children: React.ReactNode }) => (

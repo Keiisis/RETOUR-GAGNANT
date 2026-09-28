@@ -180,12 +180,17 @@ export async function POST(request: NextRequest) {
 
         // 5) Commandes boutique (clients ayant acheté)
         try {
-            const { data } = await supabase.from('orders')
-                .select('customer_email, customer_name, email, full_name, phone, created_at')
+            // Colonnes réelles de `orders` : customer_email / customer_name /
+            // customer_phone. `email`, `full_name`, `phone` n'existent pas : la
+            // requête échouait (erreur 42703 non levée) et AUCUN acheteur de la
+            // boutique n'entrait au classement.
+            const { data, error } = await supabase.from('orders')
+                .select('customer_email, customer_name, customer_phone, created_at')
+            if (error) console.error('[classement] backfill orders :', error.message)
             for (const r of data || []) {
-                add(r.customer_email || r.email, {
-                    full_name: r.customer_name || r.full_name || null,
-                    phone: r.phone || null,
+                add(r.customer_email, {
+                    full_name: r.customer_name || null,
+                    phone: r.customer_phone || null,
                     service_category: 'autres',
                     service_label: 'Commande boutique',
                     source: 'backfill', status: 'converti',

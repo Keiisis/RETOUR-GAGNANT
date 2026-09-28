@@ -10,6 +10,7 @@ import { Lead } from '@/types/lead'
 export default function AgentLeadsPage() {
     const [leads, setLeads] = useState<Lead[]>([])
     const [loading, setLoading] = useState(true)
+    const [erreur, setErreur] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState<'all' | 'hot' | 'not_contacted'>('all')
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
@@ -18,11 +19,13 @@ export default function AgentLeadsPage() {
 
     const fetchLeads = useCallback(async () => {
         setLoading(true)
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('eligibility_results')
             .select('*')
             .order('created_at', { ascending: false })
 
+        // Échec affiché : une liste vide laissait croire qu'il n'y avait aucun lead.
+        setErreur(error ? `Chargement impossible : ${error.message}` : null)
         setLeads((data || []) as Lead[])
         setLoading(false)
     }, [])
@@ -156,6 +159,7 @@ export default function AgentLeadsPage() {
                             <span className="text-[10px] font-bold text-amber-400 uppercase tracking-[0.3em]">L&apos;Oracle</span>
                         </div>
                         <h1 className="text-2xl font-black text-white">Pipeline Leads</h1>
+                        {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                         <p className="text-gray-500 text-sm mt-1 flex items-center gap-2">
                             <span>{leads.length} lead(s) • {leads.filter(l => !l.is_contacted).length} à contacter</span>
                             <span className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 uppercase tracking-wider">

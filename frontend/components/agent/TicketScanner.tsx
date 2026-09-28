@@ -223,7 +223,7 @@ export default function TicketScanner({
             : { bord: 'border-red-400', fond: 'bg-red-500/15', texte: 'text-red-300' }
 
     return (
-        <div className="fixed inset-0 z-[80] flex flex-col bg-[#070B10]">
+        <div className="fixed inset-0 z-[80] flex flex-col bg-[var(--panel-bg)]">
             {/* Barre haute */}
             <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
                 <div className="min-w-0 flex-1">
@@ -258,7 +258,7 @@ export default function TicketScanner({
             <div className="flex-1 overflow-y-auto px-4 pb-4">
                 {mode === 'camera' ? (
                     <div className="mx-auto w-full max-w-md">
-                        <div className="relative overflow-hidden rounded-2xl bg-black" style={{ aspectRatio: '1' }}>
+                        <div className="relative overflow-hidden rounded-2xl bg-slate-950" style={{ aspectRatio: '1' }}>
                             <div id="rgb-scanner-zone" className="h-full w-full [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
 
                             {camEtat === 'init' && (

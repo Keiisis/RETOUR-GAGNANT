@@ -8,7 +8,8 @@
 // ══════════════════════════════════════════════════════════════
 import { NextRequest } from 'next/server'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
-import { POST as deposer } from '@/app/api/admin/partner-applications/route'
+// Traitement partagé en lib : le POST admin est désormais gardé (personnel).
+import { deposerCandidature as deposer } from '@/lib/partner-applications'
 
 export async function POST(request: NextRequest) {
     const trop = guardPublic(request, 'partner-applications', PUBLIC_FORM_LIMIT)

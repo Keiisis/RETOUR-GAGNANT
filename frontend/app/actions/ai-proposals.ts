@@ -109,16 +109,14 @@ export async function getProposalBySecret(secret: string) {
 export async function updateProposalAndItems(proposalId: string, newTotal: number, items: Record<string, unknown>[], currency?: string) {
     try {
         await exigerEquipe()
-        // 1. Update proposal global
-        await supabaseAdmin.from('ai_client_proposals').update({
-            total_amount: newTotal,
-            status: 'ready',
-            ...(currency ? { currency } : {})
-        }).eq('id', proposalId)
+        // Erreurs vérifiées à chaque étape (audit 28/09/2026) : si l'insertion
+        // échouait après la suppression, les lignes étaient perdues et l'écran
+        // annonçait quand même un succès. Les anciennes lignes sont gardées en
+        // mémoire et restaurées en cas d'échec.
+        const { data: anciennes, error: errLecture } = await supabaseAdmin
+            .from('ai_proposal_items').select('*').eq('proposal_id', proposalId)
+        if (errLecture) throw errLecture
 
-        // 2. Handle items (Delete old, insert new)
-        await supabaseAdmin.from('ai_proposal_items').delete().eq('proposal_id', proposalId)
-        
         const itemsToInsert = items.map((item, idx) => {
             const { id, ...rest } = item
             void id; // ignore id
@@ -127,9 +125,26 @@ export async function updateProposalAndItems(proposalId: string, newTotal: numbe
                 order_index: idx
             }
         })
-        
-        await supabaseAdmin.from('ai_proposal_items').insert(itemsToInsert)
-        
+
+        const { error: errSuppr } = await supabaseAdmin.from('ai_proposal_items').delete().eq('proposal_id', proposalId)
+        if (errSuppr) throw errSuppr
+
+        if (itemsToInsert.length > 0) {
+            const { error: errIns } = await supabaseAdmin.from('ai_proposal_items').insert(itemsToInsert)
+            if (errIns) {
+                if (anciennes?.length) await supabaseAdmin.from('ai_proposal_items').insert(anciennes)
+                throw errIns
+            }
+        }
+
+        // Total mis à jour seulement quand les lignes sont bien enregistrées.
+        const { error: errMaj } = await supabaseAdmin.from('ai_client_proposals').update({
+            total_amount: newTotal,
+            status: 'ready',
+            ...(currency ? { currency } : {})
+        }).eq('id', proposalId)
+        if (errMaj) throw errMaj
+
         return { success: true }
     } catch (err: unknown) {
         return { success: false, error: err instanceof Error ? err.message : String(err) }

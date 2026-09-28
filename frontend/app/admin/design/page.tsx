@@ -360,15 +360,17 @@ export default function AdminDesignPage() {
     /* ─── Suppression ─── */
     const deleteCard = async (id: string) => {
         if (!confirm('Supprimer cette carte ?')) return
-        const { error } = await supabase.from('business_cards').delete().eq('id', id)
-        if (error) console.error('[Design] delete:', error.message)
+        // .select('id') : sous RLS une suppression refusée touche 0 ligne sans erreur.
+        const { data, error } = await supabase.from('business_cards').delete().eq('id', id).select('id')
+        // Alerte : le bandeau de statut est dans l'éditeur, hors de vue depuis la liste des cartes.
+        if (error || !data?.length) alert(`Suppression impossible : ${error?.message || 'aucune ligne supprimée (droits insuffisants ?)'}`)
         await load()
     }
 
     /* ─── Attribution à un agent ─── */
     const assignCard = async (cardId: string, agentId: string) => {
-        const { error } = await supabase.from('business_cards').update({ agent_id: agentId }).eq('id', cardId)
-        if (error) console.error('[Design] assign:', error.message)
+        const { data, error } = await supabase.from('business_cards').update({ agent_id: agentId }).eq('id', cardId).select('id')
+        if (error || !data?.length) alert(`Attribution non enregistrée : ${error?.message || 'aucune ligne mise à jour (droits insuffisants ?)'}`)
         await load()
     }
 
@@ -511,7 +513,7 @@ export default function AdminDesignPage() {
                             <AlertCircle size={18} className="text-amber-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-white font-bold text-sm mb-1">Table <code className="bg-white/8 px-1.5 py-0.5 rounded text-amber-300 text-xs">business_cards</code> introuvable</h3>
+                            <h3 className="text-white font-bold text-sm mb-1">Table <code className="bg-white/8 px-1.5 py-0.5 rounded text-amber-300 [[data-theme=light]_&]:text-amber-700 text-xs">business_cards</code> introuvable</h3>
                             <p className="text-gray-400 text-xs mb-3">
                                 Exécutez ce SQL dans votre tableau de bord Supabase pour créer la table, puis cliquez <strong className="text-white">Actualiser</strong>.
                             </p>
@@ -539,7 +541,7 @@ CREATE POLICY "Admins full access" ON public.business_cards
                                         setSqlCopied(true)
                                         setTimeout(() => setSqlCopied(false), 2500)
                                     }}
-                                    className="flex items-center gap-2 px-3 py-2 bg-amber-500/15 border border-amber-500/25 rounded-lg text-xs text-amber-300 hover:bg-amber-500/25 transition-all font-medium">
+                                    className="flex items-center gap-2 px-3 py-2 bg-amber-500/15 border border-amber-500/25 rounded-lg text-xs text-amber-300 [[data-theme=light]_&]:text-amber-700 hover:bg-amber-500/25 transition-all font-medium">
                                     {sqlCopied ? <CheckCircle size={13} className="text-green-400" /> : <ExternalLink size={13} />}
                                     {sqlCopied ? 'Copié !' : 'Copier le SQL'}
                                 </button>

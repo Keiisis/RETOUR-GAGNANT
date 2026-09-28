@@ -28,14 +28,21 @@ export default function GalleryList() {
     const { create, edit } = useNavigation();
     const queryResult = useList<GalleryItem>({
         resource: "gallery",
-        pagination: { pageSize: 24 },
+        // Avant : pageSize 24 sans aucune pagination à l'écran → seules les 24
+        // dernières images (sur 134 en base) étaient gérables et cherchables.
+        pagination: { mode: "off" },
         sorters: [{ field: "created_at", order: "desc" }]
     });
 
     const { mutate: deleteItem } = useDelete();
     const { mutate: updateItem } = useUpdate();
+    // Aucun notificationProvider Refine : sans onError, un échec était muet.
+    const echec = (quoi: string) => (err: unknown) =>
+        alert(`${quoi} : ${(err as { message?: string })?.message || 'erreur'}`);
     const [searchTerm, setSearchTerm] = useState("");
-    const [filter, setFilter] = useState<'all' | 'hero' | 'gallery'>('all');
+    // Filtre par catégorie RÉELLE (avant : 'hero'/'gallery' comparés à `type`,
+    // qui vaut 'image' en base → « Slides » et « Mosaïque » toujours vides).
+    const [filter, setFilter] = useState<string>('all');
 
     const queryInternal = queryResult as unknown as Record<string, unknown>
     const queryObj = (queryInternal.query ?? queryInternal) as Record<string, boolean | undefined>
@@ -46,7 +53,7 @@ export default function GalleryList() {
     const filteredItems = items.filter((item) => {
         const matchesSearch = (item.title?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
             (item.category?.toLowerCase() || "").includes(searchTerm.toLowerCase());
-        const matchesFilter = filter === 'all' || item.type === filter;
+        const matchesFilter = filter === 'all' || (item.category || 'Sans catégorie') === filter;
         return matchesSearch && matchesFilter;
     });
 
@@ -79,7 +86,7 @@ export default function GalleryList() {
                     </div>
 
                     <div className="flex items-center gap-1 p-1 bg-white/5 border border-white/5 rounded-2xl">
-                        {(['all', 'hero', 'gallery'] as const).map((f) => (
+                        {['all', ...Array.from(new Set(items.map(i => i.category || 'Sans catégorie'))).sort()].map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
@@ -88,7 +95,7 @@ export default function GalleryList() {
                                     filter === f ? "bg-[#FCD116] text-black shadow-lg" : "text-gray-500 hover:text-white"
                                 )}
                             >
-                                {f === 'all' ? 'Tous' : f === 'hero' ? 'Slides' : 'Mosaïque'}
+                                {f === 'all' ? 'Tous' : f}
                             </button>
                         ))}
                     </div>
@@ -151,7 +158,7 @@ export default function GalleryList() {
                                                 </button>
                                                 <button
                                                     onClick={() => {
-                                                        if (confirm("Confirmer la suppression ?")) deleteItem({ resource: "gallery", id: item.id });
+                                                        if (confirm("Confirmer la suppression ?")) deleteItem({ resource: "gallery", id: item.id }, { onError: echec("Suppression impossible") });
                                                     }}
                                                     title="Supprimer cette image"
                                                     className="p-2 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg"
@@ -168,7 +175,9 @@ export default function GalleryList() {
                                             </div>
 
                                             <div className="flex gap-2">
-                                                <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl border-white/10 text-white bg-white/5 hover:bg-white/10 text-[10px]">
+                                                <Button size="sm" variant="outline" className="flex-1 h-9 rounded-xl border-white/10 text-white bg-white/5 hover:bg-white/10 text-[10px]"
+                                                    disabled={!(item.url || item.image_url || item.image)}
+                                                    onClick={() => { const src = item.url || item.image_url || item.image; if (src) window.open(src, '_blank', 'noopener,noreferrer') }}>
                                                     <Maximize2 size={12} className="mr-2" /> APERÇU
                                                 </Button>
                                                 {item.is_featured ? (
@@ -177,7 +186,7 @@ export default function GalleryList() {
                                                     </div>
                                                 ) : (
                                                     <button
-                                                        onClick={() => updateItem({ resource: "gallery", id: item.id, values: { is_featured: true } })}
+                                                        onClick={() => updateItem({ resource: "gallery", id: item.id, values: { is_featured: true } }, { onError: echec("Mise en avant impossible") })}
                                                         className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-[#FCD116] hover:text-black transition-all"
                                                         title={t("Mettre en avant")}
                                                     >

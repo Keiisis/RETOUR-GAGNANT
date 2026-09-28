@@ -166,7 +166,7 @@ export default function AdminPageContent() {
                                                             value={editContent}
                                                             onChange={e => setEditContent(e.target.value)}
                                                             rows={12}
-                                                            className="w-full rounded-md bg-black/30 border border-white/10 text-green-300 px-3 py-2 text-xs font-mono leading-relaxed"
+                                                            className="w-full rounded-md bg-black/30 border border-white/10 text-green-300 [[data-theme=light]_&]:text-green-700 px-3 py-2 text-xs font-mono leading-relaxed"
                                                             spellCheck={false}
                                                         />
                                                     </div>

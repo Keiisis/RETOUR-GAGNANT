@@ -6,8 +6,12 @@ import { supabase } from '@/lib/supabase'
 import { FileText, MagnifyingGlass as Search, Plus, Clock, CheckCircle as CheckCircle2, CircleNotch as Loader2, Eye, X, Calendar, Envelope as Mail, Phone, Note as StickyNote, ArrowRight, WarningCircle as AlertCircle, FileText as FileWarning, PaperPlaneTilt as Send, ChatText as MessageSquare, User, Download, Trash as Trash2 } from '@phosphor-icons/react';
 import type { Icon as LucideIcon } from '@phosphor-icons/react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import {
+    DOSSIER_STATUTS, DOSSIER_PARCOURS, DOSSIER_PROGRESSION, DOSSIER_VERS_MOBILE,
+    normaliserStatutDossier, type DossierStatut,
+} from '@/lib/constants/statuts'
 
-type DossierStatus = 'reception' | 'verification' | 'traitement' | 'validation' | 'finalisation' | 'termine'
+type DossierStatus = DossierStatut
 
 interface Dossier {
     id: string
@@ -49,14 +53,23 @@ interface ChatMsg {
     created_at: string
 }
 
-const columns: { id: DossierStatus; label: string; color: string; icon: LucideIcon }[] = [
-    { id: 'reception', label: 'Réception', color: 'border-sky-500/30 bg-sky-500/5', icon: Plus },
-    { id: 'verification', label: 'Vérification', color: 'border-amber-500/30 bg-amber-500/5', icon: Clock },
-    { id: 'traitement', label: 'Traitement', color: 'border-emerald-500/30 bg-emerald-500/5', icon: Loader2 },
-    { id: 'validation', label: 'Validation', color: 'border-blue-500/30 bg-blue-500/5', icon: Eye },
-    { id: 'finalisation', label: 'Finalisation', color: 'border-purple-500/30 bg-purple-500/5', icon: ArrowRight },
-    { id: 'termine', label: 'Terminé', color: 'border-green-500/30 bg-green-500/5', icon: CheckCircle2 },
-]
+// Colonnes = référence unique lib/constants/statuts. La colonne « Annulé »
+// manquait : un dossier annulé par l'admin disparaissait du kanban agent.
+const ICONES: Record<DossierStatus, LucideIcon> = {
+    reception: Plus, verification: Clock, traitement: Loader2, validation: Eye,
+    finalisation: ArrowRight, termine: CheckCircle2, annule: X,
+}
+const COULEURS: Record<DossierStatus, string> = {
+    reception: 'border-sky-500/30 bg-sky-500/5',
+    verification: 'border-blue-500/30 bg-blue-500/5',
+    traitement: 'border-amber-500/30 bg-amber-500/5',
+    validation: 'border-purple-500/30 bg-purple-500/5',
+    finalisation: 'border-green-500/30 bg-green-500/5',
+    termine: 'border-emerald-500/30 bg-emerald-500/5',
+    annule: 'border-red-500/30 bg-red-500/5',
+}
+const columns: { id: DossierStatus; label: string; color: string; icon: LucideIcon }[] =
+    DOSSIER_STATUTS.map(d => ({ id: d.value, label: d.label, color: COULEURS[d.value], icon: ICONES[d.value] }))
 
 export default function AgentDossiersPage() {
     const [dossiers, setDossiers] = useState<Dossier[]>([])
@@ -75,6 +88,7 @@ export default function AgentDossiersPage() {
     const [chatInput, setChatInput] = useState('')
     const [chatSending, setChatSending] = useState(false)
     const [emailSending, setEmailSending] = useState(false)
+    const [erreur, setErreur] = useState<string | null>(null)
     const chatBottomRef = useRef<HTMLDivElement>(null)
 
     const deletePhysicalFile = async (url: string, sourceTable: string) => {
@@ -240,7 +254,7 @@ export default function AgentDossiersPage() {
         if (!selectedDossier?.client_email || !message.trim()) return
         setEmailSending(true)
         try {
-            await fetch('/api/email/send', {
+            const res = await fetch('/api/email/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -256,7 +270,13 @@ export default function AgentDossiersPage() {
                     trackerUrl: `${window.location.origin}/suivi-dossier`,
                 }),
             })
-        } catch (e) { console.error(e) }
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                alert(`Email non envoyé : ${data.error || `erreur ${res.status}`}`)
+            }
+        } catch (e) {
+            alert(`Email non envoyé : ${e instanceof Error ? e.message : 'réseau indisponible'}`)
+        }
         setEmailSending(false)
     }
 
@@ -282,8 +302,9 @@ export default function AgentDossiersPage() {
 
         // Envoi Email
         try {
-            await fetch('/api/email/send', {
+            const res = await fetch('/api/email/send', {
                 method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     to: selectedDossier.client_email,
                     subject: 'Action Requise : Document manquant pour votre dossier',
@@ -297,7 +318,8 @@ export default function AgentDossiersPage() {
                     trackerUrl: `${window.location.origin}/suivi-dossier`
                 })
             })
-        } catch (e) { console.error('Erreur send email doc:', e) }
+            if (!res.ok) alert('Document manquant enregistré, mais email au client NON envoyé.')
+        } catch { alert('Document manquant enregistré, mais email au client NON envoyé (réseau).') }
     }
     
     const removeMissingDocument = async (docToRemove: string) => {
@@ -321,12 +343,14 @@ export default function AgentDossiersPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) setCurrentUserId(user.id)
 
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('dossier_tracking')
                 .select('*')
                 .order('created_at', { ascending: false })
 
-            setDossiers((data || []) as Dossier[])
+            setErreur(error ? `Chargement impossible : ${error.message}` : null)
+            // Anciennes valeurs (en_cours, soumis…) ramenées à leur colonne canonique
+            setDossiers(((data || []) as Dossier[]).map(d => ({ ...d, statut: normaliserStatutDossier(d.statut) as DossierStatus })))
             setLoading(false)
         }
         fetchDossiers()
@@ -345,15 +369,7 @@ export default function AgentDossiersPage() {
     }, [])
 
     const updateStatus = async (dossierId: string, newStatus: DossierStatus) => {
-        const statusProgressionMap: Record<DossierStatus, number> = {
-            reception: 10,
-            verification: 30,
-            traitement: 60,
-            validation: 80,
-            finalisation: 95,
-            termine: 100
-        }
-        const progression = statusProgressionMap[newStatus];
+        const progression = DOSSIER_PROGRESSION[newStatus];
         const updated_at = new Date().toISOString();
 
         const dossierEntry = dossiers.find(x => x.id === dossierId);
@@ -374,14 +390,7 @@ export default function AgentDossiersPage() {
         // ── Sync to dossiers table (mobile table) via dossier_ref_id ──
         const dossierRefId = dossierEntry?.dossier_ref_id;
         if (dossierRefId) {
-            const mobileStatusMap: Record<DossierStatus, string> = {
-                reception: 'soumis',
-                verification: 'verifie',
-                traitement: 'traitement',
-                validation: 'validation',
-                finalisation: 'validation',
-                termine: 'termine',
-            }
+            const mobileStatusMap = DOSSIER_VERS_MOBILE
             const { error: mobileErr } = await supabase
                 .from('dossiers')
                 .update({
@@ -395,24 +404,29 @@ export default function AgentDossiersPage() {
 
         const d = dossiers.find(x => x.id === dossierId);
         if (d && d.client_email) {
+            const libelle = (DOSSIER_STATUTS.find(x => x.value === newStatus)?.label || newStatus).toUpperCase()
             try {
-                await fetch('/api/email/send', {
+                const res = await fetch('/api/email/send', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         to: d.client_email,
-                        subject: 'Mise à jour de votre dossier : ' + newStatus.toUpperCase(),
+                        subject: 'Mise à jour de votre dossier : ' + libelle,
                         clientName: d.client_prenom + ' ' + d.client_nom,
                         context: 'dossierUpdate',
                         relatedId: d.num_dossier,
                         dossierNumero: d.num_dossier,
                         progression: progression,
-                        message: `Votre dossier a avancé d'une étape et est actuellement en phase de **${newStatus.toUpperCase()}**.`,
+                        message: newStatus === 'annule'
+                            ? 'Votre dossier a été annulé. Contactez-nous pour toute question.'
+                            : `Votre dossier a avancé d'une étape et est actuellement en phase de **${libelle}**.`,
                         documentsManquants: d.documents_manquants || [],
                         trackerUrl: `${window.location.origin}/suivi-dossier`
                     })
                 })
-            } catch (e) {
-                console.error('Erreur send email status:', e);
+                if (!res.ok) alert('Statut enregistré, mais email au client NON envoyé.')
+            } catch {
+                alert('Statut enregistré, mais email au client NON envoyé (réseau).')
             }
         }
     }
@@ -466,11 +480,14 @@ export default function AgentDossiersPage() {
                 body: JSON.stringify({ dossier_id: dossier.id, agent_id: nouvel }),
             })
             if (!res.ok) {
-                // Rollback visuel si le serveur refuse.
+                // Rollback visuel si le serveur refuse — et on dit pourquoi.
                 setDossiers(prev => prev.map(d => d.id === dossier.id ? { ...d, agent_assigne: dossier.agent_assigne } : d))
+                const data = await res.json().catch(() => ({}))
+                alert(`Prise en charge impossible : ${data.error || `erreur ${res.status}`}`)
             }
         } catch {
             setDossiers(prev => prev.map(d => d.id === dossier.id ? { ...d, agent_assigne: dossier.agent_assigne } : d))
+            alert('Prise en charge impossible : réseau indisponible.')
         }
     }
 
@@ -489,6 +506,7 @@ export default function AgentDossiersPage() {
                 <div>
                     <h1 className="text-2xl font-black text-white">Mes Dossiers (Kanban)</h1>
                     <p className="text-gray-500 text-sm mt-1">{dossiers.length} dossier(s) au total • <span className="text-emerald-400">Glissez-déposez pour changer le statut</span></p>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -602,7 +620,7 @@ export default function AgentDossiersPage() {
                                                                         const lastUpdate = d.updated_at || d.created_at;
                                                                         const lastUpdateTime = lastUpdate && !isNaN(new Date(lastUpdate).getTime()) ? new Date(lastUpdate).getTime() : null;
                                                                         const isStagnant = lastUpdateTime !== null && (new Date().getTime() - lastUpdateTime > 3 * 24 * 60 * 60 * 1000);
-                                                                        return isStagnant && d.statut !== 'termine' ? (
+                                                                        return isStagnant && d.statut !== 'termine' && d.statut !== 'annule' ? (
                                                                             <span title="Dossier stagnant : Aucune avancée depuis 3 jours">
                                                                                 <AlertCircle size={14} className="text-amber-500" />
                                                                             </span>
@@ -627,20 +645,16 @@ export default function AgentDossiersPage() {
                                                             </div>
 
                                                             {/* Quick Status Change */}
-                                                            {column.id !== 'termine' && (
+                                                            {column.id !== 'termine' && column.id !== 'annule' && (
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation()
-                                                                        const nextStatus: Record<string, DossierStatus> = {
-                                                                            reception: 'verification',
-                                                                            verification: 'traitement',
-                                                                            traitement: 'validation',
-                                                                            validation: 'finalisation',
-                                                                            finalisation: 'termine',
-                                                                        }
-                                                                        updateStatus(d.id, nextStatus[column.id])
+                                                                        // Étape suivante du parcours de référence
+                                                                        const idx = DOSSIER_PARCOURS.indexOf(column.id)
+                                                                        const suivant = DOSSIER_PARCOURS[idx + 1]
+                                                                        if (suivant) updateStatus(d.id, suivant)
                                                                     }}
-                                                                    className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-400/80 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg py-1.5 transition-all opacity-0 group-hover:opacity-100"
+                                                                    className="mt-3 w-full flex items-center justify-center gap-1 text-[10px] font-bold text-emerald-400/80 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg py-1.5 transition-all sm:opacity-0 sm:group-hover:opacity-100"
                                                                 >
                                                                     Avancer <ArrowRight size={10} />
                                                                 </button>

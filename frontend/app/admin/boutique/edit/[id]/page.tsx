@@ -78,6 +78,8 @@ export default function EditProductPage() {
             },
             {
                 onSuccess: () => list('products'),
+                // Sans notificationProvider Refine, un refus restait muet.
+                onError: (err: unknown) => alert(`Produit non enregistré : ${(err as { message?: string })?.message || 'erreur'}`),
             }
         )
     }

@@ -41,7 +41,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'agent')
+    // 'admin' : un code vaut une prestation offerte. Seul le panel admin
+    // appelle cette route (le middleware refuse déjà les agents) ; la garde
+    // serveur doit tenir seule.
+    const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
 
     const body = await request.json().catch(() => ({})) as Record<string, unknown>
@@ -72,6 +75,12 @@ export async function POST(request: NextRequest) {
     const joursValidite = Number(body.jours_validite)
     const jours = isFinite(joursValidite) && joursValidite > 0 ? Math.min(joursValidite, 365) : 30
 
+    let auteurEmail: string | null = null
+    if (garde.userId) {
+        const { data: auteur } = await supabase.auth.admin.getUserById(garde.userId)
+        auteurEmail = auteur?.user?.email?.toLowerCase() || null
+    }
+
     /* Collision quasi impossible (32^12), mais la base a le dernier mot :
        on réessaie plutôt que de rendre une erreur incompréhensible. */
     let derniereErreur = ''
@@ -90,7 +99,9 @@ export async function POST(request: NextRequest) {
                 note: texte(body.note, 500),
                 expire_le: new Date(Date.now() + jours * 864e5).toISOString(),
                 cree_par: garde.userId || null,
-                cree_par_email: texte(body.cree_par_email, 160),
+                // Auteur pris sur la SESSION : l'e-mail envoyé par le client
+                // était recopié tel quel (traçabilité falsifiable).
+                cree_par_email: auteurEmail || texte(body.cree_par_email, 160),
             }])
             .select('*')
             .single()

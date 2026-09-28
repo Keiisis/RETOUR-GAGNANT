@@ -100,7 +100,7 @@ export default function ProcessStepsList() {
                             </button>
                             <button
                                 onClick={() => {
-                                    if (confirm('Supprimer cette étape ?')) deleteItem({ resource: 'process_steps', id: step.id })
+                                    if (confirm('Supprimer cette étape ?')) deleteItem({ resource: 'process_steps', id: step.id }, { onError: (err: unknown) => alert(`Suppression impossible : ${(err as { message?: string })?.message || 'erreur'}`) })
                                 }}
                                 className="p-3 bg-white/5 text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all"
                                 title={t("Supprimer")}

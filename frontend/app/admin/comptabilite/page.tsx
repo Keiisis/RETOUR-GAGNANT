@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { expenseCategoryLabel, EXPENSE_CATEGORIES } from '@/lib/constants/compta'
 import { exportToExcelMultiSheet } from '@/lib/exportExcel'
 import { toXOF, loadExchangeRates, rateOf } from '@/lib/currency-convert'
+import { DOC_FIN_STATUTS, DOC_FIN_EN_ATTENTE, DOC_FIN_CLOS, COMMANDE_PAIEMENT_STATUTS } from '@/lib/constants/statuts'
 import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -143,6 +144,11 @@ function getPrevPeriodRange(p: Period): { start: Date; end: Date } {
     return { start: new Date(0), end: new Date(0) }
 }
 
+// Factures émises non soldées : référence unique lib/constants/statuts (inclut en_retard).
+const FACTURE_EN_ATTENTE: string[] = DOC_FIN_EN_ATTENTE
+// Devis sortis du pipeline. Avant : liste contenant `expire`, valeur interdite
+// par la contrainte CHECK de documents_financiers.status (ne filtrait rien).
+const DEVIS_CLOS: string[] = DOC_FIN_CLOS
 const inRange = (dateStr: string, s: Date, e: Date) => { const d = new Date(dateStr); return d >= s && d <= e }
 
 function calcTrend(curr: number, prev: number) {
@@ -169,25 +175,14 @@ const formatShortDate = (str: string | null | undefined) => {
 }
 
 // ─── Status maps ────────────────────────────────────────────────────
-const DOC_STATUS: Record<string, { label: string; cls: string }> = {
-    brouillon:  { label: 'Brouillon',  cls: 'bg-gray-500/20 text-gray-400' },
-    envoye:     { label: 'Envoyé',     cls: 'bg-blue-500/20 text-blue-300' },
-    accepte:    { label: 'Accepté',    cls: 'bg-yellow-500/20 text-yellow-300' },
-    paye:       { label: 'Payé',       cls: 'bg-[#008751]/20 text-[#00c870]' },
-    refuse:     { label: 'Refusé',     cls: 'bg-red-500/20 text-red-400' },
-    annule:     { label: 'Annulé',     cls: 'bg-red-900/20 text-red-600' },
-    en_retard:  { label: 'En retard',  cls: 'bg-orange-500/20 text-orange-400' },
-}
+// Libellés/couleurs : référence unique (avant : `accepte` en jaune ici, en vert ailleurs).
+const DOC_STATUS: Record<string, { label: string; cls: string }> =
+    Object.fromEntries(DOC_FIN_STATUTS.map(d => [d.value, { label: d.label, cls: d.badge }]))
 
-const ORDER_STATUS: Record<string, { label: string; cls: string }> = {
-    pending:   { label: 'En attente', cls: 'bg-yellow-500/20 text-yellow-300' },
-    completed: { label: 'Payé',       cls: 'bg-[#008751]/20 text-[#00c870]' },
-    failed:    { label: 'Échoué',     cls: 'bg-red-500/20 text-red-400' },
-    cancelled: { label: 'Annulé',     cls: 'bg-gray-500/20 text-gray-400' },
-    refunded:  { label: 'Remboursé',  cls: 'bg-purple-500/20 text-purple-300' },
-    shipped:   { label: 'Expédié',    cls: 'bg-blue-500/20 text-blue-300' },
-    delivered: { label: 'Livré',      cls: 'bg-teal-500/20 text-teal-300' },
-}
+// orders.payment_status : référence unique. Avant, `abandoned` (valeur réelle
+// de TOUTES les commandes en base au 28/09) n'avait ni libellé ni couleur.
+const ORDER_STATUS: Record<string, { label: string; cls: string }> =
+    Object.fromEntries(COMMANDE_PAIEMENT_STATUTS.map(d => [d.value, { label: d.label, cls: d.badge }]))
 
 const DEP_COLORS = ['#008751', '#FCD116', '#3b82f6', '#8b5cf6', '#f97316', '#E8112D', '#0891b2', '#d97706']
 
@@ -240,8 +235,8 @@ function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow
                 <div className="flex items-start justify-between p-5 border-b border-white/5">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase', doc.type === 'facture' ? 'bg-[#008751]/20 text-[#00c870]' : 'bg-blue-500/20 text-blue-300')}>{doc.type}</span>
-                            {signed && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 flex items-center gap-1"><Shield size={9} /> Signé</span>}
+                            <span className={cn('text-[9px] font-black px-2 py-0.5 rounded-full uppercase', doc.type === 'facture' ? 'bg-[#008751]/20 text-[#00c870]' : 'bg-blue-500/20 text-blue-300 [[data-theme=light]_&]:text-blue-700')}>{doc.type}</span>
+                            {signed && <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 [[data-theme=light]_&]:text-purple-700 flex items-center gap-1"><Shield size={9} /> Signé</span>}
                         </div>
                         <h3 className="text-lg font-black text-white font-mono">{doc.numero}</h3>
                         <p className="text-[10px] text-gray-500 mt-0.5">{fmtDate(doc.created_at)}{doc.signed_at && ` · Signé le ${fmtDate(doc.signed_at)}`}</p>
@@ -305,7 +300,7 @@ function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow
                         <p className="text-[9px] font-black text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5"><Hash size={10} /> Récapitulatif financier</p>
                         <div className="space-y-1.5 text-[11px]">
                             <div className="flex justify-between"><span className="text-gray-400">Sous-total HT</span><span className="font-mono text-white">{fmt(sous_total, doc.currency)}</span></div>
-                            {total_tva > 0 && <div className="flex justify-between"><span className="text-gray-400">TVA</span><span className="font-mono text-yellow-300">{fmt(total_tva, doc.currency)}</span></div>}
+                            {total_tva > 0 && <div className="flex justify-between"><span className="text-gray-400">TVA</span><span className="font-mono text-yellow-300 [[data-theme=light]_&]:text-yellow-700">{fmt(total_tva, doc.currency)}</span></div>}
                             {remise > 0 && <div className="flex justify-between"><span className="text-gray-400">Remise</span><span className="font-mono text-orange-400">− {fmt(remise, doc.currency)}</span></div>}
                             <div className="border-t border-white/10 pt-2 flex justify-between">
                                 <span className="font-black text-white">Total TTC</span>
@@ -326,7 +321,7 @@ function DocDetailModal({ doc, agent, onClose }: { doc: DocRow; agent?: AgentRow
                                 {DOC_STATUS[doc.status]?.label || doc.status}
                             </span>
                             {signed && (
-                                <span className="text-[10px] text-purple-300 flex items-center gap-1"><Shield size={11} /> Signé le {fmtDate(doc.signed_at!)}</span>
+                                <span className="text-[10px] text-purple-300 [[data-theme=light]_&]:text-purple-700 flex items-center gap-1"><Shield size={11} /> Signé le {fmtDate(doc.signed_at!)}</span>
                             )}
                         </div>
                         {doc.signature_url && (
@@ -394,12 +389,29 @@ export default function AdminComptabilitePage() {
     // ── Fetch ─────────────────────────────────────────────────────
     const fetchAll = useCallback(async () => {
         setRefreshing(true)
-        // Taux de change réels (table currencies) AVANT calcul des KPI normalisés XOF
-        const [, usersRes, erpRes] = await Promise.all([
-            loadExchangeRates(),
-            fetch('/api/admin/users').then(r => r.ok ? r.json() : { users: [] }),
-            fetch('/api/admin/comptabilite').then(r => r.ok ? r.json() : { docs: [], orders: [], depenses: [], commissionRate: 0.10 }),
-        ])
+        // Avant : une erreur de /api/admin/comptabilite remplaçait les données par
+        // des listes vides → tableau de bord à 0 FCFA présenté comme réel ; une
+        // erreur réseau laissait le chargement tourner indéfiniment.
+        let usersRes: { users?: AgentRow[] }
+        let erpRes: Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
+        try {
+            const [, u, erp] = await Promise.all([
+                // Taux de change réels (table currencies) AVANT calcul des KPI normalisés XOF
+                loadExchangeRates(),
+                fetch('/api/admin/users').then(r => r.ok ? r.json() : { users: [] }),
+                fetch('/api/admin/comptabilite').then(async r => {
+                    const j = await r.json().catch(() => ({}))
+                    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`)
+                    return j
+                }),
+            ])
+            usersRes = u; erpRes = erp
+        } catch (e) {
+            alert(`Données comptables non chargées : ${e instanceof Error ? e.message : 'erreur réseau'}. Les montants affichés ne sont pas à jour.`)
+            setLoading(false)
+            setRefreshing(false)
+            return
+        }
         const allUsers: AgentRow[] = (usersRes.users || []).filter((u: AgentRow) =>
             ['agent', 'admin', 'superadmin', 'super_admin'].includes((u.role || '').toLowerCase())
         )
@@ -506,10 +518,14 @@ export default function AdminComptabilitePage() {
                 .reduce((a, d) => a + toXOF(d.total, d.currency) /* `total` est déjà net de remise (total = HT + TVA − remise) */, 0)
 
             const encaisseFactu = encaissePaiements + invoicesPayeesSansP
-            const enAttente     = invoices.filter(d => ['envoye', 'accepte'].includes(d.status)).reduce((a, d) => a + toXOF(d.total, d.currency), 0)
+            // Factures non soldées : « en_retard » compte aussi (statut valide oublié) ;
+            // reste dû = total − encaissements manuels déjà saisis (acomptes).
+            const facturesAttente = invoices.filter(d => FACTURE_EN_ATTENTE.includes(d.status))
+            const enAttente     = facturesAttente.reduce((a, d) => a + Math.max(0, toXOF(d.total, d.currency) - (paiements[d.id] || 0)), 0)
+            const nbEnAttente   = facturesAttente.length
             // Devis clients en attente de validation : pipeline introduit
             // dynamiquement dans la lecture de trésorerie réelle
-            const devisList     = dList.filter(d => d.type === 'devis' && !['paye', 'annule', 'refuse', 'expire'].includes(d.status))
+            const devisList     = dList.filter(d => d.type === 'devis' && !DEVIS_CLOS.includes(d.status))
             const devisEnAttente = devisList.reduce((a, d) => a + toXOF(d.total, d.currency), 0)
             const nbDevisAttente = devisList.length
             const boutique      = oList.filter(o => o.payment_status === 'completed').reduce((a, o) => a + toXOF(o.amount, o.currency), 0)
@@ -532,7 +548,7 @@ export default function AdminComptabilitePage() {
             // sont soldées).
             const encaisseFactures = invoices.filter(d => d.status === 'paye')
                 .reduce((a, d) => a + toXOF(d.total, d.currency), 0)
-            return { encaisseFactu, encaisseFactures, boutique, totalEncaisse, enAttente, devisEnAttente, nbDevisAttente, commission, totalDeps, caEmis, totalTVA,
+            return { encaisseFactu, encaisseFactures, boutique, totalEncaisse, enAttente, nbEnAttente, devisEnAttente, nbDevisAttente, commission, totalDeps, caEmis, totalTVA,
                      benefice: totalEncaisse - commission - totalDeps,
                      proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
         }
@@ -548,13 +564,13 @@ export default function AdminComptabilitePage() {
                 tva:       calcTrend(curr.totalTVA,      prev.totalTVA),
             }
         }
-    }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end, pPaiements, pvPaiements])
+    }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end, pPaiements, pvPaiements, paiements])
 
     // ── Balance âgée des créances (aged receivables) : toutes périodes ─
     // Feature ERP type-Odoo : qui doit combien, et depuis combien de temps.
     // Montants normalisés XOF. Buckets : 0-30 / 31-60 / 61-90 / 90+ jours.
     const agedBalance = useMemo(() => {
-        const CLOSED = ['paye', 'paid', 'completed', 'annule', 'refuse', 'brouillon']
+        const CLOSED: string[] = [...DOC_FIN_CLOS, 'brouillon']  // avant : + 'paid'/'completed', valeurs impossibles
         const now = Date.now()
         type Bk = 'b0' | 'b30' | 'b60' | 'b90'
         const buckets = { b0: 0, b30: 0, b60: 0, b90: 0, total: 0 }
@@ -606,7 +622,7 @@ export default function AdminComptabilitePage() {
     const alertes = useMemo(() => {
         const list: { type: 'warning' | 'danger' | 'info'; msg: string; action?: string }[] = []
         const now = new Date()
-        const retard = pDocs.filter(d => d.type === 'facture' && ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
+        const retard = pDocs.filter(d => d.type === 'facture' && FACTURE_EN_ATTENTE.includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
         if (retard.length > 0)
             list.push({ type: 'warning', msg: `${retard.length} facture${retard.length > 1 ? 's' : ''} en attente +7j : ${fmt(retard.reduce((a, d) => a + toXOF(d.total, d.currency), 0))} à relancer`, action: 'retard' })
         if (kpis.benefice < 0)
@@ -658,7 +674,7 @@ export default function AdminComptabilitePage() {
                 // additionne des devises différentes (incohérence par agent)
                 s.nbFactures++; s.caEmis += toXOF(d.total, d.currency)
                 s.tvaCollectee += toXOF(Number(d.total_tva) || 0, d.currency)
-                if (['envoye', 'accepte'].includes(d.status)) s.enAttente += toXOF(d.total, d.currency)
+                if (FACTURE_EN_ATTENTE.includes(d.status)) s.enAttente += Math.max(0, toXOF(d.total, d.currency) - (paiements[d.id] || 0))
             }
         }
         
@@ -696,27 +712,30 @@ export default function AdminComptabilitePage() {
         }
         const all = [...map.values()]
         return showAllAgents ? all : all.filter(s => s.caEmis > 0 || s.nbDevis > 0 || s.depenses > 0 || s.encaisse > 0)
-    }, [agents, pDocs, pDeps, pPaiements, commissionRate, showAllAgents])
+    }, [agents, pDocs, pDeps, pPaiements, commissionRate, showAllAgents, paiements])
 
     // ── Charts ────────────────────────────────────────────────────
     const areaData = useMemo(() => {
+        /* Avant : montants bruts additionnés toutes devises confondues (une facture
+           USD/EUR comptait comme des FCFA) et axe dans l'ordre d'insertion
+           (factures, puis boutique, puis dépenses) : jours désordonnés et
+           slice(-60) gardait des jours arbitraires. Clé = jour ISO, tri, XOF. */
         const days: Record<string, { factu: number; boutique: number; depenses: number }> = {}
-        for (const d of pDocs.filter(d => d.status === 'paye' && d.type === 'facture')) {
-            const k = formatShortDate(d.created_at)
-            if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
-            days[k].factu += d.total
+        const jour = (s: string | null | undefined) => {
+            const d = s ? new Date(s) : null
+            if (!d || isNaN(d.getTime())) return null
+            // Jour LOCAL (pas UTC) : une écriture à 00h30 reste sur son jour.
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         }
-        for (const o of pOrders.filter(o => o.payment_status === 'completed')) {
-            const k = formatShortDate(o.created_at)
+        const ajouter = (s: string | null | undefined, champ: 'factu' | 'boutique' | 'depenses', v: number) => {
+            const k = jour(s); if (!k) return
             if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
-            days[k].boutique += o.amount
+            days[k][champ] += v
         }
-        for (const d of pDeps) {
-            const k = formatShortDate(d.date_depense)
-            if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
-            days[k].depenses += Number(d.montant)
-        }
-        return Object.entries(days).slice(-60).map(([name, v]) => ({ name, ...v }))
+        for (const d of pDocs.filter(d => d.status === 'paye' && d.type === 'facture')) ajouter(d.created_at, 'factu', toXOF(d.total, d.currency))
+        for (const o of pOrders.filter(o => o.payment_status === 'completed')) ajouter(o.created_at, 'boutique', toXOF(o.amount, o.currency))
+        for (const d of pDeps) ajouter(d.date_depense, 'depenses', Number(d.montant))
+        return Object.keys(days).sort().slice(-60).map(k => ({ name: formatShortDate(`${k}T12:00:00`), ...days[k] }))
     }, [pDocs, pOrders, pDeps])
 
     const agentBarData = useMemo(() =>
@@ -740,7 +759,7 @@ export default function AdminComptabilitePage() {
         // bouton « Encaisser » (géré ligne par ligne selon d.type).
         let list = pDocs.filter(d => ['facture', 'devis', 'avoir'].includes(d.type))
         // Le retard de paiement ne concerne que les FACTURES
-        if (alertFilter === 'retard') list = list.filter(d => d.type === 'facture' && ['envoye', 'accepte'].includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
+        if (alertFilter === 'retard') list = list.filter(d => d.type === 'facture' && FACTURE_EN_ATTENTE.includes(d.status) && (now.getTime() - new Date(d.created_at).getTime()) > 7 * 864e5)
         if (agentFilter !== 'tous') list = list.filter(d => d.agent_id === agentFilter)
         if (searchQ) { const q = searchQ.toLowerCase(); list = list.filter(d => (`${d.client_nom} ${d.client_prenom || ''} ${d.numero}`).toLowerCase().includes(q)) }
         return list
@@ -813,7 +832,14 @@ export default function AdminComptabilitePage() {
                 setPaymentDoc(null)
                 setNewPayment({ type: 'virement', montant: '', reference: '', notes: '', date: new Date().toISOString().split('T')[0] })
                 await fetchAll()
+            } else {
+                // Avant : refus serveur (période clôturée, montant > reste dû, droits…)
+                // sans aucun message ; la modale restait ouverte, muette.
+                const data = await res.json().catch(() => ({}))
+                alert(`Paiement non enregistré : ${data.error || `HTTP ${res.status}`}`)
             }
+        } catch (e) {
+            alert(`Paiement non enregistré : ${e instanceof Error ? e.message : 'erreur réseau'}`)
         } finally {
             setSavingPayment(false)
         }
@@ -904,7 +930,7 @@ export default function AdminComptabilitePage() {
                     { label: "Revenus boutique", value: kpis.boutique, detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes` },
                     { label: "TOTAL ENCAISSÉ (Entrées)", value: kpis.totalEncaisse, detail: 'Facturation + Boutique' },
                     { label: "TVA collectée", value: kpis.totalTVA, detail: 'Sur factures émises' },
-                    { label: "Factures en attente", value: kpis.enAttente, detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} en cours` },
+                    { label: "Factures en attente", value: kpis.enAttente, detail: `${kpis.nbEnAttente} en cours` },
                     { label: "Devis en attente de validation", value: kpis.devisEnAttente, detail: `${kpis.nbDevisAttente} devis : pipeline trésorerie` },
                     // Commission : on affiche le TAUX (0 % si aucune commission)-// et le montant calculé en détail, pour lever toute ambiguïté.
                     { label: "Taux de commission agents", value: `${(commissionRate * 100).toFixed(commissionRate * 100 % 1 === 0 ? 0 : 1)} %`, detail: `Montant : ${fmt(kpis.commission)} (sur encaissements nets)` },
@@ -1254,7 +1280,7 @@ export default function AdminComptabilitePage() {
                     { header: 'Émis le', key: 'date', width: 13, type: 'date' as const },
                 ],
                 data: pDocs
-                    .filter(d => d.type === 'devis' && !['paye', 'annule', 'refuse', 'expire'].includes(d.status))
+                    .filter(d => d.type === 'devis' && !DEVIS_CLOS.includes(d.status))
                     .map(d => ({
                         numero: d.numero || d.id.slice(0, 8).toUpperCase(),
                         client: `${d.client_prenom || ''} ${d.client_nom || ''}`.trim() || '-',
@@ -1350,7 +1376,7 @@ export default function AdminComptabilitePage() {
                         { label: 'Paiements manuels', value: paiementsManuelsTotal, type: 'currency', tone: 'good', detail: `${pPaiements.length} paiements (virement / espèces / chèque)` },
                         { label: 'Revenus boutique', value: kpis.boutique, type: 'currency', tone: 'accent', detail: `${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées` },
                         { label: 'TVA collectée', value: kpis.totalTVA, type: 'currency', tone: 'neutral', detail: 'À déclarer à la DGI' },
-                        { label: 'Factures en attente', value: kpis.enAttente, type: 'currency', tone: 'warn', detail: `${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures en cours` },
+                        { label: 'Factures en attente', value: kpis.enAttente, type: 'currency', tone: 'warn', detail: `${kpis.nbEnAttente} factures en cours` },
                         { label: 'Devis en attente de validation', value: kpis.devisEnAttente, type: 'currency', tone: 'warn', detail: `${kpis.nbDevisAttente} devis : pipeline introduit dans la trésorerie réelle` },
                         { label: 'Taux de commission agents', value: commissionRate, type: 'percent', tone: 'warn', detail: `Montant : ${fmt(kpis.commission)} sur encaissements nets` },
                         { label: 'Dépenses totales', value: kpis.totalDeps, type: 'currency', tone: 'bad', detail: `${pDeps.length} dépenses enregistrées` },
@@ -1556,9 +1582,9 @@ export default function AdminComptabilitePage() {
                                     onClick={() => a.action && handleAlertAction(a.action)}
                                     className={cn('w-full flex items-start gap-2.5 px-4 py-2.5 rounded-xl text-xs text-left transition-all',
                                         a.action ? 'cursor-pointer hover:opacity-80' : 'cursor-default',
-                                        a.type === 'danger' ? 'bg-red-500/10 text-red-300 border border-red-500/10 hover:border-red-500/30' :
-                                        a.type === 'warning' ? 'bg-yellow-500/10 text-yellow-300 border border-yellow-500/10 hover:border-yellow-500/30' :
-                                        'bg-blue-500/10 text-blue-300 border border-blue-500/10 hover:border-blue-500/30')}>
+                                        a.type === 'danger' ? 'bg-red-500/10 text-red-300 [[data-theme=light]_&]:text-red-700 border border-red-500/10 hover:border-red-500/30' :
+                                        a.type === 'warning' ? 'bg-yellow-500/10 text-yellow-300 [[data-theme=light]_&]:text-yellow-700 border border-yellow-500/10 hover:border-yellow-500/30' :
+                                        'bg-blue-500/10 text-blue-300 [[data-theme=light]_&]:text-blue-700 border border-blue-500/10 hover:border-blue-500/30')}>
                                     {a.type === 'danger' ? <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" /> :
                                      a.type === 'warning' ? <Clock size={13} className="flex-shrink-0 mt-0.5" /> :
                                      <Activity size={13} className="flex-shrink-0 mt-0.5" />}
@@ -1576,7 +1602,7 @@ export default function AdminComptabilitePage() {
                 <KpiCard icon={BarChart3}     label="Factures émises"       value={fmt(kpis.caEmis)}        color="#FCD116" sub={`${pDocs.filter(d => d.type === 'facture').length} factures`} />
                 <KpiCard icon={Wallet}        label="Total Caisse Entrant"   value={fmt(kpis.totalEncaisse)} trend={kpis.trends?.encaisse}  color="#008751" sub="Facturation + Boutique + Paiements" highlight />
                 <KpiCard icon={ShoppingBag}   label="Revenus Boutique"       value={fmt(kpis.boutique)}      trend={kpis.trends?.boutique}  color="#3b82f6" sub={`${pOrders.filter(o => o.payment_status === 'completed').length} commandes payées`} />
-                <KpiCard icon={AlertTriangle} label="En Attente Paiement"    value={fmt(kpis.enAttente)}     trend={kpis.trends?.enAttente} color="#f97316" sub={`${pDocs.filter(d => ['envoye', 'accepte'].includes(d.status)).length} factures`} />
+                <KpiCard icon={AlertTriangle} label="En Attente Paiement"    value={fmt(kpis.enAttente)}     trend={kpis.trends?.enAttente} color="#f97316" sub={`${kpis.nbEnAttente} factures`} />
                 <KpiCard icon={FileText} label="Devis en attente" value={fmt(kpis.devisEnAttente)} color="#38bdf8" sub={`${kpis.nbDevisAttente} devis à valider : pipeline trésorerie`} />
                 <KpiCard icon={TrendingDown}  label="Dépenses Totales"       value={fmt(kpis.totalDeps)}     color="#E8112D" sub={`${pDeps.length} dépenses`} />
                 <KpiCard icon={Award}         label="Bénéfice Net"           value={fmt(kpis.benefice)}      trend={kpis.trends?.benefice}  color={kpis.benefice >= 0 ? '#00c870' : '#E8112D'} sub="Après dépenses" />
@@ -1761,14 +1787,14 @@ export default function AdminComptabilitePage() {
                                         </td>
                                         <td className="p-4 text-right font-mono text-[11px] text-gray-400">{fmt(s.caEmis)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-[#00c870] font-bold">{fmt(s.encaisse)}</td>
-                                        <td className="p-4 text-right font-mono text-[11px] text-purple-300">{fmt(s.commission)}</td>
+                                        <td className="p-4 text-right font-mono text-[11px] text-purple-300 [[data-theme=light]_&]:text-purple-700">{fmt(s.commission)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-cyan-400">{fmt(s.tvaCollectee)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-red-400">{fmt(s.depenses)}</td>
                                         <td className={cn('p-4 text-right font-mono text-[11px] font-bold', s.benefice >= 0 ? 'text-[#00c870]' : 'text-red-400')}>{fmt(s.benefice)}</td>
                                         <td className="p-4 text-right font-mono text-[11px] text-gray-500">{s.nbDevis}d&nbsp;/&nbsp;{s.nbFactures}f</td>
                                         <td className="p-4 pr-5 text-right">
                                             <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full',
-                                                conv >= 70 ? 'bg-[#008751]/15 text-[#00c870]' : conv >= 40 ? 'bg-yellow-500/15 text-yellow-300' : 'bg-red-500/15 text-red-400')}>
+                                                conv >= 70 ? 'bg-[#008751]/15 text-[#00c870]' : conv >= 40 ? 'bg-yellow-500/15 text-yellow-300 [[data-theme=light]_&]:text-yellow-700' : 'bg-red-500/15 text-red-400')}>
                                                 {conv.toFixed(0)}%
                                             </span>
                                         </td>
@@ -1793,7 +1819,7 @@ export default function AdminComptabilitePage() {
                                 <Bell size={14} className="text-amber-400" />
                             </div>
                             <div>
-                                <p className="text-sm font-black text-amber-300">
+                                <p className="text-sm font-black text-amber-300 [[data-theme=light]_&]:text-amber-700">
                                     {nonSoldees.length} facture{nonSoldees.length > 1 ? 's' : ''} non soldée{nonSoldees.length > 1 ? 's' : ''}
                                 </p>
                                 <p className="text-xs text-amber-500/70">{fmt(totalRestant)} restants à encaisser (tous agents)</p>
@@ -1877,7 +1903,7 @@ export default function AdminComptabilitePage() {
                             <h2 className="text-sm font-black text-white">Journal des Transactions</h2>
                             {alertFilter && (
                                 <button type="button" onClick={() => { setAlertFilter(null); setJournalPage(1) }}
-                                    className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 transition-colors">
+                                    className="flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 [[data-theme=light]_&]:text-yellow-700 hover:bg-yellow-500/30 transition-colors">
                                     Filtre alerte actif <X size={9} />
                                 </button>
                             )}

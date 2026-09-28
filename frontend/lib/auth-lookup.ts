@@ -18,6 +18,7 @@
 //  (import, création manuelle en console) : rare, borné, et jamais silencieux.
 // ══════════════════════════════════════════════════════════════
 import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { motifEmailExact } from '@/lib/email-motif'
 
 /** Garde-fou du repli : au-delà, on préfère répondre « introuvable » qu'occuper
  *  la fonction pendant des minutes. 50 pages de 200 = 10 000 comptes. */
@@ -32,11 +33,15 @@ export async function trouverUtilisateurParEmail(
     if (!adresse) return null
 
     // 1. Voie nominale : le profil porte l'identifiant du compte.
-    const { data: profil } = await supabase
+    // Motif échappé : `_`/`%` sont des jokers ILIKE ; « a_b@x » renvoyait le
+    // compte « aXb@x », dont /api/admin/users/create réécrivait alors le mot
+    // de passe et le rôle.
+    const motif = motifEmailExact(adresse)
+    const { data: profil } = motif ? await supabase
         .from('client_profiles')
         .select('id')
-        .ilike('email', adresse)
-        .maybeSingle()
+        .ilike('email', motif)
+        .maybeSingle() : { data: null }
 
     if (profil?.id) {
         const { data } = await supabase.auth.admin.getUserById(profil.id)

@@ -68,6 +68,11 @@ export async function POST(request: NextRequest) {
     if (!['document', 'paiement', 'depense'].includes(entity_type)) {
         return NextResponse.json({ error: 'entity_type invalide' }, { status: 400 })
     }
+    // entity_id entre dans le chemin de stockage : un identifiant forgé
+    // (« ../ », « / ») sortait du dossier de l'entité. UUID exigé.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entity_id)) {
+        return NextResponse.json({ error: 'entity_id invalide' }, { status: 400 })
+    }
     if (file.size > MAX_SIZE) {
         return NextResponse.json({ error: 'Fichier trop lourd (> 10 MB)' }, { status: 413 })
     }

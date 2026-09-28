@@ -22,14 +22,16 @@ export default function AgentVocauxPage() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState<'all' | 'unread'>('all')
-    const [playingId, setPlayingId] = useState<string | null>(null)
+    const [erreur, setErreur] = useState<string | null>(null)
+    const [marquage, setMarquage] = useState<string | null>(null)
 
     const fetchVocaux = async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('voice_messages')
             .select('*')
             .order('created_at', { ascending: false })
 
+        setErreur(error ? `Chargement impossible : ${error.message}` : null)
         setVocaux((data || []) as VoiceMessage[])
         setLoading(false)
     }
@@ -63,27 +65,17 @@ export default function AgentVocauxPage() {
         }
     }, [])
 
-    // Simule la lecture audio visuellement (Puisque l'audio n'est pas encore stocké réellement via Blob, 
-    // l'interface permet d'utiliser la transcription fournie par l'IA)
-    const togglePlay = (id: string, is_read: boolean) => {
-        if (!is_read) markAsRead(id)
-        if (playingId === id) setPlayingId(null)
-        else setPlayingId(id)
-
-        // Stop auto après "durée"
-        if (playingId !== id) {
-            const vocal = vocaux.find(v => v.id === id)
-            if (vocal) {
-                setTimeout(() => {
-                    setPlayingId(current => current === id ? null : current)
-                }, vocal.duration_seconds * 1000)
-            }
-        }
-    }
-
+    // voice_messages ne stocke PAS l'audio (aucune colonne de fichier) : seule la
+    // transcription existe. L'ancien bouton « lecture » simulait une écoute
+    // (animation minutée sur la durée) sans rien jouer. Il est remplacé par une
+    // action réelle : marquer la note comme traitée.
     const markAsRead = async (id: string) => {
-        await supabase.from('voice_messages').update({ is_read: true }).eq('id', id)
-        // La maj locale est gérée par le Realtime UPDATE
+        setMarquage(id)
+        const { error } = await supabase.from('voice_messages').update({ is_read: true }).eq('id', id)
+        setMarquage(null)
+        if (error) { alert(`Mise à jour impossible : ${error.message}`); return }
+        // Mise à jour locale : ne dépend plus uniquement du temps réel
+        setVocaux(prev => prev.map(v => v.id === id ? { ...v, is_read: true } : v))
     }
 
     const filtered = vocaux.filter(v => {
@@ -119,7 +111,8 @@ export default function AgentVocauxPage() {
                         </span>
                     </div>
                     <h1 className="text-2xl font-black text-white">Notes Vocales</h1>
-                    <p className="text-gray-500 text-sm mt-1">{vocaux.length} audios reçus • {vocaux.filter(v => !v.is_read).length} non écoutés</p>
+                    <p className="text-gray-500 text-sm mt-1">{vocaux.length} note(s) reçue(s) • {vocaux.filter(v => !v.is_read).length} non traitée(s)</p>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                 </div>
 
                 <div className="flex items-center gap-3">
@@ -128,7 +121,7 @@ export default function AgentVocauxPage() {
                         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher une transcription..." className="bg-white/5 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50 text-sm w-56" />
                     </div>
                     <div className="flex gap-1 bg-white/5 rounded-xl p-1">
-                        {[{ key: 'all', label: 'Toutes' }, { key: 'unread', label: 'Non Écoutées' }].map((f) => (
+                        {[{ key: 'all', label: 'Toutes' }, { key: 'unread', label: 'Non traitées' }].map((f) => (
                             <button key={f.key} onClick={() => setFilter(f.key as typeof filter)} className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-all ${filter === f.key ? 'bg-purple-500/20 text-purple-400' : 'text-gray-500 hover:text-white'}`}>{f.label}</button>
                         ))}
                     </div>
@@ -164,21 +157,10 @@ export default function AgentVocauxPage() {
                                 )}
 
                                 <div className="flex items-start gap-4">
-                                    {/* Play Button Avatar */}
-                                    <button
-                                        onClick={() => togglePlay(v.id, v.is_read)}
-                                        className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 transition-all z-10 ${playingId === v.id ? 'bg-purple-500 text-white scale-110 shadow-[0_0_20px_rgba(168,85,247,0.4)]' : !v.is_read ? 'bg-purple-500/20 text-purple-400 hover:bg-purple-500/40' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
-                                    >
-                                        {playingId === v.id ? (
-                                            <div className="flex gap-1 items-center">
-                                                <span className="w-1 h-3 bg-white rounded-full animate-[bounce_1s_infinite]" style={{ animationDelay: '0ms' }} />
-                                                <span className="w-1 h-5 bg-white rounded-full animate-[bounce_1s_infinite]" style={{ animationDelay: '200ms' }} />
-                                                <span className="w-1 h-3 bg-white rounded-full animate-[bounce_1s_infinite]" style={{ animationDelay: '400ms' }} />
-                                            </div>
-                                        ) : (
-                                            <Volume2 size={22} className="ml-1" />
-                                        )}
-                                    </button>
+                                    {/* Pastille : pas d'audio stocké, seulement la transcription */}
+                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ${!v.is_read ? 'bg-purple-500/20 text-purple-400' : 'bg-white/5 text-gray-400'}`}>
+                                        <Volume2 size={22} className="ml-1" />
+                                    </div>
 
                                     <div className="flex-1 mt-1">
                                         <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -215,10 +197,19 @@ export default function AgentVocauxPage() {
                                     <div className="flex items-center gap-1.5 text-[9px] font-bold text-gray-600 uppercase">
                                         <AlertCircle size={12} /> Source : {v.source === 'support_form' ? 'Assistance Support' : 'Consultant IA'}
                                     </div>
-                                    {v.is_read && (
+                                    {v.is_read ? (
                                         <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
                                             <CheckCircle2 size={12} /> Traité
                                         </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => markAsRead(v.id)}
+                                            disabled={marquage === v.id}
+                                            className="flex items-center gap-1 text-[10px] font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-lg hover:bg-purple-500/20 disabled:opacity-50"
+                                        >
+                                            <CheckCircle2 size={12} /> {marquage === v.id ? 'Enregistrement…' : 'Marquer comme traité'}
+                                        </button>
                                     )}
                                 </div>
                             </motion.div>

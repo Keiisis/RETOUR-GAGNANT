@@ -186,7 +186,7 @@ const PLATFORM_CONFIG: Record<string, { label: string; color: string; bg: string
     tiktok:      { label: 'TikTok',       color: 'text-cyan-400',   bg: 'bg-cyan-500/10 border-cyan-500/20',   icon: '', placeholder: 'https://www.tiktok.com/@username' },
     twitter:     { label: 'X / Twitter',  color: 'text-gray-300',   bg: 'bg-gray-500/10 border-gray-500/20',   icon: '', placeholder: 'https://twitter.com/username' },
     google_maps: { label: 'Google Maps',  color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', icon: '', placeholder: 'https://maps.google.com/?cid=... ou nom du lieu' },
-    linkedin:    { label: 'LinkedIn',     color: 'text-blue-300',   bg: 'bg-blue-400/10 border-blue-400/20',   icon: '', placeholder: 'https://www.linkedin.com/company/nom' },
+    linkedin:    { label: 'LinkedIn',     color: 'text-blue-300 [[data-theme=light]_&]:text-blue-700',   bg: 'bg-blue-400/10 border-blue-400/20',   icon: '', placeholder: 'https://www.linkedin.com/company/nom' },
 }
 
 const ENGAGEMENT_COLOR: Record<string, string> = {
@@ -252,7 +252,7 @@ export default function CommunityManagerPage() {
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                                 isActive
-                                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/20'
+                                    ? 'bg-purple-500/20 text-purple-300 [[data-theme=light]_&]:text-purple-700 border border-purple-500/20'
                                     : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                             }`}
                         >
@@ -628,12 +628,12 @@ function VeilleTab({
                             </div>
                             <div className="flex gap-2 flex-wrap">
                                 <button type="button" onClick={downloadDossierJSON}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all">
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 text-xs font-bold transition-all">
                                     <Download size={13} /> Télécharger JSON
                                 </button>
                                 <button type="button"
                                     onClick={() => copyToClipboard(activeDossier.claude_prompt, 'claude-prompt')}
-                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 text-xs font-bold transition-all">
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 [[data-theme=light]_&]:text-purple-700 text-xs font-bold transition-all">
                                     {copiedId === 'claude-prompt' ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                                     {copiedId === 'claude-prompt' ? 'Copié !' : 'Copier prompt Claude.ai'}
                                 </button>
@@ -768,7 +768,7 @@ function VeilleTab({
                             {activeDossier.style_dna?.emotional_map && (
                                 <div className="bg-white/[0.03] border border-white/5 rounded-xl p-4">
                                     <p className="text-red-400 text-xs font-bold mb-3 flex items-center gap-2"><Flame size={12} /> Carte Émotionnelle</p>
-                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Arc : <span className="text-red-300">{activeDossier.style_dna.emotional_map.emotional_arc}</span></p>
+                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Arc : <span className="text-red-300 [[data-theme=light]_&]:text-red-700">{activeDossier.style_dna.emotional_map.emotional_arc}</span></p>
                                     {activeDossier.style_dna.emotional_map.dominant_emotions.map((e, i) => (
                                         <div key={i} className="flex items-center gap-2 mb-1.5">
                                             <span className="text-gray-300 text-[10px] w-20 text-right">{e.emotion}</span>
@@ -1058,15 +1058,15 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                             <p className="text-cyan-400 text-xs font-bold mb-4 flex items-center gap-2"><Sparkles size={12} /> Empreinte Vocale</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Rythme : <span className="text-cyan-300">{analysis.voice_fingerprint.rhythm}</span></p>
-                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Moy. mots/phrase : <span className="text-cyan-300">{analysis.voice_fingerprint.sentence_avg_words}</span></p>
-                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Ponctuation : <span className="text-cyan-300">{analysis.voice_fingerprint.punctuation_style}</span></p>
+                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Rythme : <span className="text-cyan-300 [[data-theme=light]_&]:text-cyan-700">{analysis.voice_fingerprint.rhythm}</span></p>
+                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Moy. mots/phrase : <span className="text-cyan-300 [[data-theme=light]_&]:text-cyan-700">{analysis.voice_fingerprint.sentence_avg_words}</span></p>
+                                    <p className="text-gray-600 text-[10px] font-bold mb-2">Ponctuation : <span className="text-cyan-300 [[data-theme=light]_&]:text-cyan-700">{analysis.voice_fingerprint.punctuation_style}</span></p>
                                 </div>
                                 <div>
                                     <p className="text-gray-600 text-[10px] font-bold mb-1.5">Phrases signatures :</p>
                                     <div className="flex flex-wrap gap-1.5">
                                         {analysis.voice_fingerprint.signature_phrases.map((p, i) => (
-                                            <span key={i} className="text-[10px] bg-cyan-500/10 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-500/10">&ldquo;{p}&rdquo;</span>
+                                            <span key={i} className="text-[10px] bg-cyan-500/10 text-cyan-300 [[data-theme=light]_&]:text-cyan-700 px-2 py-0.5 rounded-full border border-cyan-500/10">&ldquo;{p}&rdquo;</span>
                                         ))}
                                     </div>
                                 </div>
@@ -1104,7 +1104,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                         {analysis.emotional_map && (
                             <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
                                 <p className="text-red-400 text-xs font-bold mb-3 flex items-center gap-2"><Flame size={12} /> Carte Émotionnelle</p>
-                                <p className="text-gray-600 text-[10px] font-bold mb-2">Arc émotionnel : <span className="text-red-300">{analysis.emotional_map.emotional_arc}</span></p>
+                                <p className="text-gray-600 text-[10px] font-bold mb-2">Arc émotionnel : <span className="text-red-300 [[data-theme=light]_&]:text-red-700">{analysis.emotional_map.emotional_arc}</span></p>
                                 {analysis.emotional_map.dominant_emotions.length > 0 && (
                                     <div className="space-y-2 mb-3">
                                         {analysis.emotional_map.dominant_emotions.map((e, i) => (
@@ -1121,7 +1121,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                                 {analysis.emotional_map.desires_activated.length > 0 && (
                                     <div className="pt-2 border-t border-white/5">
                                         <p className="text-gray-600 text-[10px] font-bold mb-1.5">Désirs activés :</p>
-                                        <div className="flex flex-wrap gap-1">{analysis.emotional_map.desires_activated.map((d, i) => <span key={i} className="text-[10px] bg-red-500/10 text-red-300 px-2 py-0.5 rounded-full">{d}</span>)}</div>
+                                        <div className="flex flex-wrap gap-1">{analysis.emotional_map.desires_activated.map((d, i) => <span key={i} className="text-[10px] bg-red-500/10 text-red-300 [[data-theme=light]_&]:text-red-700 px-2 py-0.5 rounded-full">{d}</span>)}</div>
                                     </div>
                                 )}
                             </div>
@@ -1216,7 +1216,7 @@ function StyleTab({ copyToClipboard, copiedId }: { copyToClipboard: (t: string, 
                                 <p className="text-gray-500 text-xs font-bold mb-2"> Planning</p>
                                 {analysis.content_blueprint.posting_frequency && <p className="text-gray-300 text-xs mb-2">Fréquence : {analysis.content_blueprint.posting_frequency}</p>}
                                 {analysis.content_blueprint.best_days.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mb-2">{analysis.content_blueprint.best_days.map((d, i) => <span key={i} className="text-[10px] bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-full">{d}</span>)}</div>
+                                    <div className="flex flex-wrap gap-1 mb-2">{analysis.content_blueprint.best_days.map((d, i) => <span key={i} className="text-[10px] bg-purple-500/10 text-purple-300 [[data-theme=light]_&]:text-purple-700 px-2 py-0.5 rounded-full">{d}</span>)}</div>
                                 )}
                                 {analysis.content_blueprint.cta_formulas.length > 0 && (
                                     <>
@@ -1345,7 +1345,7 @@ function CalendarTab({
                             <Brain size={12} /> Dossier concurrent @{activeDossier.profile.username} disponible
                         </span>
                         <button type="button" onClick={() => setForm(f => ({ ...f, use_dossier: !f.use_dossier }))}
-                            className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${form.use_dossier ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
+                            className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${form.use_dossier ? 'bg-emerald-500/20 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 border border-emerald-500/20' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
                             {form.use_dossier ? ' Utilisé comme inspiration' : 'Activer'}
                         </button>
                     </div>
@@ -1480,7 +1480,7 @@ function CalendarTab({
                                                 )}
                                                 <div className="flex flex-wrap gap-1 pt-1">
                                                     {day.hashtags.slice(0, 5).map((tag, i) => (
-                                                        <span key={i} className="text-[10px] bg-purple-500/10 text-purple-300 px-1.5 py-0.5 rounded-full">
+                                                        <span key={i} className="text-[10px] bg-purple-500/10 text-purple-300 [[data-theme=light]_&]:text-purple-700 px-1.5 py-0.5 rounded-full">
                                                             {tag.startsWith('#') ? tag : `#${tag}`}
                                                         </span>
                                                     ))}
@@ -1890,7 +1890,7 @@ function GenerationTab({
 
     const saveToLibrary = async (variant: GeneratedVariant) => {
         setSavingId(variant.id)
-        await fetch('/api/community-manager/library', {
+        const res = await fetch('/api/community-manager/library', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1902,21 +1902,31 @@ function GenerationTab({
                 viral_score: variant.estimated_engagement === 'viral' ? 5 : variant.estimated_engagement === 'élevé' ? 4 : 3,
             }),
         })
+        await signalerEchec(res, 'Contenu non enregistré dans la bibliothèque')
         await loadLibrary()
         setSavingId(null)
     }
 
+    // Avant : réponses ignorées ; un refus (droits, validation) passait pour un succès.
+    const signalerEchec = async (res: Response, quoi: string) => {
+        if (res.ok) return
+        const d = await res.json().catch(() => ({}))
+        setError(`${quoi} : ${d.error || `HTTP ${res.status}`}`)
+    }
+
     const toggleFavorite = async (item: ContentItem) => {
-        await fetch('/api/community-manager/library', {
+        const res = await fetch('/api/community-manager/library', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: item.id, is_favorite: !item.is_favorite }),
         })
+        await signalerEchec(res, 'Favori non modifié')
         await loadLibrary()
     }
 
     const deleteFromLibrary = async (id: string) => {
-        await fetch(`/api/community-manager/library?id=${id}`, { method: 'DELETE' })
+        const res = await fetch(`/api/community-manager/library?id=${id}`, { method: 'DELETE' })
+        await signalerEchec(res, 'Suppression impossible')
         await loadLibrary()
     }
 
@@ -2005,7 +2015,7 @@ function GenerationTab({
                                     </span>
                                 )}
                                 <button type="button" onClick={() => setUseDossier(u => !u)}
-                                    className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${useDossier ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/20' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
+                                    className={`text-[10px] font-bold px-3 py-1 rounded-lg transition-all ${useDossier ? 'bg-emerald-500/20 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 border border-emerald-500/20' : 'bg-white/5 text-gray-500 border border-white/10'}`}>
                                     {useDossier ? ' Activé' : 'Activer'}
                                 </button>
                             </div>
@@ -2093,7 +2103,7 @@ function GenerationTab({
                             {/* Hashtags */}
                             <div className="flex flex-wrap gap-1.5 mb-4">
                                 {variant.hashtags.map((tag, i) => (
-                                    <span key={i} className="text-xs bg-purple-500/10 text-purple-300 px-2 py-0.5 rounded-full border border-purple-500/10">
+                                    <span key={i} className="text-xs bg-purple-500/10 text-purple-300 [[data-theme=light]_&]:text-purple-700 px-2 py-0.5 rounded-full border border-purple-500/10">
                                         {tag.startsWith('#') ? tag : `#${tag}`}
                                     </span>
                                 ))}

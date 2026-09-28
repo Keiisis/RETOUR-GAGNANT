@@ -7,6 +7,7 @@ import { FileText, ChatText as MessageSquare, Compass, ArrowUpRight, TrendUp as 
 import Link from 'next/link'
 import { useTranslation, T } from '@/lib/translation'
 import { AnyRecord } from '@/types'
+import { DOSSIER_STATUTS_CLOS, statutDossier } from '@/lib/constants/statuts'
 
 // ═══════════════════════════════════════════
 // Types
@@ -70,6 +71,7 @@ const KPISkeleton = () => (
 // ═══════════════════════════════════════════
 
 const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
+    if (data.length < 2) return null
     const max = Math.max(...data)
     const min = Math.min(...data)
     const range = max - min || 1
@@ -118,6 +120,11 @@ export default function AgentDashboard() {
     const [recentMessages, setRecentMessages] = useState<AnyRecord[]>([])
     const [loading, setLoading] = useState(true)
     const [agentName, setAgentName] = useState('Agent')
+    const [erreur, setErreur] = useState<string | null>(null)
+    // Nouveautés par jour sur 7 jours (données réelles ; remplace les courbes figées)
+    const [series, setSeries] = useState<Record<'dossiers' | 'messages' | 'vocaux' | 'leads' | 'nationalite' | 'rdv', number[]>>({
+        dossiers: [], messages: [], vocaux: [], leads: [], nationalite: [], rdv: [],
+    })
 
     useEffect(() => {
         setMounted(true)
@@ -134,43 +141,87 @@ export default function AgentDashboard() {
                     if (profile?.full_name) setAgentName(profile.full_name.split(' ')[0])
                 }
 
-                // Parallel fetching (react-best-practices: async-parallel)
+                // Comptes exacts côté base (head + count) : un select('*') plafonne
+                // à 1000 lignes et faussait les totaux au-delà.
+                const depuis = new Date(Date.now() - 6 * 86400000)
+                depuis.setHours(0, 0, 0, 0)
+                const depuisIso = depuis.toISOString()
+                const tete = { count: 'exact' as const, head: true }
                 const [
-                    dossiersRes,
+                    totalDossiersRes,
+                    termineRes,
+                    actifsRes,
+                    recentDossiersRes,
                     msgCountRes,
                     voixCountRes,
-                    leadsRes,
+                    leadsTotalRes,
+                    // « Contacté » = is_contacted (drapeau posé par la page Leads) ;
+                    // l'ancien calcul lisait `contacted`, jamais renseigné → tous comptés.
+                    leadsNonContactesRes,
                     msgsRes,
                     nationalityCountRes,
                     rdvRes,
+                    s1, s2, s3, s4, s5, s6,
                 ] = await Promise.all([
-                    supabase.from('dossier_tracking').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
-                    supabase.from('messages').select('*', { count: 'exact', head: true }).eq('lu', false),
-                    supabase.from('voice_messages').select('*', { count: 'exact', head: true }).eq('is_read', false),
-                    supabase.from('eligibility_results').select('*').order('created_at', { ascending: false }),
-                    supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(5),
-                    supabase.from('nationality_applications').select('*', { count: 'exact', head: true }),
-                    supabase.from('rdv_requests').select('id', { count: 'exact', head: true }).eq('statut', 'en_attente'),
+                    supabase.from('dossier_tracking').select('id', tete),
+                    supabase.from('dossier_tracking').select('id', tete).eq('statut', 'termine'),
+                    // En cours = ni terminé ni annulé (les annulés étaient comptés « en cours »)
+                    supabase.from('dossier_tracking').select('id', tete).or(`statut.is.null,statut.not.in.(${DOSSIER_STATUTS_CLOS.join(',')})`),
+                    supabase.from('dossier_tracking').select('id, num_dossier, client_nom, client_prenom, nom, prenom, statut').order('created_at', { ascending: false }).limit(5),
+                    // Même périmètre que /agent/messages (qui exclut les messages « nationality ») :
+                    // sinon le compteur annonçait des non-lus introuvables dans la boîte.
+                    supabase.from('messages').select('id', tete).eq('lu', false).neq('type', 'nationality'),
+                    supabase.from('voice_messages').select('id', tete).eq('is_read', false),
+                    supabase.from('eligibility_results').select('id', tete),
+                    supabase.from('eligibility_results').select('id', tete).or('is_contacted.is.null,is_contacted.eq.false'),
+                    supabase.from('messages').select('*').neq('type', 'nationality').order('created_at', { ascending: false }).limit(5),
+                    supabase.from('nationality_applications').select('id', tete),
+                    supabase.from('rdv_requests').select('id', tete).eq('statut', 'en_attente'),
+                    // Séries réelles des 7 derniers jours (créations par jour)
+                    supabase.from('dossier_tracking').select('created_at').gte('created_at', depuisIso),
+                    supabase.from('messages').select('created_at').gte('created_at', depuisIso),
+                    supabase.from('voice_messages').select('created_at').gte('created_at', depuisIso),
+                    supabase.from('eligibility_results').select('created_at').gte('created_at', depuisIso),
+                    supabase.from('nationality_applications').select('created_at').gte('created_at', depuisIso),
+                    supabase.from('rdv_requests').select('created_at').gte('created_at', depuisIso),
                 ])
 
-                const allDossiers = (dossiersRes.data as AnyRecord[]) || []
-                const allLeads = (leadsRes.data as AnyRecord[]) || []
+                const echec = [totalDossiersRes, termineRes, actifsRes, recentDossiersRes, msgCountRes, voixCountRes, leadsTotalRes, leadsNonContactesRes, msgsRes, nationalityCountRes, rdvRes]
+                    .find(r => r.error)
+                if (echec?.error) setErreur(echec.error.message)
 
+                const parJour = (rows: { created_at: string | null }[] | null) => {
+                    const jours = Array.from({ length: 7 }, () => 0)
+                    for (const r of rows || []) {
+                        if (!r.created_at) continue
+                        const idx = Math.floor((new Date(r.created_at).getTime() - depuis.getTime()) / 86400000)
+                        if (idx >= 0 && idx < 7) jours[idx]++
+                    }
+                    return jours
+                }
+                setSeries({
+                    dossiers: parJour(s1.data), messages: parJour(s2.data), vocaux: parJour(s3.data),
+                    leads: parJour(s4.data), nationalite: parJour(s5.data), rdv: parJour(s6.data),
+                })
+
+                const total = totalDossiersRes.count || 0
+                const termines = termineRes.count || 0
                 setStats({
-                    totalDossiers: dossiersRes.count || allDossiers.length,
-                    dossiersEnCours: allDossiers.filter(d => d.statut !== 'termine').length,
-                    dossiersTermines: allDossiers.filter(d => d.statut === 'termine').length,
+                    totalDossiers: total,
+                    dossiersEnCours: actifsRes.count || 0,
+                    dossiersTermines: termines,
                     newMessages: msgCountRes.count || 0,
                     newVocaux: voixCountRes.count || 0,
-                    leadsOracle: allLeads.length,
-                    leadsNonContactes: allLeads.filter(l => !l.contacted).length,
+                    leadsOracle: leadsTotalRes.count || 0,
+                    leadsNonContactes: leadsNonContactesRes.count || 0,
                     nationalityApps: nationalityCountRes.count || 0,
                     rdvEnAttente: rdvRes.count || 0,
                 })
 
-                setRecentDossiers(allDossiers.slice(0, 5))
+                setRecentDossiers((recentDossiersRes.data as AnyRecord[]) || [])
                 setRecentMessages((msgsRes.data as AnyRecord[]) || [])
             } catch (err) {
+                setErreur(err instanceof Error ? err.message : 'Chargement impossible')
                 // Security: don't expose error details
                 if (process.env.NODE_ENV === 'development') {
                     console.error('Dashboard fetch error:', err)
@@ -191,7 +242,7 @@ export default function AgentDashboard() {
             gradient: 'from-emerald-500 to-teal-600',
             borderGlow: 'hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]',
             href: '/agent/dossiers',
-            sparkData: [3, 5, 4, 7, 6, 8, stats.dossiersEnCours],
+            sparkData: series.dossiers,
             sparkColor: '#10B981',
         },
         {
@@ -201,7 +252,7 @@ export default function AgentDashboard() {
             gradient: 'from-blue-500 to-indigo-600',
             borderGlow: 'hover:shadow-[0_0_30px_rgba(59,130,246,0.15)]',
             href: '/agent/messages',
-            sparkData: [2, 1, 4, 3, 5, 2, stats.newMessages],
+            sparkData: series.messages,
             sparkColor: '#3B82F6',
         },
         {
@@ -211,7 +262,7 @@ export default function AgentDashboard() {
             gradient: 'from-purple-500 to-fuchsia-600',
             borderGlow: 'hover:shadow-[0_0_30px_rgba(168,85,247,0.15)]',
             href: '/agent/vocaux',
-            sparkData: [1, 3, 2, 1, 4, 2, stats.newVocaux],
+            sparkData: series.vocaux,
             sparkColor: '#A855F7',
         },
         {
@@ -221,7 +272,7 @@ export default function AgentDashboard() {
             gradient: 'from-amber-500 to-orange-600',
             borderGlow: 'hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]',
             href: '/agent/leads',
-            sparkData: [5, 4, 6, 3, 7, 5, stats.leadsNonContactes],
+            sparkData: series.leads,
             sparkColor: '#F59E0B',
         },
         {
@@ -231,7 +282,7 @@ export default function AgentDashboard() {
             gradient: 'from-blue-600 to-cyan-700',
             borderGlow: 'hover:shadow-[0_0_30px_rgba(25,118,210,0.15)]',
             href: '/agent/nationalite',
-            sparkData: [1, 2, 3, 2, 4, 3, stats.nationalityApps],
+            sparkData: series.nationalite,
             sparkColor: '#1976D2',
         },
         {
@@ -241,7 +292,7 @@ export default function AgentDashboard() {
             gradient: 'from-rose-500 to-pink-600',
             borderGlow: 'hover:shadow-[0_0_30px_rgba(244,63,94,0.15)]',
             href: '/agent/agenda',
-            sparkData: [0, 1, 2, 1, 3, 2, stats.rdvEnAttente],
+            sparkData: series.rdv,
             sparkColor: '#F43F5E',
         },
     ]
@@ -253,29 +304,9 @@ export default function AgentDashboard() {
         { label: t('Fiche Client'), icon: Users, href: '/agent/clients', accent: 'text-teal-400 bg-teal-500/8 border-teal-500/15 hover:bg-teal-500/15' },
     ]
 
-    const statusColor = (status: string) => {
-        switch (status) {
-            case 'termine': return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
-            case 'traitement': return 'bg-amber-500/15 text-amber-400 border border-amber-500/20'
-            case 'validation': return 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
-            case 'verification': return 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20'
-            case 'finalisation': return 'bg-purple-500/15 text-purple-400 border border-purple-500/20'
-            case 'reception': return 'bg-sky-500/15 text-sky-400 border border-sky-500/20'
-            default: return 'bg-white/5 text-nexus-text-muted border border-white/10'
-        }
-    }
-
-    const statusLabel = (status: string) => {
-        switch (status) {
-            case 'termine': return t('Terminé')
-            case 'traitement': return t('Traitement')
-            case 'validation': return t('Validation')
-            case 'verification': return t('Vérification')
-            case 'finalisation': return t('Finalisation')
-            case 'reception': return t('Réception')
-            default: return t(status)
-        }
-    }
+    // Libellés et couleurs : référence unique (lib/constants/statuts), « Annulé » compris
+    const statusColor = (status: string) => statutDossier(status).badge
+    const statusLabel = (status: string) => t(statutDossier(status).label)
 
     // Greeting based on time of day
     const getGreeting = () => {
@@ -338,6 +369,12 @@ export default function AgentDashboard() {
                     </div>
                 </div>
             </motion.div>
+
+            {erreur && (
+                <div className="px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-[12px] font-semibold">
+                    {t('Certaines données du tableau de bord n\'ont pas pu être chargées')} : {erreur}
+                </div>
+            )}
 
             {/* ═══ KPI Cards ═══ */}
             <motion.div
@@ -423,7 +460,7 @@ export default function AgentDashboard() {
                                         </div>
                                         <div>
                                             <p className="text-[12px] font-bold text-white">{d.num_dossier as string}</p>
-                                            <p className="text-[10px] text-nexus-text-muted">{d.client_nom as string} {d.client_prenom as string}</p>
+                                            <p className="text-[10px] text-nexus-text-muted">{(d.client_nom || d.nom || '') as string} {(d.client_prenom || d.prenom || '') as string}</p>
                                         </div>
                                     </div>
                                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${statusColor(d.statut as string)}`}>

@@ -96,15 +96,26 @@ export async function PATCH(request: NextRequest) {
         const body = await request.json()
         const { key, value, category } = body
 
-        if (!key) {
+        if (!key || typeof key !== 'string') {
             return NextResponse.json({ error: 'key est obligatoire' }, { status: 400 })
+        }
+
+        // Catégorie absente : on GARDE celle de la ligne existante. Le repli
+        // aveugle sur 'general' déplaçait une clé 'payment' hors de sa
+        // catégorie, et /api/settings/payment (filtré sur category) ne la
+        // trouvait plus : passerelle de paiement désactivée sans bruit.
+        let cat = typeof category === 'string' && category ? category : ''
+        if (!cat) {
+            const { data: existante } = await supabase
+                .from('settings').select('category').eq('key', key).maybeSingle()
+            cat = (existante as { category?: string } | null)?.category || 'general'
         }
 
         // Upsert: mettre à jour si existe, sinon créer
         const { data, error } = await supabase
             .from('settings')
             .upsert(
-                { key, value: value ?? '', category: category || 'general' },
+                { key, value: value ?? '', category: cat },
                 { onConflict: 'key' }
             )
             .select()

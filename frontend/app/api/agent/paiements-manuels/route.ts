@@ -47,6 +47,56 @@ async function assertOwnership(
 }
 
 
+/* Enregistrement d'un paiement (sur facture, ou externe sans facture).
+   Auparavant inséré depuis le navigateur : la réserve Comptabilité n'était
+   alors contrôlée que par l'interface. */
+export async function POST(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'agent')
+    if (!auth.authenticated) return auth.error!
+    { const refus = await accesCompta(auth); if (refus) return refus }
+
+    const body = await request.json().catch(() => ({}))
+    const montant = Number(body.montant)
+    if (!isFinite(montant) || montant <= 0) return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
+    const type = String(body.type || '').trim()
+    if (!type) return NextResponse.json({ error: 'Mode de paiement requis' }, { status: 400 })
+    const datePaiement = String(body.date_paiement || '').trim() || new Date().toISOString().slice(0, 10)
+    if (isNaN(new Date(datePaiement).getTime())) return NextResponse.json({ error: 'Date invalide' }, { status: 400 })
+    const documentId = body.document_id ? String(body.document_id) : null
+
+    const supabase = createClient(supabaseUrl, serviceKey)
+    if (documentId) {
+        // Un agent n'encaisse que sur SES documents ; un admin, sur tous.
+        const { data: doc } = await supabase.from('documents_financiers').select('id, agent_id').eq('id', documentId).maybeSingle()
+        if (!doc) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
+        if (!isAdminRole(auth.role) && doc.agent_id !== auth.userId) {
+            return NextResponse.json({ error: 'Ce document ne vous appartient pas.' }, { status: 403 })
+        }
+    }
+    if (await isPeriodLocked(supabase, datePaiement)) {
+        return NextResponse.json({ error: 'Période clôturée : enregistrement refusé.' }, { status: 423 })
+    }
+
+    const ligne = {
+        agent_id: auth.userId,
+        document_id: documentId,
+        type,
+        montant,
+        date_paiement: datePaiement,
+        reference: body.reference ? String(body.reference) : null,
+        notes: body.notes ? String(body.notes) : null,
+    }
+    const { data, error } = await supabase.from('paiements_manuels').insert(ligne).select('id').single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await logAudit(supabase, {
+        table: 'paiements_manuels', recordId: String(data.id), action: 'create',
+        acteur: { userId: auth.userId, role: auth.role },
+        apres: ligne as Record<string, unknown>,
+    })
+    return NextResponse.json({ success: true, id: data.id })
+}
+
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!

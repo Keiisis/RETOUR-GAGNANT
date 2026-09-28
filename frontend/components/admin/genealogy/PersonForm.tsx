@@ -582,17 +582,20 @@ export default function PersonForm({
         const expected = getExpectedParentsForRole(p, latestPersons);
 
         if (p.father_id !== expected.fatherId || p.mother_id !== expected.motherId) {
-          await supabase
+          const { error: liensErr } = await supabase
             .from('persons')
             .update({
               father_id: expected.fatherId,
               mother_id: expected.motherId,
             })
             .eq('id', p.id);
+          // Avant : erreur ignorée → arbre affiché avec des liens parents faux, sans alerte.
+          if (liensErr) throw liensErr;
         }
       }
     } catch (e) {
       console.error('Error syncing tree relations:', e);
+      alert(`Liens parents de l'arbre non synchronisés : ${(e as { message?: string })?.message || 'erreur'}`);
     }
   }
 
@@ -1072,8 +1075,8 @@ export default function PersonForm({
             className={cn(
               'absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full px-4 py-2 text-[11px] font-bold backdrop-blur-md animate-in fade-in slide-in-from-bottom-2',
               toast.ok
-                ? 'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-400/30'
-                : 'bg-red-500/15 text-red-300 ring-1 ring-red-400/30'
+                ? 'bg-emerald-500/15 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 ring-1 ring-emerald-400/30'
+                : 'bg-red-500/15 text-red-300 [[data-theme=light]_&]:text-red-700 ring-1 ring-red-400/30'
             )}
           >
             <span className={cn('h-1.5 w-1.5 rounded-full', toast.ok ? 'bg-emerald-400' : 'bg-red-400')} />

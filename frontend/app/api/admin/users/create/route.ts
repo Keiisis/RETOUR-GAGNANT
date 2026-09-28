@@ -7,6 +7,13 @@ import { validateStrongPassword } from '@/lib/password'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+/* Même liste que /api/admin/users/[id] : `role` était recopié tel quel, un
+   admin pouvait créer un super-admin ou un rôle inventé — et, via la branche
+   « compte existant », réécrire le mot de passe d'un super-admin. */
+const ROLES_VALIDES = ['admin', 'super_admin', 'superadmin', 'ceo', 'agent', 'client']
+const ROLES_SUPER = ['super_admin', 'superadmin', 'ceo']
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
@@ -18,10 +25,22 @@ export async function POST(request: NextRequest) {
         }, { status: 500 })
     }
 
-    const { email, password, fullName, role } = await request.json()
+    const corps = await request.json().catch(() => ({}))
+    const { email, password, fullName } = corps as { email?: string; password?: string; fullName?: string }
+    const role = String((corps as { role?: string }).role || 'agent')
 
-    if (!email || !password || !fullName) {
+    if (!email || !password || !fullName || typeof email !== 'string' || typeof password !== 'string') {
         return NextResponse.json({ error: 'email, password et fullName requis' }, { status: 400 })
+    }
+    if (!EMAIL_RE.test(email.trim())) {
+        return NextResponse.json({ error: 'Adresse e-mail invalide' }, { status: 400 })
+    }
+    if (!ROLES_VALIDES.includes(role)) {
+        return NextResponse.json({ error: `Rôle inconnu : ${role}` }, { status: 400 })
+    }
+    const appelantSuper = ROLES_SUPER.includes(String(auth.role || ''))
+    if (ROLES_SUPER.includes(role) && !appelantSuper) {
+        return NextResponse.json({ error: 'Seul un super-administrateur peut créer un super-administrateur.' }, { status: 403 })
     }
     const pwdErrors = validateStrongPassword(password)
     if (pwdErrors.length > 0) {
@@ -40,6 +59,18 @@ export async function POST(request: NextRequest) {
     let userId: string
 
     if (existingUser) {
+        // Branche « compte existant » = réécriture du mot de passe et du rôle
+        // d'un compte tiers : interdite sur un super-admin sauf par un super-admin.
+        const { data: profilExistant } = await supabase
+            .from('user_profiles').select('role').eq('id', existingUser.id).maybeSingle()
+        const roleExistant = String((profilExistant as { role?: string } | null)?.role || '')
+        if (ROLES_SUPER.includes(roleExistant) && !appelantSuper) {
+            return NextResponse.json({ error: 'Ce compte appartient à un super-administrateur : modification refusée.' }, { status: 403 })
+        }
+        if (existingUser.id === auth.userId) {
+            return NextResponse.json({ error: 'Utilisez votre profil pour modifier votre propre compte.' }, { status: 400 })
+        }
+
         // L'utilisateur existe déjà (inscrit mais non confirmé, ou ancien compte)
         // On met à jour son mot de passe + métadonnées + email_confirm
         const { data: updatedAuth, error: updateError } = await supabase.auth.admin.updateUserById(
@@ -47,7 +78,7 @@ export async function POST(request: NextRequest) {
             {
                 password,
                 email_confirm: true,
-                user_metadata: { full_name: fullName, role: role || 'agent' },
+                user_metadata: { full_name: fullName, role },
             }
         )
 
@@ -66,7 +97,7 @@ export async function POST(request: NextRequest) {
             email: cleanEmail,
             password,
             email_confirm: true,
-            user_metadata: { full_name: fullName, role: role || 'agent' },
+            user_metadata: { full_name: fullName, role },
         })
 
         if (authError) {
@@ -93,13 +124,18 @@ export async function POST(request: NextRequest) {
         id: userId,
         email: cleanEmail,
         full_name: fullName,
-        role: role || 'agent',
+        role,
         is_active: true,
     }, { onConflict: 'id' })
 
     if (profileError) {
         console.error('[Admin Create User] Profile error:', profileError.message)
-        // L'auth user est créé/mis à jour, le profil a échoué : on retourne succès quand même
+        // Le rôle vit dans user_profiles : sans profil, le compte existe mais
+        // n'a pas les droits annoncés. On ne répond plus « succès ».
+        return NextResponse.json({
+            error: `Compte d'authentification créé, mais profil non enregistré : ${profileError.message}`,
+            userId,
+        }, { status: 500 })
     }
 
     return NextResponse.json({
@@ -109,7 +145,7 @@ export async function POST(request: NextRequest) {
             id: userId,
             email: cleanEmail,
             full_name: fullName,
-            role: role || 'agent',
+            role,
         }
     })
 }

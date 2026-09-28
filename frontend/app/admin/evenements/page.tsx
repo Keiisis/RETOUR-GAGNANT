@@ -33,33 +33,56 @@ export default function AdminEventsPage() {
     const [search, setSearch] = useState('')
     const [deleting, setDeleting] = useState<string | null>(null)
 
+    /* Avant : useCallback dépendait de `loading` et l'effet de fetchEvents →
+       chaque fin de chargement recréait la fonction, relançait l'effet, qui
+       remettait loading à true… : boucle de requêtes /api/events sans fin. */
     const fetchEvents = useCallback(() => {
-        if (!loading) setLoading(true)
+        setLoading(true)
         fetch('/api/events?admin=true')
-            .then(r => r.json())
+            .then(async r => {
+                const d = await r.json().catch(() => ({}))
+                // Avant : une erreur affichait « aucun événement » sans explication.
+                if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+                return d
+            })
             .then(d => setEvents(d.events || []))
-            .catch(() => { })
+            .catch((e) => alert(`Événements non chargés : ${e instanceof Error ? e.message : 'erreur réseau'}`))
             .finally(() => setLoading(false))
-    }, [loading])
+    }, [])
 
     useEffect(() => { fetchEvents() }, [fetchEvents])
 
     const handleDelete = async (id: string) => {
         if (!confirm('Supprimer cet événement ?')) return
         setDeleting(id)
+        // Avant : réponse ignorée (403/500 muets) et erreurs réseau avalées.
         try {
-            await fetch(`/api/events/${id}`, { method: 'DELETE' })
+            const res = await fetch(`/api/events/${id}`, { method: 'DELETE' })
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}))
+                alert(`Suppression impossible : ${d.error || `HTTP ${res.status}`}`)
+            }
             fetchEvents()
-        } catch { /* */ }
+        } catch (e) {
+            alert(`Suppression impossible : ${e instanceof Error ? e.message : 'erreur réseau'}`)
+        }
         setDeleting(null)
     }
 
     const handleStatusChange = async (id: string, status: string) => {
-        await fetch(`/api/events/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status }),
-        })
+        try {
+            const res = await fetch(`/api/events/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+            })
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}))
+                alert(`Statut non modifié : ${d.error || `HTTP ${res.status}`}`)
+            }
+        } catch (e) {
+            alert(`Statut non modifié : ${e instanceof Error ? e.message : 'erreur réseau'}`)
+        }
         fetchEvents()
     }
 

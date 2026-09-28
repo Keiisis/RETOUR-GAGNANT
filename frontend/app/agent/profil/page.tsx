@@ -33,16 +33,18 @@ export default function AgentProfilePage() {
     useEffect(() => {
         const fetchProfile = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            // Session absente : message + fin du chargement (spinner infini auparavant)
+            if (!user) { setError('Session expirée : reconnectez-vous.'); setLoading(false); return }
 
             setEmail(user.email || '')
             setCreatedAt(user.created_at || '')
 
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from('user_profiles')
                 .select('full_name, role')
                 .eq('id', user.id)
                 .single()
+            if (profileError) setError(`Profil non chargé : ${profileError.message}`)
 
             if (profile) {
                 setFullName(profile.full_name || '')

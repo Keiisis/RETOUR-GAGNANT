@@ -290,12 +290,22 @@ export default function AdminBlogPage() {
 
     const handleDelete = async (id: string) => {
         if (!confirm('Supprimer cet article ?')) return
-        await supabase.from('blog_posts').delete().eq('id', id)
+        // .select('id') : sous RLS, une suppression refusée ne lève pas d'erreur,
+        // elle touche 0 ligne. Sans ce contrôle l'article « disparaissait » puis revenait.
+        const { data, error } = await supabase.from('blog_posts').delete().eq('id', id).select('id')
+        if (error || !data?.length) {
+            alert(`Suppression impossible : ${error?.message || 'aucune ligne supprimée (droits insuffisants ?)'}`)
+        }
         fetchPosts()
     }
 
     const togglePublish = async (post: BlogPost) => {
-        await supabase.from('blog_posts').update({ is_published: !post.is_published }).eq('id', post.id)
+        const { data, error } = await supabase.from('blog_posts')
+            .update({ is_published: !post.is_published, updated_at: new Date().toISOString() })
+            .eq('id', post.id).select('id')
+        if (error || !data?.length) {
+            alert(`Publication non modifiée : ${error?.message || 'aucune ligne mise à jour (droits insuffisants ?)'}`)
+        }
         fetchPosts()
     }
 

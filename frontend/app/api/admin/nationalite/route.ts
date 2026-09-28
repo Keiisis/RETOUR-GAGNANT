@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
 import { recordNationalityIncome } from '@/lib/nationality-income'
+import { MOYENS_PAIEMENT, type MoyenPaiement } from '@/lib/moyens-paiement'
 
 /* ═══════════════════════════════════════════════════════════════
    CRÉATION MANUELLE D'UN DOSSIER DE NATIONALITÉ
@@ -38,20 +39,8 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY || '',
 )
 
-/** Moyens de règlement acceptés hors passerelle en ligne. */
-export const MOYENS_PAIEMENT = {
-    momo: 'Mobile Money',
-    rib: 'Virement bancaire (RIB)',
-    kkiapay: 'Kkiapay',
-    taptap: 'TapTap Send',
-    especes: 'Espèces',
-    autre: 'Autre',
-    /* Dossier offert : aucune somme n est encaissee, donc aucune facture.
-       Present dans la liste pour que le moyen soit NOMME plutot que devine. */
-    invitation: "Code d'invitation (offert)",
-} as const
-
-type MoyenPaiement = keyof typeof MOYENS_PAIEMENT
+// MOYENS_PAIEMENT vit dans lib/moyens-paiement : un fichier route.ts ne
+// peut exporter que des handlers (sinon TS2344 dans .next/types, build cassé).
 
 const texte = (v: unknown, max = 200): string | null => {
     const s = String(v ?? '').replace(/[\r\n]+/g, ' ').trim()
@@ -87,7 +76,10 @@ function etapesNationalite() {
 }
 
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'agent')
+    // 'admin' : dossier « réputé payé sur parole » + revenu comptabilisé.
+    // Seul le panel admin l'appelle (middleware : agents refusés) ; la garde
+    // serveur doit tenir seule.
+    const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
 
     const body = await request.json().catch(() => ({})) as Record<string, unknown>
@@ -135,7 +127,8 @@ export async function POST(request: NextRequest) {
     const tarifConfig = Number(fs.amount)
     const deviseConfig = String(fs.currency || 'EUR').toUpperCase()
 
-    const montantSaisi = Number(body.amount)
+    // '' et null valaient Number(...) = 0 : dossier créé à 0 au lieu du tarif.
+    const montantSaisi = body.amount === '' || body.amount === null || body.amount === undefined ? NaN : Number(body.amount)
     const montant = isFinite(montantSaisi) && montantSaisi >= 0
         ? montantSaisi
         : (isFinite(tarifConfig) && tarifConfig > 0 ? tarifConfig : null)

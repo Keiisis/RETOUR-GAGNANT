@@ -78,7 +78,7 @@ function messageErreurBase(err: { code?: string; message?: string } | null): str
 }
 
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'agent')
+    const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
 
     let body: Record<string, unknown>
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-    const garde = await requireStaff(request, 'agent')
+    const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
 
     let body: Record<string, unknown>

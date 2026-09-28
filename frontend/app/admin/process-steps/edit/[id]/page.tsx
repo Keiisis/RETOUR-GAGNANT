@@ -21,6 +21,8 @@ export default function ProcessStepEdit() {
         id: id as string,
         redirect: 'list',
         action: 'edit',
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     })
 
     const record = query?.data?.data as ProcessStep | undefined

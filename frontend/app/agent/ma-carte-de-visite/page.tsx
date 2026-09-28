@@ -100,6 +100,9 @@ export default function MaCarteDeVisite() {
             link.download = `${prefix}-carte-${side}-${card.prenom}-${card.nom}.png`
             link.href = dataUrl
             link.click()
+        } catch (e) {
+            // L'échec de rendu (image, police) laissait le clic sans aucun effet visible.
+            alert(`Téléchargement impossible : ${e instanceof Error ? e.message : 'erreur de rendu'}`)
         } finally {
             setDownloading(null)
         }
@@ -115,6 +118,8 @@ export default function MaCarteDeVisite() {
             } else {
                 await downloadSVGCard(card, `Carte-VIP-${prefix}-${card.prenom}-${card.nom}`)
             }
+        } catch (e) {
+            alert(`Téléchargement impossible : ${e instanceof Error ? e.message : 'erreur de rendu'}`)
         } finally {
             setDownloading(null)
         }
@@ -166,6 +171,8 @@ export default function MaCarteDeVisite() {
 
             const prefix = activeTab === 'rgb' ? 'RGB' : 'Ouidah-Heritage'
             pdf.save(`Carte-VIP-${prefix}-${card.prenom}-${card.nom}.pdf`)
+        } catch (e) {
+            alert(`Téléchargement impossible : ${e instanceof Error ? e.message : 'erreur de rendu'}`)
         } finally {
             setDownloading(null)
         }

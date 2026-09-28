@@ -237,7 +237,7 @@ export default function RattacherFacture({
                             <div className="px-6 py-4 border-t shrink-0" style={{ borderColor: 'var(--panel-border)' }}>
                                 <div className="flex items-start gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-3">
                                     <WarningCircle size={15} className="text-amber-400 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-amber-300">
+                                    <p className="text-xs text-amber-300 [[data-theme=light]_&]:text-amber-700">
                                         {erreur}
                                         {migration && (
                                             <> Exécutez <code className="font-mono">20260904_rattachement_facture.sql</code> dans Supabase.</>

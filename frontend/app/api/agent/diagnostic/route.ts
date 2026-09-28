@@ -1,10 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    // Garde propre à la route (liste nominative de l'équipe avec emails) :
+    // elle ne reposait que sur le middleware.
+    const garde = await requireStaff(request, 'agent')
+    if (!garde.ok) return garde.response!
+
     const report: Record<string, unknown> = {
         timestamp: new Date().toISOString(),
         env: {

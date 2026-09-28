@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { toXOF } from '@/lib/currency-convert'
 
 // Cache 5 min : évite de refaire les requêtes à chaque message
 let _cache: { data: string; ts: number } | null = null
@@ -41,15 +42,20 @@ export async function buildRgbContext(): Promise<string> {
     // 10 requêtes regroupées (au lieu de 23)
     const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10] = await Promise.allSettled([
         // 1. Revenus : une seule requête avec toutes les commandes payées
-        supabase.from('orders').select('total_amount, created_at, status, client_name, client_email').in('status', ['completed', 'paid']).order('created_at', { ascending: false }).limit(200),
+        // Colonnes RÉELLES de `orders` : amount/currency/payment_status/customer_*.
+        // Sous total_amount/status/client_* la requête échouait : l'assistant
+        // annonçait 0 FCFA de revenu et aucune commande en attente.
+        supabase.from('orders').select('amount, currency, created_at, payment_status, customer_name, customer_email').in('payment_status', ['completed', 'paid']).order('created_at', { ascending: false }).limit(200),
         // 2. Commandes en attente
-        supabase.from('orders').select('id, created_at, total_amount, client_name, client_email, status').eq('status', 'pending').order('created_at', { ascending: false }).limit(8),
+        supabase.from('orders').select('id, created_at, amount, currency, customer_name, customer_email, payment_status').eq('payment_status', 'pending').order('created_at', { ascending: false }).limit(8),
         // 3. Clients
         supabase.from('user_profiles').select('id, created_at, full_name, role').in('role', ['client', 'agent']),
         // 4. Messages non lus
-        supabase.from('messages').select('id, created_at, name, sujet, content').eq('lu', false).order('created_at', { ascending: false }).limit(6),
+        // `messages` expose nom/prenom/message (pas name/content).
+        supabase.from('messages').select('id, created_at, nom, prenom, sujet, message').eq('lu', false).order('created_at', { ascending: false }).limit(6),
         // 5. Dossiers récents
-        supabase.from('dossiers').select('id, created_at, client_name, type, status').order('created_at', { ascending: false }).limit(5),
+        // `dossiers` : dossier_type, pas de client_name ni de type.
+        supabase.from('dossiers').select('id, created_at, dossier_type, status').order('created_at', { ascending: false }).limit(5),
         // 6. Partenaires & nationalité
         supabase.from('partner_applications').select('id, created_at, company_name, status').order('created_at', { ascending: false }).limit(4),
         // 7. Nationalité
@@ -66,10 +72,10 @@ export async function buildRgbContext(): Promise<string> {
         supabase.from('gemma_memory').select('type, content, importance').order('importance', { ascending: false }).limit(15),
     ])
 
-    type Order = { total_amount?: number; created_at: string; status?: string; client_name?: string; client_email?: string }
+    type Order = { amount?: number; currency?: string | null; created_at: string; payment_status?: string; customer_name?: string; customer_email?: string }
     type User  = { id: string; created_at: string; full_name?: string; role: string }
-    type Msg   = { id: string; created_at: string; name?: string; sujet?: string; content?: string }
-    type Dos   = { id: string; created_at: string; client_name?: string; type?: string; status?: string }
+    type Msg   = { id: string; created_at: string; nom?: string; prenom?: string; sujet?: string; message?: string }
+    type Dos   = { id: string; created_at: string; dossier_type?: string; status?: string }
     type App   = { id: string; created_at: string; company_name?: string; status?: string }
     type Nat   = { id: string; created_at: string; nom?: string; prenom?: string; statut?: string }
     type Mem   = { type: string; content: string; importance: number }
@@ -97,9 +103,11 @@ export async function buildRgbContext(): Promise<string> {
     const clients = allUsers.filter(u => u.role === 'client')
     const agents  = allUsers.filter(u => u.role === 'agent')
 
-    const revenueTotal = allPaidOrders.reduce((a, o) => a + (o.total_amount || 0), 0)
-    const revenueMonth = allPaidOrders.filter(o => o.created_at >= month.toISOString()).reduce((a, o) => a + (o.total_amount || 0), 0)
-    const revenueToday = allPaidOrders.filter(o => o.created_at >= day.toISOString()).reduce((a, o) => a + (o.total_amount || 0), 0)
+    // Commandes multi-devises : conversion en XOF avant de sommer.
+    const enXof = (o: Order) => toXOF(Number(o.amount) || 0, o.currency)
+    const revenueTotal = allPaidOrders.reduce((a, o) => a + enXof(o), 0)
+    const revenueMonth = allPaidOrders.filter(o => o.created_at >= month.toISOString()).reduce((a, o) => a + enXof(o), 0)
+    const revenueToday = allPaidOrders.filter(o => o.created_at >= day.toISOString()).reduce((a, o) => a + enXof(o), 0)
     const clientsMonth = clients.filter(c => c.created_at >= month.toISOString()).length
 
     const fd = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
@@ -119,21 +127,21 @@ export async function buildRgbContext(): Promise<string> {
 
     if (pendingOrders.length > 0) {
         lines.push(`COMMANDES EN ATTENTE:`)
-        pendingOrders.forEach(o => lines.push(`  ${fd(o.created_at)} | ${o.client_name || o.client_email || '?'} | ${xof(o.total_amount || 0)}`))
+        pendingOrders.forEach(o => lines.push(`  ${fd(o.created_at)} | ${o.customer_name || o.customer_email || '?'} | ${xof(enXof(o))}`))
         lines.push('')
     }
 
     if (unreadMsgs.length > 0) {
         lines.push(`MESSAGES NON LUS:`)
         unreadMsgs.forEach(m => {
-            lines.push(`  ${fd(m.created_at)} | ${m.name || '?'} : ${m.sujet || '-'}`)
-            if (m.content) lines.push(`    > ${m.content.slice(0, 100)}`)
+            lines.push(`  ${fd(m.created_at)} | ${`${m.prenom || ''} ${m.nom || ''}`.trim() || '?'} : ${m.sujet || '-'}`)
+            if (m.message) lines.push(`    > ${m.message.slice(0, 100)}`)
         })
         lines.push('')
     }
 
     if (dossiers.length > 0) {
-        lines.push(`DOSSIERS RÉCENTS: ${dossiers.map(d => `${d.client_name || '?'}(${d.status || '?'})`).join(', ')}`)
+        lines.push(`DOSSIERS RÉCENTS: ${dossiers.map(d => `${d.dossier_type || '?'}(${d.status || '?'})`).join(', ')}`)
     }
     if (partApps.length > 0) {
         lines.push(`PARTENAIRES: ${partApps.map(p => `${p.company_name || '?'}(${p.status || '?'})`).join(', ')}`)

@@ -46,8 +46,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (body.is_active !== undefined) updates.is_active = body.is_active
     if (body.full_name !== undefined) updates.full_name = body.full_name
 
-    const { error } = await supabase.from('user_profiles').update(updates).eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (Object.keys(updates).length === 0 && !body.password) {
+        return NextResponse.json({ error: 'Rien à modifier' }, { status: 400 })
+    }
+    if (Object.keys(updates).length > 0) {
+        const { error } = await supabase.from('user_profiles').update(updates).eq('id', id)
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    }
 
     // Si on change le mot de passe
     if (body.password) {
@@ -75,7 +80,8 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Supprimer le profil d'abord
-    await supabase.from('user_profiles').delete().eq('id', id)
+    const { error: profErr } = await supabase.from('user_profiles').delete().eq('id', id)
+    if (profErr) return NextResponse.json({ error: profErr.message }, { status: 500 })
 
     // Supprimer l'auth user
     const { error } = await supabase.auth.admin.deleteUser(id)

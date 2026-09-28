@@ -31,17 +31,21 @@ const db = () => createClient(
 async function avoirsExistants(
     supabase: ReturnType<typeof db>, factureId: string,
 ): Promise<number> {
-    const { data } = await supabase
+    const { data, error } = await supabase
         .from('documents_financiers')
         .select('total')
         .eq('type', 'avoir')
         .eq('avoir_de_facture_id', factureId)
+    // Lecture ratée = 0 déjà avoiré = sur-avoir possible : on refuse.
+    if (error) throw new Error(`Lecture des avoirs existants impossible : ${error.message}`)
     return (data || []).reduce((a, d) => a + (Number(d.total) || 0), 0)
 }
 
 // ─── GET : liste des avoirs (option ?facture_id=…) ────────────
 export async function GET(request: NextRequest) {
-    const auth = await verifyApiAuth(request, 'agent')
+    // 'admin' : notes de crédit = données comptables ; écran réservé à la
+    // direction (app/admin/facturation), le middleware refuse déjà les agents.
+    const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
 
     const factureId = request.nextUrl.searchParams.get('facture_id')
@@ -91,7 +95,9 @@ export async function POST(request: NextRequest) {
     }
 
     const totalFacture = Number(facture.total) || 0
-    const dejaAvoir = await avoirsExistants(supabase, factureId)
+    let dejaAvoir: number
+    try { dejaAvoir = await avoirsExistants(supabase, factureId) }
+    catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 500 }) }
     const restant = Math.max(0, totalFacture - dejaAvoir)
 
     // Montant : par défaut l'avoir est TOTAL sur le restant
@@ -140,7 +146,11 @@ export async function POST(request: NextRequest) {
         total_tva: tvaAvoir,
         remise: 0,
         total: montant,
-        status: 'valide',              // émis ; « payé » = remboursement effectué
+        // 'envoye' = émis ; « paye » = remboursement effectué. 'valide' n'existe
+        // pas dans la contrainte CHECK de documents_financiers.status
+        // (brouillon, envoye, accepte, refuse, paye, en_retard, annule) :
+        // l'insertion était rejetée et aucun avoir ne pouvait être émis.
+        status: 'envoye',
         notes: `Avoir émis sur la facture ${facture.numero}.\nMotif : ${motif}`,
         conditions: 'Note de crédit : déduite du chiffre d’affaires et de la TVA collectée.',
         validite: 'Sans objet',
@@ -188,7 +198,7 @@ export async function PATCH(request: NextRequest) {
     const rembourse = body.rembourse !== false
     const { error } = await db().from('documents_financiers')
         .update({
-            status: rembourse ? 'paye' : 'valide',
+            status: rembourse ? 'paye' : 'envoye', // 'valide' hors contrainte CHECK
             paid_at: rembourse ? new Date().toISOString() : null,
         })
         .eq('id', id)

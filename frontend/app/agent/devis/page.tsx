@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, refreshRates, CURRENCIES, asCurrency, type CurrencyCode } from '@/lib/currency'
 import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
+import { DOC_FIN_STATUTS, DOC_FIN_RGB, DOC_FIN_CLOS, type DocFinStatut } from '@/lib/constants/statuts'
 
 // Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
 /* Delegue a la table UNIQUE des devises (`lib/currency.ts`).
@@ -55,6 +56,7 @@ export default function AgentDevisPage() {
     const [documents, setDocuments] = useState<DocumentFinancier[]>([])
     const [paidByDoc, setPaidByDoc] = useState<Record<string, number>>({})
     const [loading, setLoading] = useState(true)
+    const [erreur, setErreur] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture' | 'impayees'>('all')
     const [sendingRelance, setSendingRelance] = useState<string | null>(null)
@@ -66,15 +68,17 @@ export default function AgentDevisPage() {
         // Charger les taux de change (table currencies) pour agréger multi-devises
         refreshRates()
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        // Session absente : fin du chargement + message (le spinner tournait sans fin)
+        if (!user) { setErreur('Session expirée : reconnectez-vous.'); setLoading(false); return }
 
         // Requête 1 : documents directement assignés à cet agent
-        const { data: ownDocs } = await supabase
+        const { data: ownDocs, error: ownErr } = await supabase
             .from('documents_financiers')
             .select('*')
             .eq('agent_id', user.id)
             .order('created_at', { ascending: false })
 
+        setErreur(ownErr ? `Chargement impossible : ${ownErr.message}` : null)
         const owned = (ownDocs || []) as DocumentFinancier[]
         const ownedIds = new Set(owned.map(d => d.id))
 
@@ -152,7 +156,10 @@ export default function AgentDevisPage() {
         if (res.ok) {
             setDocuments(prev => prev.map(d => d.id === id ? { ...d, status } : d))
             if (showPreview?.id === id) setShowPreview(prev => prev ? { ...prev, status } : null)
+            return null
         }
+        const data = await res.json().catch(() => ({}))
+        return (data.error as string) || `erreur ${res.status}`
     }
 
     // Marquer une facture (produite manuellement) comme payée / impayée
@@ -198,14 +205,9 @@ export default function AgentDevisPage() {
             const mr = 14
             const cw = pw - ml - mr
 
-            const statusLabels: Record<string, string> = { 
-                brouillon: 'BROUILLON', envoye: 'ENVOYÉ', accepte: 'ACCEPTÉ', 
-                refuse: 'REFUSÉ', paye: 'PAYÉ', en_retard: 'EN RETARD', annule: 'ANNULÉ' 
-            }
-            const statusColorMap: Record<string, [number, number, number]> = {
-                brouillon: [100, 100, 100], envoye: [59, 130, 246], accepte: [0, 160, 90],
-                refuse: [230, 60, 60], paye: [16, 185, 129], en_retard: [245, 158, 11], annule: [100, 100, 100]
-            }
+            // Libellés et couleurs PDF : référence unique (identiques à l'admin)
+            const statusLabels: Record<string, string> = Object.fromEntries(DOC_FIN_STATUTS.map(d => [d.value, d.label.toUpperCase()]))
+            const statusColorMap: Record<string, [number, number, number]> = DOC_FIN_RGB
 
             // ── BENIN FLAG BANNER (Robust for Printing) ───────────
             pdf.setLineWidth(4)
@@ -542,14 +544,11 @@ export default function AgentDevisPage() {
             if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`)
 
             // Update status to 'envoye' if still brouillon
+            // Via la route serveur (propriété + règles de statut), plus d'écriture directe.
             if (doc.status === 'brouillon') {
-                const { error: statutErr } = await supabase
-                    .from('documents_financiers')
-                    .update({ status: 'envoye' })
-                    .eq('id', doc.id)
-                fetchDocuments()
+                const statutErr = await handleUpdateStatus(doc.id, 'envoye')
                 if (statutErr) {
-                    alert(` ${typeLabel} envoyé(e) par email à ${doc.client_email}, mais statut non mis à jour : ${statutErr.message}`)
+                    alert(` ${typeLabel} envoyé(e) par email à ${doc.client_email}, mais statut non mis à jour : ${statutErr}`)
                     return
                 }
             }
@@ -618,15 +617,8 @@ export default function AgentDevisPage() {
         return matchSearch && matchType
     })
 
-    const statusConfig: Record<string, { color: string; label: string }> = {
-        brouillon: { color: 'bg-gray-500/20 text-gray-400', label: 'Brouillon' },
-        envoye: { color: 'bg-blue-500/20 text-blue-400', label: 'Envoyé' },
-        accepte: { color: 'bg-emerald-500/20 text-emerald-400', label: 'Accepté' },
-        refuse: { color: 'bg-red-500/20 text-red-400', label: 'Refusé' },
-        paye: { color: 'bg-green-500/20 text-green-400', label: 'Payé' },
-        en_retard: { color: 'bg-orange-500/20 text-orange-400', label: 'En retard' },
-        annule: { color: 'bg-zinc-500/20 text-zinc-400', label: 'Annulé' },
-    }
+    const statusConfig: Record<string, { color: string; label: string }> =
+        Object.fromEntries(DOC_FIN_STATUTS.map(d => [d.value, { color: d.badge, label: d.label }]))
 
     if (loading) {
         return <div className="flex items-center justify-center h-96"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
@@ -635,7 +627,8 @@ export default function AgentDevisPage() {
     // KPIs agrégés en XOF (conversion des documents EUR/USD) : sinon on
     // additionnerait des devises différentes (337 EUR + 164 000 XOF = faux)
     const myCA = documents.filter(d => d.status === 'paye').reduce((s, d) => s + toXof(d.total, d.currency), 0)
-    const activeDevis = documents.filter(d => d.type === 'devis' && d.status !== 'refuse').length
+    // Devis actifs = hors pipeline clos (payé, annulé, refusé) — pas seulement « non refusé »
+    const activeDevis = documents.filter(d => d.type === 'devis' && !DOC_FIN_CLOS.includes(d.status as DocFinStatut)).length
 
     // Alarmes factures impayées
     const unpaidDocs = documents.filter(d => computeOverdue(d, paidByDoc[d.id] || 0).isUnpaid)
@@ -653,6 +646,7 @@ export default function AgentDevisPage() {
                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]">Mon Espace Facturation</span>
                     </div>
                     <h1 className="text-2xl font-black text-white">Mes Documents Financiers</h1>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                     <p className="text-gray-500 text-sm mt-1">Gérez vos propals techniques et factures clients.</p>
                 </div>
                 <Link href="/agent/devis/create" className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-500/30 transition-all">
@@ -834,7 +828,7 @@ export default function AgentDevisPage() {
                                         )
                                     })()}
                                     <td className="py-3 px-5 text-center">
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || ''}`}>{statusConfig[doc.status]?.label}</span>
+                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${statusConfig[doc.status]?.color || ''}`}>{statusConfig[doc.status]?.label || doc.status}</span>
                                     </td>
                                     <td className="py-3 px-5 text-right">
                                         <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">

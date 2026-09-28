@@ -156,8 +156,17 @@ export default function SecuritePage() {
     useEffect(() => { load() }, [load])
 
     // ── Actions IPs ───────────────────────────────────────────
+    // Lit l'erreur réelle de la route (sinon un 401/403/500 passait pour un succès).
+    async function echec(res: Response, quoi: string) {
+        if (res.ok) return false
+        const d = await res.json().catch(() => ({}))
+        alert(`${quoi} : ${d.error || `HTTP ${res.status}`}`)
+        return true
+    }
+
     async function unblockIp(ip: string) {
-        await fetch(`/api/admin/waf?ip=${encodeURIComponent(ip)}`, { method: 'DELETE' })
+        const res = await fetch(`/api/admin/waf?ip=${encodeURIComponent(ip)}`, { method: 'DELETE' })
+        await echec(res, `Déblocage de ${ip} impossible`)
         load(true)
     }
     async function blockIp() {
@@ -201,16 +210,19 @@ export default function SecuritePage() {
 
     // ── Toggle règle ──────────────────────────────────────────
     async function toggleRule(rule: CustomRule) {
-        await fetch(`/api/admin/waf/rules/${rule.id}`, {
+        const res = await fetch(`/api/admin/waf/rules/${rule.id}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ enabled: !rule.enabled }),
         })
+        await echec(res, 'Règle non modifiée')
         load(true)
     }
 
     // ── Supprimer règle ───────────────────────────────────────
     async function deleteRule(id: string) {
-        await fetch(`/api/admin/waf/rules/${id}`, { method: 'DELETE' })
+        if (!confirm('Supprimer définitivement cette règle WAF ?')) return
+        const res = await fetch(`/api/admin/waf/rules/${id}`, { method: 'DELETE' })
+        await echec(res, 'Suppression de la règle impossible')
         load(true)
     }
 
@@ -221,7 +233,8 @@ export default function SecuritePage() {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(editConfig),
         })
-        setConfigMsg(res.ok ? 'Configuration sauvegardée' : 'Erreur de sauvegarde')
+        const d = res.ok ? null : await res.json().catch(() => ({}))
+        setConfigMsg(res.ok ? 'Configuration sauvegardée' : `Erreur de sauvegarde : ${d?.error || `HTTP ${res.status}`}`)
         setSavingConfig(false)
         load(true)
     }

@@ -42,12 +42,13 @@ export async function POST(request: NextRequest) {
     const report = await eraseByEmail(supabase, email)
 
     // Journalise la demande (preuve de traitement RGPD)
-    try {
-        await supabase.from('security_logs').insert({
-            action: 'rgpd_erasure_admin',
-            details: { email, report, by: auth.userId, at: new Date().toISOString() },
-        })
-    } catch { /* table de logs optionnelle */ }
+    // Supabase ne lève pas d'exception : l'erreur se lit dans `error`.
+    // Preuve de traitement RGPD : son absence doit au moins être journalisée.
+    const { error: logErr } = await supabase.from('security_logs').insert({
+        action: 'rgpd_erasure_admin',
+        details: { email, report, by: auth.userId, at: new Date().toISOString() },
+    })
+    if (logErr) console.error('[RGPD] preuve d’effacement non journalisée :', logErr.message)
 
     return NextResponse.json({ success: true, email, report })
 }

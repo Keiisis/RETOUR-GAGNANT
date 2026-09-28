@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const moi = garde.userId!
 
     let qDossiers = supabase.from('dossier_tracking').select('statut, created_at, client_email, email')
-    let qMessages = supabase.from('messages').select('lu, is_read, type, created_at, email')
+    let qMessages = supabase.from('messages').select('lu, type, created_at, email')
     let qDevis = supabase.from('documents_financiers').select('status').eq('type', 'devis')
     let qEvents = supabase.from('agent_events').select('id')
     if (!global) {
@@ -85,7 +85,8 @@ export async function GET(request: NextRequest) {
             dossiersNouveaux: dossiers.filter(d => d.statut === 'reception').length,
             tauxResolution: dossiers.length > 0 ? Math.round((termines / dossiers.length) * 100) : 0,
             messagesTotal: messages.length,
-            messagesLus: messages.filter(m => m.lu === true || m.is_read === true).length,
+            // `lu` seul : is_read n'est jamais écrit sur messages (le panel marque `lu`).
+            messagesLus: messages.filter(m => m.lu === true).length,
             messagesRDV: messages.filter(m => m.type === 'rendez-vous').length,
             leadsTotal: leads ? leads.length : null,
             leadsContactes: leads ? leads.filter(l => l.contacted === true || l.is_contacted === true).length : null,

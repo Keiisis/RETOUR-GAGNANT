@@ -56,7 +56,11 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
             }
         }
         if (body.tracking_url) {
-            try { new URL(body.tracking_url) } catch {
+            // http(s) uniquement : `new URL('javascript:…')` passait le contrôle
+            // et le lien est affiché tel quel au client (web + mobile).
+            let proto = ''
+            try { proto = new URL(body.tracking_url).protocol } catch { /* invalide */ }
+            if (proto !== 'https:' && proto !== 'http:') {
                 return NextResponse.json({ error: 'tracking_url invalide' }, { status: 400 })
             }
         }

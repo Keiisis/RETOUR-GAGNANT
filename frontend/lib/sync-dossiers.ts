@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import type { DossierStatut } from '@/lib/constants/statuts'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -11,12 +12,12 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
  * (dossier_tracking) avec le statut réel des commandes (orders).
  *
  * Logique de progression boutique :
- *   pending   →  20% étape 1 (commande reçue : en attente paiement)
- *   completed →  40% étape 2 (paiement confirmé)
- *   shipped   →  60% étape 3 (commande expédiée)
- *   delivered →  80% étape 4 (livraison en cours)
- *   closed    → 100% étape 5 (terminé)
- *   cancelled →   0% statut annulé
+ *   payment pending                →  20% étape 1 reception
+ *   payment completed              →  40% étape 2 traitement
+ *   shipping shipped               →  60% étape 3 traitement
+ *   shipping in_transit            →  80% étape 4 finalisation
+ *   shipping delivered             → 100% étape 5 termine
+ *   refunded / returned            →   0% annule
  *
  * Appelé par Vercel Cron toutes les heures + manuellement depuis l'admin.
  */
@@ -39,21 +40,32 @@ function buildEtapes(activeIndex: number) {
     }))
 }
 
-function progressionFromStatus(status: string): { progression: number; etapeIndex: number; statut: string } {
-    switch (status) {
-        case 'completed':
-            return { progression: 40, etapeIndex: 1, statut: 'en_cours' }
-        case 'shipped':
-            return { progression: 60, etapeIndex: 2, statut: 'en_cours' }
-        case 'delivered':
-            return { progression: 80, etapeIndex: 3, statut: 'en_cours' }
-        case 'closed':
-            return { progression: 100, etapeIndex: 4, statut: 'termine' }
-        case 'cancelled':
-            return { progression: 0, etapeIndex: -1, statut: 'annule' }
-        default:
-            return { progression: 20, etapeIndex: 0, statut: 'en_cours' }
+/**
+ * État de la commande → progression du dossier.
+ *
+ * Correctif du 28/09/2026 : l'ancienne version lisait `payment_status` pour
+ * des valeurs d'EXPÉDITION (shipped/delivered/closed/cancelled) qu'il ne
+ * prend jamais — elles vivent dans `shipping_status` (orders.status n'existe
+ * pas) — et écrivait `en_cours`, statut inconnu des panels (ni libellé, ni
+ * colonne de kanban). Les statuts écrits sont désormais ceux de
+ * lib/constants/statuts.ts.
+ */
+function progressionFromStatus(paymentStatus: string, shippingStatus: string): { progression: number; etapeIndex: number; statut: DossierStatut } {
+    if (paymentStatus === 'refunded' || shippingStatus === 'returned') {
+        return { progression: 0, etapeIndex: -1, statut: 'annule' }
     }
+    switch (shippingStatus) {
+        case 'delivered':
+            return { progression: 100, etapeIndex: 4, statut: 'termine' }
+        case 'in_transit':
+            return { progression: 80, etapeIndex: 3, statut: 'finalisation' }
+        case 'shipped':
+            return { progression: 60, etapeIndex: 2, statut: 'traitement' }
+    }
+    if (paymentStatus === 'completed' || paymentStatus === 'paid') {
+        return { progression: 40, etapeIndex: 1, statut: 'traitement' }
+    }
+    return { progression: 20, etapeIndex: 0, statut: 'reception' }
 }
 
 /** Le traitement lui-même : appelé par le cron ET par le bouton « Sync » du panel. */
@@ -106,7 +118,7 @@ export async function synchroniserDossiers(): Promise<NextResponse> {
         // des commandes boutique : on les lit et on apparie par préfixe.
         const { data: orders, error: oErr } = await supabase
             .from('orders')
-            .select('id, payment_status')
+            .select('id, payment_status, shipping_status')
             .order('created_at', { ascending: false })
             .limit(5000)
 
@@ -116,13 +128,13 @@ export async function synchroniserDossiers(): Promise<NextResponse> {
         }
 
         // Table de correspondance « 8 premiers caractères → statut »
-        const parFragment = new Map<string, string>()
+        const parFragment = new Map<string, { payment: string; shipping: string }>()
         for (const o of orders || []) {
             const cle = String(o.id).slice(0, 8).toLowerCase()
             // Collision de préfixe (2 sur 8 caractères hexadécimaux) :
             // improbable, mais on garde la commande la plus récente, déjà
             // en tête grâce au tri.
-            if (!parFragment.has(cle)) parFragment.set(cle, o.payment_status)
+            if (!parFragment.has(cle)) parFragment.set(cle, { payment: String(o.payment_status || ''), shipping: String(o.shipping_status || '') })
         }
 
         // 4. Synchroniser
@@ -133,10 +145,10 @@ export async function synchroniserDossiers(): Promise<NextResponse> {
             const fragment = dossier.num_dossier?.match(/^RG-CMD-(.+)$/)?.[1]
             if (!fragment) continue
 
-            const paymentStatus = parFragment.get(fragment.toLowerCase())
-            if (!paymentStatus) continue
+            const etat = parFragment.get(fragment.toLowerCase())
+            if (!etat) continue
 
-            const { progression, etapeIndex, statut } = progressionFromStatus(paymentStatus)
+            const { progression, etapeIndex, statut } = progressionFromStatus(etat.payment, etat.shipping)
 
             // Ne mettre à jour que si quelque chose a changé
             if (dossier.progression === progression && dossier.statut === statut) continue
@@ -145,11 +157,13 @@ export async function synchroniserDossiers(): Promise<NextResponse> {
 
             updates.push(
                 (async () => {
-                    await supabase
+                    const { error: majErr } = await supabase
                         .from('dossier_tracking')
                         .update({ progression, statut, etapes })
                         .eq('id', dossier.id)
-                    synced++
+                    // Compté seulement si écrit : l'erreur était ignorée.
+                    if (majErr) console.error('[sync-dossiers] maj', dossier.num_dossier, majErr.message)
+                    else synced++
                 })()
             )
         }

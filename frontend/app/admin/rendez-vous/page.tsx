@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Calendar, Clock, User, Phone, Envelope as Mail, VideoCamera as Video, MapPin, CheckCircle, XCircle, Checks as CheckCheck, CircleNotch as Loader2, MagnifyingGlass as Search } from '@phosphor-icons/react';
+import { RDV_STATUTS } from '@/lib/constants/statuts'
 
 interface RDV {
     id: string
@@ -29,12 +30,10 @@ interface RDV {
     client_profiles?: { nom: string | null; prenom: string | null; phone: string | null } | null
 }
 
-const STATUTS: Record<RDV['statut'], { label: string; cls: string }> = {
-    en_attente: { label: 'En attente', cls: 'text-amber-600 bg-amber-50 border-amber-200' },
-    confirme: { label: 'Confirmé', cls: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    annule: { label: 'Annulé', cls: 'text-red-600 bg-red-50 border-red-200' },
-    termine: { label: 'Terminé', cls: 'text-gray-500 bg-gray-100 border-gray-200' },
-}
+// Référence unique lib/constants/statuts (badges lisibles en thème sombre ET clair ;
+// avant : fonds pastel -50 codés pour le seul thème clair).
+const STATUTS: Record<RDV['statut'], { label: string; cls: string }> =
+    Object.fromEntries(RDV_STATUTS.map(d => [d.value, { label: d.label, cls: d.badge }])) as Record<RDV['statut'], { label: string; cls: string }>
 
 const TYPE_ICON: Record<string, typeof Video> = {
     visio: Video, telephone: Phone, presentiel: MapPin,

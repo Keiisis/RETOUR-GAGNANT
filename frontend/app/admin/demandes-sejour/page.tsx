@@ -43,9 +43,9 @@ interface Demande {
 }
 
 const STATUTS: Array<{ v: string; l: string; cls: string }> = [
-    { v: 'nouveau', l: 'Nouvelle', cls: 'bg-blue-500/15 text-blue-300 border-blue-500/30' },
-    { v: 'en_preparation', l: 'En préparation', cls: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
-    { v: 'propose', l: 'Proposition envoyée', cls: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' },
+    { v: 'nouveau', l: 'Nouvelle', cls: 'bg-blue-500/15 text-blue-300 [[data-theme=light]_&]:text-blue-700 border-blue-500/30' },
+    { v: 'en_preparation', l: 'En préparation', cls: 'bg-amber-500/15 text-amber-300 [[data-theme=light]_&]:text-amber-700 border-amber-500/30' },
+    { v: 'propose', l: 'Proposition envoyée', cls: 'bg-emerald-500/15 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 border-emerald-500/30' },
     { v: 'clos', l: 'Clos', cls: 'bg-white/5 text-gray-400 border-white/10' },
 ]
 
@@ -154,7 +154,7 @@ export default function DemandesSejourPage() {
                 <div className="flex justify-center py-24"><Loader2 size={28} className="animate-spin text-[#008751]" /></div>
             ) : erreur ? (
                 <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
-                    <p className="flex items-center gap-2 font-bold text-amber-300">
+                    <p className="flex items-center gap-2 font-bold text-amber-300 [[data-theme=light]_&]:text-amber-700">
                         <AlertTriangle size={18} /> {erreur}
                     </p>
                     {migrationRequise && (
@@ -197,7 +197,7 @@ export default function DemandesSejourPage() {
                                                 {st.l}
                                             </span>
                                             {d.client_id && (
-                                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black text-emerald-300">
+                                                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-black text-emerald-300 [[data-theme=light]_&]:text-emerald-700">
                                                     Compte lié
                                                 </span>
                                             )}
@@ -303,7 +303,7 @@ export default function DemandesSejourPage() {
                                         <Send size={14} /> Envoyer un slide existant
                                     </a>
                                     {d.statut === 'propose' && (
-                                        <span className="inline-flex items-center gap-1.5 px-2 text-xs font-bold text-emerald-300">
+                                        <span className="inline-flex items-center gap-1.5 px-2 text-xs font-bold text-emerald-300 [[data-theme=light]_&]:text-emerald-700">
                                             <CheckCircle2 size={14} /> Proposition envoyée
                                         </span>
                                     )}

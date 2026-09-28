@@ -269,10 +269,14 @@ function RegistrationsPanel({ eventId, eventTitle, onClose }: { eventId: string;
     const [scannerOuvert, setScannerOuvert] = useState(false)
 
     const fetchRegs = useCallback(() => {
+        // Échec affiché : une liste vide laissait croire à zéro inscrit.
         fetch(`/api/events/${eventId}/register?admin=true`)
-            .then(r => r.json())
-            .then(d => setRegs(d.registrations || []))
-            .catch(() => { })
+            .then(async r => {
+                const d = await r.json().catch(() => ({}))
+                if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+                setRegs(d.registrations || [])
+            })
+            .catch(e => alert(`Inscrits non chargés : ${e instanceof Error ? e.message : 'réseau indisponible'}`))
             .finally(() => setLoading(false))
     }, [eventId])
 
@@ -284,9 +288,13 @@ function RegistrationsPanel({ eventId, eventTitle, onClose }: { eventId: string;
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ticket_code: code, validated_by: 'Agent' }),
+        }).catch(() => null)
+        // Réseau coupé / réponse non-JSON : l'écran restait bloqué sur « Validation... ».
+        const data = res ? await res.json().catch(() => ({})) : {}
+        setScanResult({
+            status: data.valid ? 'success' : 'error',
+            message: data.message || data.error || (res ? `Erreur ${res.status}` : 'Réseau indisponible'),
         })
-        const data = await res.json()
-        setScanResult({ status: data.valid ? 'success' : 'error', message: data.message || data.error })
         if (data.valid) fetchRegs()
     }
 
@@ -454,9 +462,12 @@ export default function AgentEventsPage() {
     const fetchEvents = useCallback(() => {
         setLoading(true)
         fetch('/api/events?admin=true')
-            .then(r => r.json())
-            .then(d => setEvents(d.events || []))
-            .catch(() => { })
+            .then(async r => {
+                const d = await r.json().catch(() => ({}))
+                if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+                setEvents(d.events || [])
+            })
+            .catch(e => alert(`Événements non chargés : ${e instanceof Error ? e.message : 'réseau indisponible'}`))
             .finally(() => setLoading(false))
     }, [])
 

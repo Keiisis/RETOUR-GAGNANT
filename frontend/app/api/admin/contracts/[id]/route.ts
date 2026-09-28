@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
-import { auditEntry, type AuditEntry } from '@/lib/contracts'
+import { auditEntry, nomActeur, type AuditEntry } from '@/lib/contracts'
 import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -28,8 +28,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     try {
         const { id } = await params
         const body = await request.json()
-        const actor = String(body.actor || 'Admin').slice(0, 80)
         const supabase = createClient(supabaseUrl, serviceKey)
+        const actor = await nomActeur(supabase, garde.userId, body.actor)
 
         const { data: existing, error: fetchErr } = await supabase
             .from('contracts').select('*').eq('id', id).single()
@@ -57,6 +57,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
             update.signature_hash = ''
             log.push(auditEntry('marquage_non_signe', actor, 'Signature retirée : repassé au statut « envoyé »'))
         } else {
+            // Un contrat SIGNÉ n'est plus modifiable : sinon le texte change
+            // après signature et la preuve (signature_hash) ne vaut plus rien.
+            // Retirer d'abord la signature (action journalisée).
+            if (existing.status === 'signe') {
+                return NextResponse.json({ error: 'Contrat signé : retirez d’abord la signature pour le modifier.' }, { status: 409 })
+            }
             // ── Édition classique : uniquement les champs autorisés ──
             const changed: string[] = []
             for (const field of EDITABLE) {

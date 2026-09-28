@@ -76,11 +76,15 @@ export async function deposerLivrable(l: Livrable): Promise<string | null> {
                 origine: 'agence',
                 categorie: l.categorie,
                 titre: l.titre,
-                nom_fichier: l.nomFichier,
-                type_fichier: 'application/pdf',
-                taille: contenu.length,
+                // Noms RÉELS des colonnes (file_name / file_type / file_size /
+                // file_url) : sous nom_fichier/type_fichier/taille/url l'insert
+                // échouait à chaque appel, le fichier restait orphelin dans le
+                // bucket et aucun livrable n'apparaissait côté client.
+                file_name: l.nomFichier,
+                file_type: 'application/pdf',
+                file_size: contenu.length,
                 storage_path: chemin,
-                url: '',              // jamais d'URL publique : voir la note ci-dessous
+                file_url: '',         // jamais d'URL publique : voir la note ci-dessous
                 client_email: l.email.toLowerCase().trim(),
                 client_id: l.clientId || null,
                 nationality_id: l.nationalityId || null,

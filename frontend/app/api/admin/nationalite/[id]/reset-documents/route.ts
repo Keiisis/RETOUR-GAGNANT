@@ -35,15 +35,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const lu = lireLigneDocument(line)
         if (lu?.ok) paths.push(lu.path)
     }
-    if (paths.length) {
-        await supabase.storage.from('nationality_documents').remove(paths).catch(() => {})
-    }
-
+    // Base d'abord : en cas d'échec, les fichiers restent et le dossier aussi.
+    // L'ordre inverse laissait des lignes pointant vers des fichiers effacés.
     const { error: updErr } = await supabase
         .from('nationality_applications')
         .update({ documents_uploaded: [] })
         .eq('id', id)
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
+
+    if (paths.length) {
+        await supabase.storage.from('nationality_documents').remove(paths).catch(() => {})
+    }
 
     return NextResponse.json({ success: true, filesRemoved: paths.length })
 }

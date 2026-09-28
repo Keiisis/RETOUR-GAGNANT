@@ -18,7 +18,9 @@ export default function PatrimonioCreate() {
     const { onFinish, formLoading } = useForm<Patrimoine>({
         resource: "patrimoine",
         redirect: "list",
-        action: "create"
+        action: "create",
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     });
 
     const { query: galleryQuery } = useList<{ id: string, url?: string, image_url?: string }>({

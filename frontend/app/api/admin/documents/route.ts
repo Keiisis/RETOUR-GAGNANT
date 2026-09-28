@@ -84,7 +84,8 @@ export async function POST(request: NextRequest) {
         }
         const token = signMyafroToken(60, paid, invoiceId, { email, nom: name })
         const link = lienReprise(token)
-        const civil = name || 'Cher(e) client(e)'
+        // Nom échappé : saisi dans le panel, il était injecté brut dans le HTML de l'e-mail.
+        const civil = (name || 'Cher(e) client(e)').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] as string))
         const html = `
         <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
             <div style="background:linear-gradient(135deg,#006b40,#008751);padding:30px 40px;text-align:center;">
@@ -149,8 +150,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
         }
 
-        const link = `${SITE}/nationalite/complement-ancestral?ref=${app.application_ref}`
-        const civil = `${app.prenom} ${app.nom}`
+        const link = `${SITE}/nationalite/complement-ancestral?ref=${encodeURIComponent(String(app.application_ref || ''))}`
+        // Nom saisi par le CLIENT (formulaire public) : échappé avant d'entrer dans le HTML.
+        const civil = `${app.prenom || ''} ${app.nom || ''}`.trim().replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] as string))
         
         const html = `
         <div style="font-family:'Segoe UI',Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;">
@@ -185,10 +187,16 @@ export async function POST(request: NextRequest) {
         if (!emailRes.success) return NextResponse.json({ error: emailRes.error || 'Envoi impossible' }, { status: 500 })
 
         // Update application state
-        await supabase
+        const { error: majErr } = await supabase
             .from('nationality_applications')
             .update({ needs_recherche_ancestrale: true })
             .eq('id', id)
+        // L'e-mail est parti : on ne renvoie pas 500 (renvoi en double), mais
+        // l'échec du marquage est signalé au lieu d'être tu.
+        if (majErr) {
+            console.error('[admin/documents] marquage recherche ancestrale :', majErr.message)
+            return NextResponse.json({ success: true, avertissement: `E-mail envoyé, marquage du dossier non enregistré : ${majErr.message}` })
+        }
 
         return NextResponse.json({ success: true })
     }

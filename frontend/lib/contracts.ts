@@ -206,3 +206,24 @@ export function contractDocumentHtml(c: ContractRow, opts: { embed?: boolean } =
   ${doc}
 </body></html>`
 }
+
+/**
+ * Nom de l'auteur d'une action sur un contrat, lu sur la SESSION.
+ * Le journal d'audit recopiait `body.actor`, que le navigateur envoie :
+ * n'importe quel membre du personnel pouvait signer une modification ou un
+ * « marqué signé » du nom d'un autre. Le corps n'est plus qu'un repli quand
+ * le profil n'a pas de nom.
+ */
+export async function nomActeur(
+    supabase: SupabaseClient,
+    userId: string | undefined,
+    repli: unknown,
+): Promise<string> {
+    if (userId) {
+        const { data } = await supabase.from('user_profiles').select('full_name').eq('id', userId).maybeSingle()
+        const nom = String((data as { full_name?: string } | null)?.full_name || '').trim()
+        if (nom) return nom.slice(0, 80)
+    }
+    return String(repli || 'Équipe').slice(0, 80)
+}
+

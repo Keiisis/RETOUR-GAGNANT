@@ -29,6 +29,8 @@ export default function GalleryEdit() {
         action: "edit",
         id,
         redirect: "list",
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     });
 
     const [formData, setFormData] = useState<Partial<GalleryItem> & { alt?: string }>({
@@ -60,8 +62,8 @@ export default function GalleryEdit() {
             url: formData.url,
             title: formData.title,
             category: formData.category,
-            type: formData.category, // Handle both category and type fields to be safe
-            alt: formData.title // Just use the title as alt if not set
+            // Plus de `alt` (colonne inexistante dans gallery → chaque mise à jour
+            // échouait) ni d'écrasement de `type` (valeur réelle 'image') par la catégorie.
         });
     };
 

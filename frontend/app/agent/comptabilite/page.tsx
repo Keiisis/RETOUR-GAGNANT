@@ -179,63 +179,53 @@ export default function AgentComptabilitePage() {
 
     const [commissionRate, setCommissionRate] = useState(0.10)
 
+    const [erreurChargement, setErreurChargement] = useState<string | null>(null)
+
+    /** En-têtes des appels /api/agent/* (session du navigateur). */
+    const entetes = async (json = false): Promise<Record<string, string>> => {
+        const { data: { session } } = await supabase.auth.getSession()
+        return {
+            ...(json ? { 'Content-Type': 'application/json' } : {}),
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        }
+    }
+
+    // Lecture via /api/agent/comptabilite : la réserve « Comptabilité = Ornel »
+    // est contrôlée par le serveur (le navigateur lisait les tables en direct).
     const fetchAllData = async () => {
         setLoading(true)
         await loadExchangeRates()  // taux réels avant normalisation XOF des KPI
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setLoading(false); return }
+        const res = await fetch('/api/agent/comptabilite', { headers: await entetes(), cache: 'no-store' }).catch(() => null)
+        const data = res ? await res.json().catch(() => ({})) : {}
+        if (!res || !res.ok) {
+            setErreurChargement(data.error || (res ? `Chargement impossible (erreur ${res.status})` : 'Réseau indisponible'))
+            setLoading(false)
+            return
+        }
+        setErreurChargement(null)
 
-        // Fetch Documents
-        const { data: docs } = await supabase
-            .from('documents_financiers')
-            .select('*')
-            .eq('agent_id', user.id)
-            .order('created_at', { ascending: false })
-
-        // Fetch Expenses
-        const { data: exp } = await supabase
-            .from('depenses')
-            .select('*')
-            .eq('agent_id', user.id)
-            .order('date_depense', { ascending: false })
-
-        // Fetch Settings : commission_rate dans la table settings
-        const { data: settings } = await supabase
-            .from('settings')
-            .select('key,value')
-            .eq('key', 'commission_rate')
-            .maybeSingle()
-
-        if (settings?.value) {
-            setCommissionRate(parseFloat(settings.value))
+        if (data.commission_rate != null && !isNaN(parseFloat(data.commission_rate))) {
+            setCommissionRate(parseFloat(data.commission_rate))
         }
 
-        // Fetch paiements manuels pour cet agent
-        const { data: paiem } = await supabase
-            .from('paiements_manuels')
-            .select('id, document_id, type, montant, date_paiement, reference, notes')
-            .eq('agent_id', user.id)
-            .order('date_paiement', { ascending: false })
+        const paiem = (data.paiements || []) as Array<{ id: string; document_id: string | null; type: string; montant: number; date_paiement: string; reference: string | null; notes: string | null }>
+        const map: Record<string, number> = {}
+        paiem.forEach(p => {
+            if (p.document_id) map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant)
+        })
+        setPaiements(map)
+        setPaiementsList(paiem.map(p => ({
+            id: String(p.id),
+            document_id: String(p.document_id),
+            type: String(p.type),
+            montant: Number(p.montant),
+            date_paiement: String(p.date_paiement),
+            reference: p.reference ?? null,
+            notes: p.notes ?? null,
+        })))
 
-        if (paiem) {
-            const map: Record<string, number> = {}
-            paiem.forEach(p => {
-                map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant)
-            })
-            setPaiements(map)
-            setPaiementsList(paiem.map(p => ({
-                id: String(p.id),
-                document_id: String(p.document_id),
-                type: String(p.type),
-                montant: Number(p.montant),
-                date_paiement: String(p.date_paiement),
-                reference: p.reference ?? null,
-                notes: p.notes ?? null,
-            })))
-        }
-
-        if (docs) setAllDocs(docs)
-        if (exp) setExpenses(exp)
+        setAllDocs((data.documents || []) as DocumentFinancier[])
+        setExpenses((data.depenses || []) as Depense[])
         setLoading(false)
     }
 
@@ -466,18 +456,22 @@ export default function AgentComptabilitePage() {
             return
         }
 
-        // ── MODE CRÉATION ──
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setSavingExpense(false); return }
-
-        const { error } = await supabase.from('depenses').insert({
-            agent_id: user.id,
-            titre,
-            categorie: newExpense.categorie,
-            montant: Number(newExpense.montant),
-            // Date fixée à midi UTC → jour stable quel que soit le fuseau
-            date_depense: newExpense.date ? new Date(`${newExpense.date}T12:00:00Z`).toISOString() : new Date().toISOString(),
-        })
+        // ── MODE CRÉATION (route serveur : contrôle d'accès + clôture + audit) ──
+        const resCreation = await fetch('/api/agent/depenses', {
+            method: 'POST',
+            headers: await entetes(true),
+            body: JSON.stringify({
+                titre,
+                categorie: newExpense.categorie,
+                montant: Number(newExpense.montant),
+                // YYYY-MM-DD → midi UTC côté serveur (jour stable quel que soit le fuseau)
+                ...(newExpense.date ? { date_depense: newExpense.date } : {}),
+            }),
+        }).catch(() => null)
+        const creation = resCreation ? await resCreation.json().catch(() => ({})) : {}
+        const error = !resCreation || !resCreation.ok
+            ? { message: creation.error || (resCreation ? `Erreur ${resCreation.status}` : 'Réseau indisponible') }
+            : null
 
         if (!error) {
             setShowExpenseModal(false)
@@ -524,17 +518,22 @@ export default function AgentComptabilitePage() {
     const handleAddSalaire = async (e: React.FormEvent) => {
         e.preventDefault()
         setSavingSalaire(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setSavingSalaire(false); return }
 
         const { nom, prenom, poste, montant, mois } = newSalaire
-        const { error } = await supabase.from('depenses').insert({
-            agent_id: user.id,
-            titre: `Salaire ${mois} : ${nom.trim().toUpperCase()} ${prenom.trim()} : ${poste.trim()}`,
-            categorie: 'salaires',
-            montant: Number(montant),
-            date_depense: new Date(`${mois}-28T12:00:00Z`).toISOString(),
-        })
+        const resSalaire = await fetch('/api/agent/depenses', {
+            method: 'POST',
+            headers: await entetes(true),
+            body: JSON.stringify({
+                titre: `Salaire ${mois} : ${nom.trim().toUpperCase()} ${prenom.trim()} : ${poste.trim()}`,
+                categorie: 'salaires',
+                montant: Number(montant),
+                date_depense: `${mois}-28`,
+            }),
+        }).catch(() => null)
+        const retourSalaire = resSalaire ? await resSalaire.json().catch(() => ({})) : {}
+        const error = !resSalaire || !resSalaire.ok
+            ? { message: retourSalaire.error || (resSalaire ? `Erreur ${resSalaire.status}` : 'Réseau indisponible') }
+            : null
 
         if (!error) {
             setShowSalaireModal(false)
@@ -580,8 +579,6 @@ export default function AgentComptabilitePage() {
     const handleAddPayment = async (e: React.FormEvent) => {
         e.preventDefault()
         setSavingPayment(true)
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { setSavingPayment(false); return }
 
         const isExterne = paymentMode === 'externe' && !paymentDoc
         const targetDocId = paymentDoc?.id || paymentDocId
@@ -592,15 +589,22 @@ export default function AgentComptabilitePage() {
             ? `[EXTERNE] ${externePayment.libelle}${externePayment.client ? ' : ' + externePayment.client : ''}${newPayment.notes ? ' | ' + newPayment.notes : ''}`
             : (newPayment.notes || null)
 
-        const { error } = await supabase.from('paiements_manuels').insert({
-            agent_id: user.id,
-            document_id: isExterne ? null : targetDocId,
-            type: newPayment.type,
-            montant: Number(newPayment.montant),
-            date_paiement: newPayment.date,
-            reference: newPayment.reference || null,
-            notes: composedNotes,
-        })
+        const resPaiement = await fetch('/api/agent/paiements-manuels', {
+            method: 'POST',
+            headers: await entetes(true),
+            body: JSON.stringify({
+                document_id: isExterne ? null : targetDocId,
+                type: newPayment.type,
+                montant: Number(newPayment.montant),
+                date_paiement: newPayment.date,
+                reference: newPayment.reference || null,
+                notes: composedNotes,
+            }),
+        }).catch(() => null)
+        const retourPaiement = resPaiement ? await resPaiement.json().catch(() => ({})) : {}
+        const error = !resPaiement || !resPaiement.ok
+            ? { message: retourPaiement.error || (resPaiement ? `Erreur ${resPaiement.status}` : 'Réseau indisponible') }
+            : null
 
         if (!error) {
             setShowPaymentModal(false)
@@ -611,7 +615,7 @@ export default function AgentComptabilitePage() {
             setNewPayment({ type: 'virement', montant: '', reference: '', notes: '', date: new Date().toISOString().split('T')[0] })
             fetchAllData()
         } else {
-            alert('Erreur: ' + error.message + (isExterne ? '\n\nAstuce: la colonne document_id de paiements_manuels doit être nullable pour accepter les paiements externes.' : ''))
+            alert('Erreur : ' + error.message)
         }
         setSavingPayment(false)
     }
@@ -717,7 +721,7 @@ export default function AgentComptabilitePage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-screen bg-[#060a10]">
+            <div className="flex items-center justify-center h-screen bg-[var(--panel-bg)]">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-10 h-10 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
                     <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Chargement trésorerie...</p>
@@ -736,6 +740,9 @@ export default function AgentComptabilitePage() {
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tight">Espace <span className="text-emerald-400">Financier</span></h1>
                     <p className="text-nexus-text-muted text-sm mt-1">Plateforme de gestion analytique.</p>
+                    {erreurChargement && (
+                        <p className="mt-2 text-sm font-semibold text-red-400">{erreurChargement}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">

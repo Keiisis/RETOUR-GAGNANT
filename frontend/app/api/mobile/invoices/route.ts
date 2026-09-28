@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { motifEmailExact } from '@/lib/email-motif'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Devis et factures d'un client, pour l'application.
@@ -161,7 +162,7 @@ export async function GET(req: NextRequest) {
             const parEmail = await supabase
                 .from('documents_financiers')
                 .select(CHAMPS)
-                .ilike('client_email', email)
+                .ilike('client_email', motifEmailExact(email) ?? '\u0000')
                 .is('client_id', null)      // le compte a déjà été servi ci-dessus
                 .order('created_at', { ascending: false })
                 .limit(200)

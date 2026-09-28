@@ -5,6 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
+import {
+    NATIONALITE_STATUTS_EDITABLES, NATIONALITE_HORS_LISTE, NATIONALITE_DECISIONS,
+    statutNationalite, nationalitePayee, type NationaliteStatut,
+} from '@/lib/constants/statuts'
 
 interface NationalityApplication {
     id: string
@@ -63,14 +67,8 @@ interface NationalityApplication {
     agent_notes?: string
 }
 
-/* Statuts d'un dossier : les MÊMES que /admin/nationalite (statusMap). */
-const STATUTS_DOSSIER = [
-    { v: 'soumis', l: 'Soumis' },
-    { v: 'en_traitement', l: 'En traitement' },
-    { v: 'verification', l: 'Vérification' },
-    { v: 'approuve', l: 'Approuvé' },
-    { v: 'rejete', l: 'Rejeté' },
-]
+/* Statuts d'un dossier : référence unique (lib/constants/statuts), partagée avec l'admin. */
+const STATUTS_DOSSIER = NATIONALITE_STATUTS_EDITABLES.map(v => ({ v, l: statutNationalite(v).label }))
 
 export default function AgentNationalitePage() {
     const [apps, setApps] = useState<NationalityApplication[]>([])
@@ -80,6 +78,7 @@ export default function AgentNationalitePage() {
     const [isUpdating, setIsUpdating] = useState(false)
     const [showDetail, setShowDetail] = useState<NationalityApplication | null>(null)
     const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
+    const [erreur, setErreur] = useState<string | null>(null)
 
     // Envoie au client un lien sécurisé pour compléter/redéposer ses documents
     // (dossier déjà payé : aucun paiement redemandé).
@@ -93,7 +92,7 @@ export default function AgentNationalitePage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, mode }),
             })
-            const data = await res.json()
+            const data = await res.json().catch(() => ({}))
             if (res.ok && data.success) {
                 setRelanceState(prev => ({ ...prev, [stateKey]: 'sent' }))
             } else {
@@ -108,11 +107,15 @@ export default function AgentNationalitePage() {
 
     const fetchApps = async () => {
         setLoading(true)
+        // Comme l'admin : les dossiers MyAfroOrigins en revue (revue_myafro) restent
+        // hors liste tant qu'ils ne sont pas approuvés (→ soumis).
         const { data, error } = await supabase
             .from('nationality_applications')
             .select('*')
-            .order('submitted_at', { ascending: false })
+            .or(`status.is.null,status.not.in.(${NATIONALITE_HORS_LISTE.join(',')})`)
+            .order('submitted_at', { ascending: false, nullsFirst: false })
 
+        setErreur(error ? `Chargement impossible : ${error.message}` : null)
         if (!error && data) {
             setApps(data)
         }
@@ -132,12 +135,14 @@ export default function AgentNationalitePage() {
         // « approuvé » par un agent sortait des filtres et compteurs de l'admin.
         const { error } = await supabase
             .from('nationality_applications')
-            .update({ status: newStatus, decision_date: newStatus === 'approuve' || newStatus === 'rejete' ? new Date().toISOString() : null })
+            .update({ status: newStatus, decision_date: NATIONALITE_DECISIONS.includes(newStatus as NationaliteStatut) ? new Date().toISOString() : null })
             .eq('id', id)
 
         if (!error) {
             setApps(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a))
             if (showDetail?.id === id) setShowDetail(prev => ({ ...prev!, status: newStatus }))
+        } else {
+            alert(`Changement de statut non enregistré : ${error.message}`)
         }
         setIsUpdating(false)
     }
@@ -156,16 +161,8 @@ export default function AgentNationalitePage() {
         return matchSearch && matchStatus
     })
 
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'soumis': return 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-            case 'en_traitement': return 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-            case 'verification': return 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-            case 'approuve': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-            case 'rejete': return 'bg-red-500/10 text-red-400 border-red-500/20'
-            default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20'
-        }
-    }
+    // Couleurs : référence unique (revue_myafro, brouillon compris)
+    const getStatusStyle = (status: string) => statutNationalite(status).badge
 
     return (
         <div className="space-y-6">
@@ -176,6 +173,7 @@ export default function AgentNationalitePage() {
                         Demandes de Nationalité
                     </h1>
                     <p className="text-gray-500 text-xs mt-1">Gérez et examinez les demandes de reconnaissance de nationalité.</p>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                 </div>
             </div>
 
@@ -256,13 +254,13 @@ export default function AgentNationalitePage() {
                                     </td>
                                     <td className="p-4">
                                         <div className="flex items-center gap-1.5">
-                                            <span className={`w-2 h-2 rounded-full ${['payé', 'paye', 'paid', 'completed', 'success'].includes(String(app.payment_status || '').toLowerCase()) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 opacity-50'}`} />
+                                            <span className={`w-2 h-2 rounded-full ${nationalitePayee(app.payment_status) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 opacity-50'}`} />
                                             <span className="text-xs font-bold uppercase tracking-widest text-white/80">{app.amount} {app.currency}</span>
                                         </div>
                                     </td>
                                     <td className="p-4">
                                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${getStatusStyle(app.status)}`}>
-                                            {app.status}
+                                            {statutNationalite(app.status).label}
                                         </span>
                                     </td>
                                     <td className="p-4 text-right">
@@ -316,7 +314,7 @@ export default function AgentNationalitePage() {
                                         <div className="flex items-center gap-2">
                                             <h2 className="text-xl font-black text-white">{showDetail.application_ref || 'Demande sans référence'}</h2>
                                             <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border ${getStatusStyle(showDetail.status)}`}>
-                                                {showDetail.status}
+                                                {statutNationalite(showDetail.status).label}
                                             </span>
                                         </div>
                                         <p className="text-xs text-gray-500">

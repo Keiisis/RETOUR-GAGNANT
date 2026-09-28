@@ -5,6 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Users, MagnifyingGlass as Search, Envelope as Mail, Phone, PencilLine as Edit3, Trash as Trash2, X, FloppyDisk as Save, CircleNotch as Loader2, Calendar, FileText, CaretRight as ChevronRight, Star, Globe, ChatText as MessageSquare, FolderOpen, MagicWand as Wand2, Translate as Languages, PaperPlaneTilt as Send, Flame, TrendUp as TrendingUp, Wallet, Briefcase, Pulse as Activity } from '@phosphor-icons/react';
 import { toXOF } from '@/lib/currency-convert'
+import {
+    DOSSIER_STATUTS, DOSSIER_PROGRESSION, NATIONALITE_STATUTS, NATIONALITE_STATUTS_EDITABLES,
+    NATIONALITE_DECISIONS, normaliserStatutDossier, type DossierStatut, type NationaliteStatut,
+} from '@/lib/constants/statuts'
 
 type ClientSource = 'dossier' | 'message' | 'eligibilite' | 'nationalite'
 
@@ -46,19 +50,13 @@ const sourceConfig: Record<ClientSource, { color: string; label: string; icon: t
     nationalite: { color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', label: 'Nationalité', icon: Globe },
 }
 
+// Statuts : référence unique. L'ancienne liste proposait pour la nationalité
+// `en_examen`, `approuvé`, `rejeté` (accents) : valeurs inconnues de l'admin
+// et du suivi client, que la fiche écrivait pourtant en base.
 const statusConfig: Record<string, { color: string; label: string }> = {
-    reception: { color: 'bg-sky-500/20 text-sky-400', label: 'Réception' },
-    verification: { color: 'bg-cyan-500/20 text-cyan-400', label: 'Vérification' },
-    traitement: { color: 'bg-blue-500/20 text-blue-400', label: 'Traitement' },
-    validation: { color: 'bg-amber-500/20 text-amber-400', label: 'Validation' },
-    finalisation: { color: 'bg-purple-500/20 text-purple-400', label: 'Finalisation' },
-    termine: { color: 'bg-emerald-500/20 text-emerald-400', label: 'Terminé' },
-    annule: { color: 'bg-red-500/20 text-red-400', label: 'Annulé' },
+    ...Object.fromEntries(DOSSIER_STATUTS.map(d => [d.value, { color: d.badge, label: d.label }])),
+    ...Object.fromEntries(NATIONALITE_STATUTS.map(d => [d.value, { color: d.badge, label: d.label }])),
     prospect: { color: 'bg-purple-500/20 text-purple-400', label: 'Prospect' },
-    soumis: { color: 'bg-blue-500/20 text-blue-400', label: 'Soumis' },
-    en_examen: { color: 'bg-amber-500/20 text-amber-400', label: 'En examen' },
-    'approuvé': { color: 'bg-emerald-500/20 text-emerald-400', label: 'Approuvé' },
-    'rejeté': { color: 'bg-red-500/20 text-red-400', label: 'Rejeté' },
     eligible: { color: 'bg-emerald-500/20 text-emerald-400', label: 'Éligible' },
     non_eligible: { color: 'bg-red-500/20 text-red-400', label: 'Non éligible' },
 }
@@ -66,6 +64,7 @@ const statusConfig: Record<string, { color: string; label: string }> = {
 export default function AgentClientsPage() {
     const [clients, setClients] = useState<Client[]>([])
     const [loading, setLoading] = useState(true)
+    const [erreur, setErreur] = useState<string | null>(null)
     const [search, setSearch] = useState('')
     const [filterSource, setFilterSource] = useState<ClientSource | 'all'>('all')
     const [selectedClient, setSelectedClient] = useState<Client | null>(null)
@@ -97,6 +96,10 @@ export default function AgentClientsPage() {
             supabase.from('eligibility_results').select('*').order('created_at', { ascending: false }),
             supabase.from('nationality_applications').select('*').order('submitted_at', { ascending: false }),
         ])
+
+        // Une source en échec vidait silencieusement une partie de la liste.
+        const echec = [dossierRes, messageRes, eligRes, natRes].find(r => r.error)
+        setErreur(echec?.error ? `Liste incomplète : ${echec.error.message}` : null)
 
         const seenEmails = new Set<string>()
 
@@ -197,7 +200,8 @@ export default function AgentClientsPage() {
             supabase.from('documents_financiers').select('id, client_email, total, currency, type, status'),
             // `paiements_manuels` n'a pas d'e-mail : il se rattache par sa facture.
             supabase.from('paiements_manuels').select('document_id, montant'),
-            supabase.from('appointments').select('client_email, date'),
+            // Les RDV réels vivent dans `rdv_requests` (table `appointments` vide, abandonnée).
+            supabase.from('rdv_requests').select('client_email, date'),
         ])
 
         const countsByEmail = new Map<string, { dossiers: number; factures: number; paid: number; appts: number; lastActivity: number }>()
@@ -275,11 +279,12 @@ export default function AgentClientsPage() {
         setDetailLoading(true)
         const email = client.email
         const [dossiersRes, financRes, paiementsRes, apptsRes] = await Promise.all([
-            supabase.from('dossier_tracking').select('id, service, statut, created_at').eq('email', email).order('created_at', { ascending: false }),
-            supabase.from('documents_financiers').select('id, numero, type, total, currency, status, created_at').eq('client_email', email).order('created_at', { ascending: false }),
+            // ilike sans joker = égalité insensible à la casse (emails saisis en majuscules)
+            supabase.from('dossier_tracking').select('id, service, statut, created_at').or(`email.ilike.${email},client_email.ilike.${email}`).order('created_at', { ascending: false }),
+            supabase.from('documents_financiers').select('id, numero, type, total, currency, status, created_at').ilike('client_email', email).order('created_at', { ascending: false }),
             // Colonnes réelles (type, reference, notes) ; rattachement par la facture ci-dessous.
             supabase.from('paiements_manuels').select('id, document_id, montant, type, reference, notes, created_at').order('created_at', { ascending: false }),
-            supabase.from('appointments').select('id, date, type, status').eq('client_email', email).order('date', { ascending: false }),
+            supabase.from('rdv_requests').select('id, date, type, statut').ilike('client_email', email).order('date', { ascending: false }),
         ])
         const factures = (financRes.data || []) as ClientDetailData['factures']
         const idsFactures = new Set(factures.map(f => f.id))
@@ -298,7 +303,8 @@ export default function AgentClientsPage() {
             dossiers: (dossiersRes.data || []) as ClientDetailData['dossiers'],
             factures,
             paiements,
-            appointments: (apptsRes.data || []) as ClientDetailData['appointments'],
+            appointments: ((apptsRes.data || []) as { id: string; date: string; type: string; statut: string }[])
+                .map(r => ({ id: r.id, date: r.date, type: r.type, status: r.statut })),
             totalPaid,
             totalInvoiced,
         })
@@ -328,12 +334,24 @@ export default function AgentClientsPage() {
         // Route update to correct table
         let resultat: { error: { message: string } | null } = { error: null }
         if (selectedClient.source === 'dossier') {
-            resultat = await supabase.from('dossier_tracking').update({ ...updateData, statut: editStatus }).eq('id', selectedClient.id)
+            const statut = normaliserStatutDossier(editStatus) as DossierStatut
+            resultat = await supabase.from('dossier_tracking').update({
+                ...updateData, statut,
+                // Même progression que le kanban (sinon la barre du client restait figée)
+                ...(statut in DOSSIER_PROGRESSION ? { progression: DOSSIER_PROGRESSION[statut] } : {}),
+                updated_at: new Date().toISOString(),
+            }).eq('id', selectedClient.id)
         } else if (selectedClient.source === 'message') {
             resultat = await supabase.from('messages').update({ nom: editNom, prenom: editPrenom, email: editEmail, telephone: editTelephone }).eq('id', selectedClient.id)
         } else if (selectedClient.source === 'nationalite') {
             // `telephone` : la colonne `phone` n'existe pas, et TOUTE la mise à jour échouait.
-            resultat = await supabase.from('nationality_applications').update({ nom: editNom, prenom: editPrenom, email: editEmail, telephone: editTelephone, status: editStatus }).eq('id', selectedClient.id)
+            // decision_date posée à l'approbation / au rejet, comme côté admin.
+            const decision = NATIONALITE_DECISIONS.includes(editStatus as NationaliteStatut)
+            const statutChange = editStatus !== selectedClient.status
+            resultat = await supabase.from('nationality_applications').update({
+                nom: editNom, prenom: editPrenom, email: editEmail, telephone: editTelephone, status: editStatus,
+                ...(statutChange && decision ? { decision_date: new Date().toISOString() } : {}),
+            }).eq('id', selectedClient.id)
         }
         if (resultat.error) {
             setSaving(false)
@@ -484,6 +502,7 @@ export default function AgentClientsPage() {
                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em]">CRM</span>
                     </div>
                     <h1 className="text-2xl font-black text-white">Clients</h1>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                     <p className="text-gray-500 text-sm mt-1">
                         {clients.length} client(s) : <span className="text-emerald-400 font-bold">{activeMembersCount} actifs</span>
                         {totalRevenue > 0 && <> : <span className="text-amber-400 font-bold">{totalRevenue.toLocaleString('fr-FR')} XOF encaissés</span></>}
@@ -674,20 +693,15 @@ export default function AgentClientsPage() {
                                         <select value={editStatus} onChange={e => setEditStatus(e.target.value)} title="Statut" className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-emerald-500/50">
                                             {selectedClient.source === 'dossier' ? (
                                                 <>
-                                                    <option value="reception">Réception</option>
-                                                    <option value="verification">Vérification</option>
-                                                    <option value="traitement">Traitement</option>
-                                                    <option value="validation">Validation</option>
-                                                    <option value="finalisation">Finalisation</option>
-                                                    <option value="termine">Terminé</option>
-                                                    <option value="annule">Annulé</option>
+                                                    {DOSSIER_STATUTS.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <option value="soumis">Soumis</option>
-                                                    <option value="en_examen">En examen</option>
-                                                    <option value="approuvé">Approuvé</option>
-                                                    <option value="rejeté">Rejeté</option>
+                                                    {/* Statut actuel hors liste éditable (brouillon, revue MyAfro) : conservé tel quel */}
+                                                    {!NATIONALITE_STATUTS_EDITABLES.includes(editStatus as NationaliteStatut) && (
+                                                        <option value={editStatus}>{statusConfig[editStatus]?.label || editStatus}</option>
+                                                    )}
+                                                    {NATIONALITE_STATUTS_EDITABLES.map(v => <option key={v} value={v}>{statusConfig[v]?.label || v}</option>)}
                                                 </>
                                             )}
                                         </select>

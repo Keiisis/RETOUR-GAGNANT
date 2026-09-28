@@ -92,7 +92,7 @@ export async function livrerRecap(
            envoyé. */
         const { data: pieces } = await supabase
             .from('client_documents')
-            .select('nom_fichier, created_at')
+            .select('file_name, created_at') // colonne réelle (nom_fichier n'existe pas : liste toujours vide)
             .eq('recap_id', recap.id)
             .order('created_at', { ascending: true })
             .limit(30)

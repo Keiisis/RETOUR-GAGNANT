@@ -33,6 +33,9 @@ export default function PatrimonioList() {
 
     const { mutate: deleteItem } = useDelete();
     const { mutate: updateItem } = useUpdate();
+    // Aucun notificationProvider Refine : sans onError, un échec était muet.
+    const echec = (quoi: string) => (err: unknown) =>
+        alert(`${quoi} : ${(err as { message?: string })?.message || 'erreur'}`);
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryFilter, setCategoryFilter] = useState('all');
 
@@ -151,7 +154,7 @@ export default function PatrimonioList() {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (confirm("Défendre cette archive ou la supprimer ?")) deleteItem({ resource: "patrimoine", id: item.id });
+                                                    if (confirm("Supprimer définitivement cette archive ?")) deleteItem({ resource: "patrimoine", id: item.id }, { onError: echec("Suppression impossible") });
                                                 }}
                                                 className="w-12 h-12 bg-red-500/20 backdrop-blur-xl border border-red-500/20 rounded-2xl flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"
                                                 title="Supprimer cette archive"
