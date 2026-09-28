@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 // Client navigateur AVEC la session de l'équipe (cookies) : un client anonyme
 // sans session ne lira plus rien une fois documents_financiers verrouillée.
 import { supabase } from '@/lib/supabase'
+import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
+import { DOC_FIN_EN_ATTENTE } from '@/lib/constants/statuts'
 
 interface MonthlyMetric {
     month: string
@@ -41,6 +43,9 @@ export const FinancialAnalytics = () => {
         setLoading(true)
         try {
             const now = new Date()
+            // Taux réels AVANT agrégation : les cartes affichent des FCFA, or des
+            // factures USD/EUR payées existent (avant : additionnées telles quelles).
+            await loadExchangeRates()
 
             // ── Charger les 6 derniers mois ──
             const monthsData: MonthlyMetric[] = []
@@ -54,15 +59,16 @@ export const FinancialAnalytics = () => {
 
                 const { data: docs } = await supabase
                     .from('documents_financiers')
-                    .select('type, status, total')
+                    .select('type, status, total, currency')
                     .gte('created_at', startDate)
                     .lt('created_at', endDate)
 
                 const monthDocs = docs || []
                 const factures = monthDocs.filter(d => d.type === 'facture')
                 const devisList = monthDocs.filter(d => d.type === 'devis')
-                const ca = factures.filter(d => d.status === 'paye').reduce((s, d) => s + (d.total || 0), 0)
-                const impaye = factures.filter(d => ['accepte', 'envoye'].includes(d.status)).reduce((s, d) => s + (d.total || 0), 0)
+                const ca = factures.filter(d => d.status === 'paye').reduce((s, d) => s + toXOF(d.total || 0, d.currency), 0)
+                // Impayés = référence unique (inclut `en_retard`, oublié avant).
+                const impaye = factures.filter(d => (DOC_FIN_EN_ATTENTE as string[]).includes(d.status)).reduce((s, d) => s + toXOF(d.total || 0, d.currency), 0)
 
                 monthsData.push({
                     month: startDate.slice(0, 7),
@@ -94,19 +100,20 @@ export const FinancialAnalytics = () => {
                     .lt('created_at', cmEnd)
 
                 const totalDevis = (devisData || []).length
-                const accepted = (devisData || []).filter(d => d.status === 'accepte').length
+                // Un devis signé puis réglé passe à `paye` : il reste converti.
+                const accepted = (devisData || []).filter(d => d.status === 'accepte' || d.status === 'paye').length
                 setConversionRate(totalDevis > 0 ? Math.round((accepted / totalDevis) * 100) : 0)
             }
 
             // Total docs du mois
             setTotalDocs((thisMonth?.factures || 0) + (thisMonth?.devis || 0))
 
-            // ── Alertes impayés critiques (>30 jours) ──
+            // ── Alertes impayés critiques (> 14 jours, seuil réellement appliqué) ──
             const { data: overdueData } = await supabase
                 .from('documents_financiers')
                 .select('id, numero, client_nom, total, currency, created_at, status')
                 .eq('type', 'facture')
-                .in('status', ['accepte', 'envoye'])
+                .in('status', DOC_FIN_EN_ATTENTE)
                 .order('created_at', { ascending: true })
                 .limit(10)
 

@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
+import { motifEmailExact } from '@/lib/email-motif'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -34,8 +35,11 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(20)
 
-    if (q) {
-        const motif = `%${q}%`
+    // Séparateurs PostgREST (`,` `(` `)`) et jokers retirés : sinon la saisie
+    // pouvait ajouter ses propres filtres à la requête `.or()`.
+    const propre = q.replace(/[,()%*\\"]/g, ' ').trim().slice(0, 60)
+    if (propre) {
+        const motif = `%${propre}%`
         req = req.or(`nom.ilike.${motif},prenom.ilike.${motif},email.ilike.${motif}`)
     }
 
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
             )
         }
         const { data: cp } = await supabase
-            .from('client_profiles').select('id').ilike('email', email).maybeSingle()
+            .from('client_profiles').select('id').ilike('email', motifEmailExact(email) ?? '\u0000').maybeSingle()
         if (!cp) {
             return NextResponse.json(
                 { error: `Aucun compte ne correspond à ${email}. Choisissez un client dans la liste.` },

@@ -398,7 +398,7 @@ export default function MyafroRepriseSection() {
                                 <button onClick={generateLink} disabled={lienEnCours} className="w-full py-2.5 rounded-xl bg-sky-500/15 border border-sky-500/25 text-sky-400 hover:bg-sky-500/25 font-black text-sm flex items-center justify-center gap-2 disabled:opacity-60">{lienEnCours ? <Loader2 size={15} className="animate-spin" /> : <Link2 size={15} />} Générer un lien{linkPaid ? ' (déjà payé)' : ''}</button>
                             )}
                             {lienErreur && (
-                                <p className="mt-3 flex items-start gap-1.5 text-[11px] text-amber-300"><WarningCircle size={13} className="shrink-0 mt-0.5" /> {lienErreur}</p>
+                                <p className="mt-3 flex items-start gap-1.5 text-[11px] text-amber-300 [[data-theme=light]_&]:text-amber-700"><WarningCircle size={13} className="shrink-0 mt-0.5" /> {lienErreur}</p>
                             )}
                         </div>
                     </div>
@@ -459,7 +459,7 @@ export default function MyafroRepriseSection() {
                                                         <button
                                                             onClick={generateAiRecap}
                                                             disabled={aiRecapLoading}
-                                                            className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                                                            className="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 hover:bg-emerald-500/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
                                                         >
                                                             {aiRecapLoading ? <Loader2 size={12} className="animate-spin" /> : <ShieldCheck size={12} />}
                                                             {aiRecapLoading ? 'Analyse en cours…' : (aiRecap ? 'Actualiser le récap IA' : 'Générer le récap IA')}
@@ -520,7 +520,7 @@ export default function MyafroRepriseSection() {
                                                     {a.recherche_ancestrale_paid ? (
                                                         <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 font-black">Recherche Ancestrale Payée</span>
                                                     ) : a.needs_recherche_ancestrale ? (
-                                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-bold">Relancé (Recherche)</span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 [[data-theme=light]_&]:text-purple-700 font-bold">Relancé (Recherche)</span>
                                                     ) : null}
                                                 </div>
                                             </div>

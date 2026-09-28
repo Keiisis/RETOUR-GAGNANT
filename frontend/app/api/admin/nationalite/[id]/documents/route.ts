@@ -91,7 +91,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     if (mutated) {
-        await supabase.from('nationality_applications').update({ documents_uploaded: lines }).eq('id', id)
+        // Le fichier a déjà été renommé dans le stockage : si la base n'est pas
+        // mise à jour, la ligne pointe vers un chemin qui n'existe plus.
+        const { error: majErr } = await supabase.from('nationality_applications').update({ documents_uploaded: lines }).eq('id', id)
+        if (majErr) console.error('[nationalite/documents GET] réparation .bin non enregistrée :', majErr.message)
     }
 
     return NextResponse.json({ documents: docs })
@@ -124,8 +127,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     })
     if (!replaced) return NextResponse.json({ error: 'Pièce introuvable' }, { status: 404 })
 
+    // Base d'abord, stockage ensuite : l'ancien ordre supprimait le fichier
+    // puis ignorait l'échec de l'écriture — la pièce pointait vers un fichier
+    // effacé et la réponse annonçait un succès.
+    const { error: majErr } = await supabase.from('nationality_applications').update({ documents_uploaded: updated }).eq('id', id)
+    if (majErr) return NextResponse.json({ error: majErr.message }, { status: 500 })
     await supabase.storage.from(BUCKET).remove([oldPath]).catch(() => {})
-    await supabase.from('nationality_applications').update({ documents_uploaded: updated }).eq('id', id)
     return NextResponse.json({ success: true })
 }
 
@@ -145,8 +152,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const lines = Array.isArray(app.documents_uploaded) ? (app.documents_uploaded as string[]) : []
     const kept = lines.filter(l => !l.includes(path))
+    // Base d'abord : un échec ne doit pas laisser une ligne vers un fichier effacé.
+    const { error: majErr } = await supabase.from('nationality_applications').update({ documents_uploaded: kept }).eq('id', id)
+    if (majErr) return NextResponse.json({ error: majErr.message }, { status: 500 })
     await supabase.storage.from(BUCKET).remove([path]).catch(() => {})
-    await supabase.from('nationality_applications').update({ documents_uploaded: kept }).eq('id', id)
 
     return NextResponse.json({ success: true, removed: lines.length - kept.length })
 }

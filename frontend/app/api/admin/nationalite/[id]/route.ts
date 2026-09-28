@@ -74,11 +74,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         const lu = lireLigneDocument(line)
         if (lu?.ok) paths.push(lu.path)
     }
+    // Ligne d'abord, fichiers ensuite : si la suppression en base échoue
+    // (clé étrangère, facture liée…), les pièces du dossier restent intactes.
+    // L'ordre inverse effaçait les fichiers d'un dossier qui, lui, survivait.
+    const { error } = await supabase.from('nationality_applications').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
     if (paths.length) {
         await supabase.storage.from('nationality_documents').remove(paths).catch(() => {})
     }
-
-    const { error } = await supabase.from('nationality_applications').delete().eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, filesRemoved: paths.length })
 }

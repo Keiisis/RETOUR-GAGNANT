@@ -49,9 +49,14 @@ export default function AdminSponsorsPage() {
     const fetchSponsors = useCallback(() => {
         setLoading(true)
         fetch('/api/sponsors?admin=true')
-            .then(r => r.json())
+            .then(async r => {
+                const d = await r.json().catch(() => ({}))
+                // Une erreur serveur affichait « Aucun sponsor » au lieu de l'erreur.
+                if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`)
+                return d
+            })
             .then(d => setSponsors(d.sponsors || []))
-            .catch(() => showToast('error', 'Impossible de charger les sponsors'))
+            .catch((e) => showToast('error', `Impossible de charger les sponsors : ${e instanceof Error ? e.message : ''}`))
             .finally(() => setLoading(false))
     }, [])
 
@@ -105,34 +110,55 @@ export default function AdminSponsorsPage() {
         if (!confirm(`Supprimer "${name}" ?`)) return
         try {
             const res = await fetch(`/api/sponsors/${id}`, { method: 'DELETE' })
-            if (!res.ok) throw new Error('Erreur suppression')
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
             showToast('success', 'Sponsor supprimé')
             fetchSponsors()
-        } catch {
-            showToast('error', 'Erreur lors de la suppression')
+        } catch (e) {
+            showToast('error', `Suppression impossible : ${e instanceof Error ? e.message : 'erreur'}`)
         }
     }
 
     const toggleActive = async (s: Sponsor) => {
         try {
-            await fetch(`/api/sponsors/${s.id}`, {
+            const res = await fetch(`/api/sponsors/${s.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ is_active: !s.is_active }),
             })
-            fetchSponsors()
-        } catch { /* */ }
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+            showToast('success', s.is_active ? 'Sponsor masqué' : 'Sponsor affiché')
+        } catch (e) {
+            showToast('error', `Statut non modifié : ${e instanceof Error ? e.message : 'erreur'}`)
+        }
+        fetchSponsors()
     }
 
+    /* Échange avec le voisin puis renumérotation 0..n-1. Avant : ±1 sur un seul
+       sponsor ; tous créés à sort_order 0, « monter » ne bougeait rien et
+       « descendre » envoyait le sponsor en fin de liste. */
     const moveOrder = async (s: Sponsor, direction: 'up' | 'down') => {
-        const newOrder = direction === 'up'
-            ? Math.max(0, s.sort_order - 1)
-            : s.sort_order + 1
-        await fetch(`/api/sponsors/${s.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sort_order: newOrder }),
-        })
+        const idx = sponsors.findIndex(x => x.id === s.id)
+        const cible = direction === 'up' ? idx - 1 : idx + 1
+        if (idx < 0 || cible < 0 || cible >= sponsors.length) return
+        const ordre = [...sponsors]
+        ;[ordre[idx], ordre[cible]] = [ordre[cible], ordre[idx]]
+        const aEcrire = ordre.map((x, i) => ({ x, i })).filter(({ x, i }) => x.sort_order !== i)
+        try {
+            const reponses = await Promise.all(aEcrire.map(({ x, i }) => fetch(`/api/sponsors/${x.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sort_order: i }),
+            })))
+            const ko = reponses.find(r => !r.ok)
+            if (ko) {
+                const data = await ko.json().catch(() => ({}))
+                throw new Error(data.error || `HTTP ${ko.status}`)
+            }
+        } catch (e) {
+            showToast('error', `Ordre non enregistré : ${e instanceof Error ? e.message : 'erreur'}`)
+        }
         fetchSponsors()
     }
 

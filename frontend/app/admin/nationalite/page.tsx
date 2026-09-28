@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 import RattacherFacture from '@/components/admin/RattacherFacture'
 import { formatMontant } from '@/lib/currency-format'
+import { statutNationalite, nationalitePayee, NATIONALITE_STATUTS_EDITABLES, NATIONALITE_DECISIONS } from '@/lib/constants/statuts'
 
 interface Application {
     id: string; application_ref: string; status: string
@@ -67,20 +68,24 @@ function ChampCreation({
 // `color` = pastille de statut (badge). `solid` = bouton d'action plein, à fort
 // contraste, lisible en thème clair ET sombre (l'ancien bg-X/20 + text-X-400
 // était illisible sur fond clair).
-const statusMap: Record<string, { label: string; color: string; solid: string }> = {
-    brouillon: { label: 'Brouillon', color: 'bg-gray-500/20 text-gray-400', solid: 'bg-slate-500 hover:bg-slate-600 text-white' },
-    soumis: { label: 'Soumis', color: 'bg-blue-500/20 text-blue-400', solid: 'bg-blue-600 hover:bg-blue-700 text-white' },
-    en_traitement: { label: 'En traitement', color: 'bg-amber-500/20 text-amber-400', solid: 'bg-amber-500 hover:bg-amber-600 text-white' },
-    verification: { label: 'Vérification', color: 'bg-purple-500/20 text-purple-400', solid: 'bg-purple-600 hover:bg-purple-700 text-white' },
-    approuve: { label: 'Approuvé', color: 'bg-emerald-500/20 text-emerald-400', solid: 'bg-emerald-600 hover:bg-emerald-700 text-white' },
-    rejete: { label: 'Rejeté', color: 'bg-red-500/20 text-red-400', solid: 'bg-red-600 hover:bg-red-700 text-white' },
+// Libellés/pastilles : référence unique lib/constants/statuts. `solid` reste
+// local (boutons d'action pleins, lisibles en thème clair ET sombre).
+const SOLID: Record<string, string> = {
+    brouillon: 'bg-slate-500 hover:bg-slate-600 text-white',
+    soumis: 'bg-blue-600 hover:bg-blue-700 text-white',
+    en_traitement: 'bg-amber-500 hover:bg-amber-600 text-white',
+    verification: 'bg-purple-600 hover:bg-purple-700 text-white',
+    approuve: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    rejete: 'bg-red-600 hover:bg-red-700 text-white',
+}
+// Avant : un statut hors liste (revue_myafro, valeur inattendue) s'affichait « Soumis ».
+const statut = (v?: string | null) => {
+    const d = statutNationalite(v)
+    return { label: d.label, color: d.badge, solid: SOLID[d.value] || 'bg-slate-500 hover:bg-slate-600 text-white' }
 }
 
-// Statut de paiement « payé » (tolère les variantes accents/webhooks).
-const isPaidStatus = (s?: string | null) => {
-    const v = String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok'].includes(v)
-}
+// Statut de paiement « payé » : référence unique (tolère accents/webhooks).
+const isPaidStatus = nationalitePayee
 
 /* Un dossier ouvert par code d'invitation (ou réglé « manuel » sans pièce) est
    marqué payé pour que le client avance — mais AUCUNE facture n'a été émise.
@@ -108,8 +113,11 @@ export default function AdminNationalitePage() {
         // jusqu'à leur approbation (qui les bascule en statut 'soumis').
         if (filter !== 'all') q = q.eq('status', filter)
         else q = q.neq('status', 'revue_myafro')
-        if (search) q = q.or(`nom.ilike.%${search}%,prenom.ilike.%${search}%,email.ilike.%${search}%,application_ref.ilike.%${search}%`)
-        const { data } = await q
+        // Virgule/parenthèses cassent la syntaxe du filtre .or() PostgREST (liste vide, sans message).
+        const s = search.replace(/[,()%*]/g, ' ').trim()
+        if (s) q = q.or(`nom.ilike.%${s}%,prenom.ilike.%${s}%,email.ilike.%${s}%,application_ref.ilike.%${s}%`)
+        const { data, error } = await q
+        if (error) alert(`Chargement des dossiers impossible : ${error.message}`)
         const liste = (data || []) as Application[]
         setApps(liste)
         setLoading(false)
@@ -152,7 +160,12 @@ export default function AdminNationalitePage() {
     useEffect(() => { fetchApps() }, [filter, search])
 
     const updateStatus = async (id: string, status: string) => {
-        await supabase.from('nationality_applications').update({ status, decision_date: status === 'approuve' || status === 'rejete' ? new Date().toISOString() : null }).eq('id', id)
+        // .select('id') : sous RLS un refus touche 0 ligne sans lever d'erreur ;
+        // le sélecteur affichait alors le nouveau statut alors que rien n'était écrit.
+        const { data, error } = await supabase.from('nationality_applications')
+            .update({ status, decision_date: (NATIONALITE_DECISIONS as string[]).includes(status) ? new Date().toISOString() : null })
+            .eq('id', id).select('id')
+        if (error || !data?.length) alert(`Statut non enregistré : ${error?.message || 'aucune ligne mise à jour (droits insuffisants ?)'}`)
         fetchApps()
     }
 
@@ -395,7 +408,9 @@ export default function AdminNationalitePage() {
             const { error } = await supabase.from('nationality_applications')
                 .update({ recherche_ancestrale_payee: next, recherche_ancestrale_montant: montant, recherche_ancestrale_devise: devise })
                 .eq('id', a.id)
-            if (error) { alert('Champs indisponibles : exécutez les migrations 20260804_recherche_ancestrale_payee.sql et 20260804b_recherche_ancestrale_montant.sql'); return }
+            // Les colonnes existent en base (vérifié) : l'ancien message « exécutez les
+            // migrations » masquait la vraie cause (droits, contrainte…).
+            if (error) { alert(`Recherche ancestrale non enregistrée : ${error.message}`); return }
             setApps(prev => prev.map(x => x.id === a.id ? { ...x, recherche_ancestrale_payee: next, recherche_ancestrale_montant: montant, recherche_ancestrale_devise: devise } : x))
         } finally { setAncestralBusy(null) }
     }
@@ -851,7 +866,7 @@ export default function AdminNationalitePage() {
                             le remplisse à sa place. */}
                         <button
                             onClick={() => { setInvitationsOuvert(true); chargerInvitations() }}
-                            className="text-xs font-bold text-amber-300 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/25 flex items-center gap-2 hover:bg-amber-500/20 transition-all"
+                            className="text-xs font-bold text-amber-300 [[data-theme=light]_&]:text-amber-700 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/25 flex items-center gap-2 hover:bg-amber-500/20 transition-all"
                         >
                             <Copy size={14} /> <T>Code d&apos;invitation</T>
                         </button>
@@ -866,9 +881,9 @@ export default function AdminNationalitePage() {
 
                 {/* Filters */}
                 <div className="flex flex-wrap gap-2 mb-6">
-                    {['all', 'soumis', 'en_traitement', 'verification', 'approuve', 'rejete'].map(f => (
+                    {['all', ...NATIONALITE_STATUTS_EDITABLES].map(f => (
                         <button key={f} onClick={() => setFilter(f)} className={`text-xs font-bold px-4 py-2 rounded-xl transition-all ${filter === f ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-gray-500 border border-white/5 hover:text-white'}`}>
-                            {f === 'all' ? 'Toutes' : statusMap[f]?.label}
+                            {f === 'all' ? 'Toutes' : statut(f).label}
                         </button>
                     ))}
                     <div className="relative ml-auto"><Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder={t("Rechercher...")} className="bg-white/5 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-white text-xs focus:outline-none w-48" /></div>
@@ -889,7 +904,7 @@ export default function AdminNationalitePage() {
                     if (!justifsCharges || (n === 0 && !seulementAJustifier)) return null
                     return (
                         <div className="mb-6 flex items-center justify-between gap-3 flex-wrap rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                            <p className="text-xs text-amber-300">
+                            <p className="text-xs text-amber-300 [[data-theme=light]_&]:text-amber-700">
                                 <strong className="font-black">{n}</strong>{' '}
                                 {n > 1 ? <T>dossiers ouverts par code d’invitation (ou saisis sans pièce) n’ont aucune facture : leur paiement reste à justifier et n’est pas compté comme encaissé.</T>
                                     : <T>dossier ouvert par code d’invitation (ou saisi sans pièce) n’a aucune facture : son paiement reste à justifier et n’est pas compté comme encaissé.</T>}
@@ -906,7 +921,7 @@ export default function AdminNationalitePage() {
 
                 {loading ? <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div> : apps.length === 0 ? <div className="text-center py-20 text-gray-500"><Globe2 className="mx-auto mb-3 text-gray-700" size={40} /><p className="text-sm"><T>Aucune demande</T></p></div> : (
                     <div className="space-y-3">{apps.filter(a => !seulementAJustifier || justificatif(a) === false).map((a, i) => {
-                        const st = statusMap[a.status] || statusMap.soumis
+                        const st = statut(a.status)
                         const isOpen = expanded === a.id
                         const justif = justificatif(a)
                         return (
@@ -1119,8 +1134,8 @@ export default function AdminNationalitePage() {
                                                         ? <><Check size={13} /> <T>Relance envoyée</T></>
                                                         : <><Mail size={13} /> <T>Relancer (dossier complet)</T></>}
                                             </button>
-                                            {['soumis', 'en_traitement', 'verification', 'approuve', 'rejete'].filter(s => s !== a.status).map(s => (
-                                                <button key={s} onClick={() => updateStatus(a.id, s)} className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors ${statusMap[s]?.solid}`}>{statusMap[s]?.label}</button>
+                                            {NATIONALITE_STATUTS_EDITABLES.filter(s => s !== a.status).map(s => (
+                                                <button key={s} onClick={() => updateStatus(a.id, s)} className={`text-[11px] font-bold px-3 py-1.5 rounded-lg transition-colors ${statut(s).solid}`}>{statut(s).label}</button>
                                             ))}
                                             <button onClick={() => deleteApp(a)} disabled={deletingId === a.id} className="ml-auto bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 disabled:opacity-50">
                                                 {deletingId === a.id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />} <T>Supprimer</T>

@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { generateSerial, generateSignToken, auditEntry } from '@/lib/contracts'
+import { generateSerial, generateSignToken, auditEntry, nomActeur } from '@/lib/contracts'
 import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -38,13 +38,14 @@ export async function POST(request: NextRequest) {
         const body = await request.json()
         const { client_nom, client_email, title, content, amount, currency, expires_at, actor } = body
 
-        if (!client_nom?.trim() || !client_email?.trim() || !title?.trim() || !content?.trim()) {
+        if ([client_nom, client_email, title, content].some(v => typeof v !== 'string')
+            || !client_nom.trim() || !client_email.trim() || !title.trim() || !content.trim()) {
             return NextResponse.json({ error: 'Nom, email, titre et contenu sont requis.' }, { status: 400 })
         }
 
         const supabase = createClient(supabaseUrl, serviceKey)
         const serial = await generateSerial(supabase)
-        const actorName = String(actor || 'Admin').slice(0, 80)
+        const actorName = await nomActeur(supabase, garde.userId, actor)
 
         const { data, error } = await supabase.from('contracts').insert({
             serial,

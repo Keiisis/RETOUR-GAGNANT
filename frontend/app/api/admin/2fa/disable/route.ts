@@ -47,7 +47,10 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: 'Code incorrect' }, { status: 401 })
     }
 
-    await supabase.from('totp_secrets').delete().eq('user_id', userId)
+    // Erreur vérifiée : sinon « désactivée » était annoncé alors que le secret
+    // restait en base (2FA toujours exigée à la connexion suivante).
+    const { error: delErr } = await supabase.from('totp_secrets').delete().eq('user_id', userId)
+    if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 })
 
     const res = NextResponse.json({ success: true })
     res.cookies.delete('totp_verified')

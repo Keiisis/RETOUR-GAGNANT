@@ -7,7 +7,7 @@ import { expenseCategoryLabel } from '@/lib/constants/compta'
 
 interface RawDoc { id: string; numero?: string | null; type: string; status: string; total: number; total_tva?: number | null; sous_total?: number | null; remise?: number | null; currency?: string | null; created_at: string; client_nom?: string | null; client_prenom?: string | null }
 interface RawPaie { id: string; document_id?: string | null; montant: number; date_paiement: string; type?: string | null; reference?: string | null }
-interface RawDep { id: string; titre?: string | null; categorie?: string | null; montant: number; date_depense: string }
+interface RawDep { id: string; titre?: string | null; categorie?: string | null; montant: number; devise?: string | null; date_depense: string }
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -58,13 +58,22 @@ export async function GET(request: NextRequest) {
             .select('id, document_id, montant, date_paiement, type, reference')
             .gte('date_paiement', startDay).lt('date_paiement', endDay),
         supabase.from('depenses')
-            .select('id, titre, categorie, montant, date_depense')
+            .select('id, titre, categorie, montant, devise, date_depense')
             .gte('date_depense', startDay).lt('date_depense', endDay),
         supabase.from('currencies').select('code, exchange_rate_to_base, is_base'),
     ])
 
-    // Carte de taux XOF par unité (table currencies = source de vérité)
-    const rates: Record<string, number> = { XOF: 1 }
+    // Une lecture ratée produisait un FEC vide mais « équilibré » : export
+    // trompeur transmis à l'expert-comptable. On refuse.
+    const erreurLecture = docsRes.error || paiemRes.error || depRes.error
+    if (erreurLecture) {
+        return NextResponse.json({ error: `Lecture comptable impossible : ${erreurLecture.message}` }, { status: 500 })
+    }
+
+    // Carte de taux XOF par unité (table currencies = source de vérité).
+    // EUR : parité FIXE BCEAO en repli — sans elle, une table currencies
+    // incomplète comptait 1 € pour 1 FCFA.
+    const rates: Record<string, number> = { XOF: 1, EUR: 655.957 }
     for (const c of curRes.data || []) {
         const r = c.is_base ? 1 : Number(c.exchange_rate_to_base)
         if (c.code && isFinite(r) && r > 0) rates[String(c.code).toUpperCase()] = r
@@ -153,7 +162,7 @@ async function buildFecWorkbook(
     // Total encaissé = somme des encaissements réellement enregistrés
     // (= total de la feuille « Encaissements », donc cohérent avec elle)
     const totalEncaisse = paiements.reduce((a, p) => a + toXof(Number(p.montant) || 0, 'XOF'), 0)
-    const totalDepenses = depenses.reduce((a, d) => a + (Number(d.montant) || 0), 0)
+    const totalDepenses = depenses.reduce((a, d) => a + toXof(Number(d.montant) || 0, d.devise), 0) // dépenses multi-devises
     const resultat = totalEncaisse - totalDepenses
 
     /* ── Feuille 1 : Synthèse ── */
@@ -272,7 +281,7 @@ async function buildFecWorkbook(
     /* ── Feuille 4 : Dépenses (sorties) ── */
     simpleSheet('Dépenses',
         [{ h: 'Date', w: 12 }, { h: 'Fournisseur / Libellé', w: 34 }, { h: 'Catégorie', w: 22 }, { h: 'Montant (FCFA)', w: 16, num: true }],
-        depenses.map(e => [fmtIsoDate(e.date_depense), e.titre || '-', expenseCategoryLabel(e.categorie || 'autre'), Number(e.montant) || 0]), 3)
+        depenses.map(e => [fmtIsoDate(e.date_depense), e.titre || '-', expenseCategoryLabel(e.categorie || 'autre'), toXof(Number(e.montant) || 0, e.devise)]), 3)
 
     /* ── Feuille 5 : Écritures (partie double : expert-comptable) ── */
     const ws = wb.addWorksheet('Écritures (partie double)', { views: [{ state: 'frozen', ySplit: 1 }] })

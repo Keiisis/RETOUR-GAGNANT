@@ -17,7 +17,9 @@ export default function GalleryCreate() {
     const { onFinish, formLoading } = useForm<GalleryItem>({
         resource: "gallery",
         redirect: "list",
-        action: "create"
+        action: "create",
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     });
 
     const [formData, setFormData] = useState<Partial<GalleryItem>>({

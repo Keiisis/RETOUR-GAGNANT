@@ -63,7 +63,8 @@ export default function AgentPresentationEditor({ params }: { params: Promise<{ 
         setLoading(true)
         const result = await getProposalById(id)
         if (!result.success || !result.proposal) {
-            alert('Proposition introuvable.')
+            // Motif réel (session expirée, refus, panne) plutôt qu'un « introuvable » générique
+            alert(`Proposition non chargée : ${('error' in result && result.error) || 'introuvable'}`)
             router.push('/agent/presentations')
             return
         }

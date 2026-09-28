@@ -139,7 +139,7 @@ export default function CurrencySettingsPage() {
             <div className="bg-[var(--panel-surface)] border border-[var(--panel-border)] rounded-2xl p-6 md:p-8 shadow-xl">
                 <div className="mb-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
                     <Info size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-200">
+                    <div className="text-sm text-blue-200 [[data-theme=light]_&]:text-blue-700">
                         <p className="font-bold mb-1">Comment fonctionnent les devises ?</p>
                         <p className="opacity-80 leading-relaxed">
                             Le <strong>Franc CFA (XOF)</strong> est la devise de référence (base = 1.0).

@@ -59,6 +59,39 @@ function toDepenseIso(input: string): string | null {
     return isNaN(d.getTime()) ? null : d.toISOString()
 }
 
+/* Création d'une dépense (ou d'un salaire, catégorie « salaires »).
+   Auparavant insérée depuis le navigateur : la réserve Comptabilité n'était
+   alors contrôlée que par l'interface. */
+export async function POST(request: NextRequest) {
+    const auth = await verifyApiAuth(request, 'agent')
+    if (!auth.authenticated) return auth.error!
+    { const refus = await accesCompta(auth); if (refus) return refus }
+
+    const body = await request.json().catch(() => ({}))
+    const titre = String(body.titre || '').trim()
+    const categorie = String(body.categorie || 'autre').trim() || 'autre'
+    const montant = Number(body.montant)
+    if (!titre) return NextResponse.json({ error: 'Libellé requis' }, { status: 400 })
+    if (!isFinite(montant) || montant <= 0) return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
+    const iso = body.date_depense ? toDepenseIso(String(body.date_depense)) : new Date().toISOString()
+    if (!iso) return NextResponse.json({ error: 'Date invalide' }, { status: 400 })
+
+    const supabase = createClient(supabaseUrl, serviceKey)
+    if (await isPeriodLocked(supabase, iso)) {
+        return NextResponse.json({ error: 'Période clôturée : enregistrement refusé.' }, { status: 423 })
+    }
+    const ligne = { agent_id: auth.userId, titre, categorie, montant, date_depense: iso }
+    const { data, error } = await supabase.from('depenses').insert(ligne).select('id').single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await logAudit(supabase, {
+        table: 'depenses', recordId: String(data.id), action: 'create',
+        acteur: { userId: auth.userId, role: auth.role },
+        apres: ligne as Record<string, unknown>,
+    })
+    return NextResponse.json({ success: true, id: data.id })
+}
+
 export async function PATCH(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!

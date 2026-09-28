@@ -18,7 +18,9 @@ export default function TestimonialsCreate() {
     const { onFinish, formLoading } = useForm<Testimonial>({
         resource: "testimonials",
         redirect: "list",
-        action: "create"
+        action: "create",
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     });
 
     const [formData, setFormData] = useState<Partial<Testimonial>>({

@@ -40,6 +40,18 @@ export const RGPD_TABLES: RgpdTable[] = [
     { table: 'testimonials',           emailCols: ['email'],                        mode: 'delete',    kind: 'data',     label: 'Avis & témoignages' },
     { table: 'client_classement',      emailCols: ['email'],                        mode: 'delete',    kind: 'data',     label: 'Suivi client (CRM)' },
 
+    // Audit 28/09/2026 : tables réelles portant un e-mail client et absentes
+    // de la cartographie — l'accès RGPD les taisait, l'effacement les ignorait.
+    { table: 'partner_applications',   emailCols: ['email'],                        mode: 'delete',    kind: 'data',     label: 'Candidature partenaire (formulaire)' },
+    { table: 'logement_leads',         emailCols: ['email'],                        mode: 'delete',    kind: 'data',     label: 'Demandes logement' },
+    { table: 'appointments',           emailCols: ['client_email'],                 mode: 'delete',    kind: 'data',     label: 'Rendez-vous' },
+    { table: 'client_notifications',   emailCols: ['client_email'],                 mode: 'delete',    kind: 'data',     label: 'Notifications' },
+    { table: 'email_logs',             emailCols: ['to_email'],                     mode: 'delete',    kind: 'data',     label: 'Journal des e-mails reçus' },
+    { table: 'product_reviews',        emailCols: ['reviewer_email'],               mode: 'delete',    kind: 'data',     label: 'Avis produits' },
+    { table: 'support_sessions',       emailCols: ['email'],                        mode: 'delete',    kind: 'data',     label: 'Sessions d’assistance' },
+    { table: 'voice_messages',         emailCols: ['client_email'],                 mode: 'delete',    kind: 'document', label: 'Messages vocaux' },
+    { table: 'calls',                  emailCols: ['client_email'],                 mode: 'delete',    kind: 'data',     label: 'Appels' },
+
     // ── Comptes & profils : anonymisés (préserve l'intégrité référentielle) ──
     { table: 'client_profiles',        emailCols: ['email', 'client_email'],        mode: 'anonymize', kind: 'data',     label: 'Profil client' },
 
@@ -49,6 +61,14 @@ export const RGPD_TABLES: RgpdTable[] = [
     // ── Obligation légale (comptabilité, ~10 ans) : anonymisation ──
     { table: 'orders',                 emailCols: ['customer_email', 'client_email', 'email'], mode: 'anonymize', kind: 'data',     label: 'Commandes' },
     { table: 'documents_financiers',   emailCols: ['client_email', 'customer_email', 'email'], mode: 'anonymize', kind: 'document', label: 'Pièces comptables' },
+    // Dossiers liés à des paiements / contrats : la ligne reste, l'identité part.
+    { table: 'nationality_applications', emailCols: ['email'],                      mode: 'anonymize', kind: 'document', label: 'Dossiers de nationalité' },
+    { table: 'nationality_requests',   emailCols: ['email'],                        mode: 'anonymize', kind: 'document', label: 'Demandes de nationalité' },
+    { table: 'myafro_recap_requests',  emailCols: ['email'],                        mode: 'anonymize', kind: 'document', label: 'Récaps MyAfroOrigins' },
+    { table: 'contracts',              emailCols: ['client_email'],                 mode: 'anonymize', kind: 'document', label: 'Contrats' },
+    { table: 'ai_client_proposals',    emailCols: ['client_email'],                 mode: 'anonymize', kind: 'data',     label: 'Propositions & liens de paiement' },
+    { table: 'agent_devis',            emailCols: ['client_email'],                 mode: 'anonymize', kind: 'document', label: 'Devis (ancien module)' },
+    { table: 'tourism_itineraries',    emailCols: ['email'],                        mode: 'anonymize', kind: 'data',     label: 'Itinéraires de séjour' },
 ]
 
 // Colonnes PII à neutraliser lors d'une anonymisation.

@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { Authenticated, useLogout, useGetIdentity } from '@refinedev/core'
 import { usePathname, useRouter } from 'next/navigation'
-import { SquaresFour as LayoutDashboard, Gear as Settings, ChatText as MessageSquare, ShieldCheck, SignOut as LogOut, Bell, List as Menu, Globe, Sparkle as Sparkles, User, Question as HelpCircle, ShoppingBag, Receipt, UserGear as UserCog, Tag, Calculator, Envelope as Mail, FileText, Compass, X, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, ChartBar as BarChart3, FileText as FileSignature, FolderOpen, Palette, Calendar, Star, Translate as Languages, Crosshair as Radar, Cube as Box, Coins, Megaphone, Pulse as Activity, StackSimple as Layers, Bank as Landmark, Buildings as Building2, ShieldWarning as ShieldAlert, Key as KeyRound, GitFork, PaperPlaneTilt as Send, MagnifyingGlass as Search, Car, Archive } from '@phosphor-icons/react';
+import { SquaresFour as LayoutDashboard, Gear as Settings, ChatText as MessageSquare, ShieldCheck, SignOut as LogOut, Bell, List as Menu, Globe, Sparkle as Sparkles, User, Question as HelpCircle, ShoppingBag, Receipt, UserGear as UserCog, Tag, Calculator, Envelope as Mail, FileText, Compass, X, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, ChartBar as BarChart3, FileText as FileSignature, FolderOpen, Palette, Calendar, Star, Translate as Languages, Crosshair as Radar, Cube as Box, Coins, Megaphone, Pulse as Activity, StackSimple as Layers, Bank as Landmark, Buildings as Building2, ShieldWarning as ShieldAlert, Key as KeyRound, GitFork, PaperPlaneTilt as Send, MagnifyingGlass as Search, Car, Archive, BookOpen, Handshake, Brain } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
@@ -81,18 +81,22 @@ function AdminLayoutContent({
     const [unreadNotifications, setUnreadNotifications] = useState(0)
     const [relancesDue, setRelancesDue] = useState(0)
     const [rdvEnAttente, setRdvEnAttente] = useState(0)
+    const [unreadPartenaires, setUnreadPartenaires] = useState(0)
 
     useEffect(() => {
         if (isLoginPage) return
 
         // Initial fetch
         const fetchUnread = async () => {
-            const [msgRes, notifRes] = await Promise.all([
+            const [msgRes, notifRes, partRes] = await Promise.all([
                 supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false).neq('type', 'nationality'),
                 supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false).eq('type', 'nationality'),
+                // Candidatures partenaires non lues : même compteur que le panel agent
+                supabase.from('partner_applications').select('id', { count: 'exact', head: true }).eq('is_read', false),
             ])
             setUnreadMessages(msgRes.count || 0)
             setUnreadNotifications(notifRes.count || 0)
+            setUnreadPartenaires(partRes.count || 0)
         }
 
         // RDV en attente de traitement (badge sur « Rendez-vous »)
@@ -123,6 +127,7 @@ function AdminLayoutContent({
         const channel = supabase.channel('admin_layout_badges')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchUnread)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'rdv_requests' }, fetchRdv)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'partner_applications' }, fetchUnread)
             .subscribe()
 
         return () => {
@@ -171,12 +176,20 @@ function AdminLayoutContent({
         { title: 'Coupons', icon: Tag, href: '/admin/coupons' },
         { title: 'Messages', icon: MessageSquare, href: '/admin/messages', badge: unreadMessages },
         { title: 'Notifications', icon: Bell, href: '/admin/notifications', badge: unreadNotifications },
+        /* Candidatures + répertoire partenaires : l'agent a cette entrée (avec
+           badge) depuis longtemps ; l'admin n'y accédait que via « Frontend ». */
+        { title: 'Partenaires', icon: Handshake, href: '/admin/partenaires', badge: unreadPartenaires },
+        /* Blog : même situation (entrée directe côté agent, cachée côté admin). */
+        { title: 'Blog', icon: BookOpen, href: '/admin/blog' },
         { title: 'Community Mgr', icon: Megaphone, href: '/admin/community-manager' },
         { title: 'Traductions', icon: Languages, href: '/admin/traductions' },
         { title: 'Utilisateurs', icon: UserCog, href: '/admin/users' },
         { title: 'Réglages', icon: Settings, href: '/admin/settings' },
         { title: 'Devises (ERP)', icon: Coins, href: '/admin/settings/currency' },
         { title: 'Réglages ERP', icon: ShieldCheck, href: '/admin/settings/erp' },
+        /* Fournisseur/modèle IA (table ai_config) : page finie mais sans
+           aucun lien entrant — ni menu, ni hub Réglages. */
+        { title: 'Config IA', icon: Brain, href: '/admin/settings/ai' },
         { title: 'Sécurité WAF', icon: ShieldAlert, href: '/admin/securite' },
         { title: '2FA : Auth Admin', icon: KeyRound, href: '/admin/settings/2fa' },
         { title: 'Centre RGPD', icon: ShieldCheck, href: '/admin/rgpd' },

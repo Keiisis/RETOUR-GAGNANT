@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
     const docId = (url.searchParams.get('doc') || '').toLowerCase()
     const format = (url.searchParams.get('format') || 'pdf').toLowerCase()
 
-    const doc = RGPD_DOCS[docId]
+    // hasOwn : « constructor » ou « __proto__ » renvoyaient un objet hérité → 500.
+    const doc = Object.prototype.hasOwnProperty.call(RGPD_DOCS, docId) ? RGPD_DOCS[docId] : undefined
     if (!doc) return NextResponse.json({ error: 'Document inconnu' }, { status: 404 })
 
     const safeName = doc.id

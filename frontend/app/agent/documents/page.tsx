@@ -54,6 +54,7 @@ export default function AgentDocumentsPage() {
     const [filterCategory, setFilterCategory] = useState<string | null>(null)
     const [showUpload, setShowUpload] = useState(false)
     const [uploading, setUploading] = useState(false)
+    const [erreur, setErreur] = useState<string | null>(null)
 
     // Upload form
     const [uploadFile, setUploadFile] = useState<globalThis.File | null>(null)
@@ -64,12 +65,14 @@ export default function AgentDocumentsPage() {
 
     const fetchDocs = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
-        const { data } = await supabase
+        // Session absente : fin du chargement + message (spinner infini auparavant)
+        if (!user) { setErreur('Session expirée : reconnectez-vous.'); setLoading(false); return }
+        const { data, error } = await supabase
             .from('agent_documents')
             .select('*')
             .eq('agent_id', user.id)
             .order('created_at', { ascending: false })
+        setErreur(error ? `Chargement impossible : ${error.message}` : null)
         setDocs((data || []) as Document[])
         setLoading(false)
     }, [])
@@ -80,10 +83,17 @@ export default function AgentDocumentsPage() {
         if (!uploadFile) return
         setUploading(true)
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user) { setUploading(false); alert('Session expirée : reconnectez-vous.'); return }
 
-        const ext = uploadFile.name.split('.').pop()
-        const filename = `${user.id}/${Date.now()}_${uploadFile.name}`
+        // Clé de stockage ASCII : Supabase refuse les clés avec accents ou
+        // caractères spéciaux (« Invalid key ») ; le nom d'origine reste
+        // conservé dans original_name.
+        const nomSur = uploadFile.name
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^A-Za-z0-9._-]+/g, '_')
+            .replace(/_+/g, '_')
+            .slice(-120) || 'fichier'
+        const filename = `${user.id}/${Date.now()}_${nomSur}`
 
         // Try Supabase Storage upload
         let fileUrl = ''
@@ -163,6 +173,7 @@ export default function AgentDocumentsPage() {
                     </div>
                     <h1 className="text-2xl font-black text-white">Documents</h1>
                     <p className="text-gray-500 text-sm mt-1">{docs.length} fichier(s)</p>
+                    {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                 </div>
                 <button onClick={() => setShowUpload(true)} className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-500/30 transition-all">
                     <Upload size={16} /> Nouveau Document

@@ -43,6 +43,9 @@ export default function MessageShow() {
 
     const { mutate: deleteItem } = useDelete();
     const { mutate: updateItem } = useUpdate();
+    // Aucun notificationProvider Refine : sans onError, un échec était muet.
+    const echec = (quoi: string) => (err: unknown) =>
+        alert(`${quoi} : ${(err as { message?: string })?.message || 'erreur'}`);
 
     const record = query?.data?.data;
     const isLoading = query?.isLoading;
@@ -237,8 +240,12 @@ export default function MessageShow() {
                     <Button
                         onClick={() => {
                             if (confirm("Archiver definitivement cette liaison ?")) {
-                                deleteItem({ resource: "messages", id: id as string });
-                                list("messages");
+                                // Retour à la liste seulement après suppression effective
+                                // (avant : navigation immédiate, échec invisible).
+                                deleteItem({ resource: "messages", id: id as string }, {
+                                    onSuccess: () => list("messages"),
+                                    onError: echec("Suppression impossible"),
+                                });
                             }
                         }}
                         className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500 hover:text-white transition-all font-bold"
@@ -514,7 +521,7 @@ export default function MessageShow() {
                                 <label className="block text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] mb-4">Statut de la Liaison</label>
                                 <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/5">
                                     <button
-                                        onClick={() => updateItem({ resource: "messages", id: id as string, values: { lu: false } })}
+                                        onClick={() => updateItem({ resource: "messages", id: id as string, values: { lu: false } }, { onError: echec("Statut non modifié") })}
                                         className={cn(
                                             "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                                             !record.lu ? "bg-[#E8112D] text-white shadow-lg" : "text-gray-500 hover:text-white"
@@ -523,7 +530,7 @@ export default function MessageShow() {
                                         NON LU
                                     </button>
                                     <button
-                                        onClick={() => updateItem({ resource: "messages", id: id as string, values: { lu: true } })}
+                                        onClick={() => updateItem({ resource: "messages", id: id as string, values: { lu: true } }, { onError: echec("Statut non modifié") })}
                                         className={cn(
                                             "flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
                                             record.lu ? "bg-[#008751] text-white shadow-lg" : "text-gray-500 hover:text-white"

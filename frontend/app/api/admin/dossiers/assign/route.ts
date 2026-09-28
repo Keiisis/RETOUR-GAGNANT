@@ -64,6 +64,20 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = db()
 
+    // Agent : il ne touche qu'à un dossier LIBRE ou DÉJÀ À LUI. Sans ce
+    // contrôle, « se retirer » (agent_id vide) désassignait le dossier d'un
+    // collègue, et « prendre en charge » le lui retirait.
+    if (!garde.isAdmin) {
+        const { data: actuel, error: errLecture } = await supabase
+            .from('dossier_tracking').select('agent_assigne').eq('id', dossierId).maybeSingle()
+        if (errLecture) return NextResponse.json({ error: errLecture.message }, { status: 500 })
+        if (!actuel) return NextResponse.json({ error: 'Dossier introuvable.' }, { status: 404 })
+        const titulaire = (actuel as { agent_assigne?: string | null }).agent_assigne
+        if (titulaire && titulaire !== garde.userId) {
+            return NextResponse.json({ error: 'Ce dossier est suivi par un autre agent : demandez à un administrateur.' }, { status: 403 })
+        }
+    }
+
     // Si un agent est fourni, il doit exister et avoir le rôle agent.
     if (agentId) {
         const { data: prof } = await supabase

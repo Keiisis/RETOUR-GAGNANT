@@ -112,6 +112,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
     const [unreadVoices, setUnreadVoices] = useState(0)
     const [unreadPartenaires, setUnreadPartenaires] = useState(0)
     const [relancesDue, setRelancesDue] = useState(0)
+    const [rdvEnAttente, setRdvEnAttente] = useState(0)
 
     // Sound notification refs
     const prevUnreadRef = useRef<number | null>(null)
@@ -289,11 +290,23 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
             } catch { /* silencieux */ }
         }
 
+        /* RDV en attente de confirmation : l'admin a ce badge sur « Rendez-vous »,
+           l'agent (qui les traite dans l'Agenda) n'en avait aucun. Même
+           requête que le tableau de bord agent. */
+        const fetchRdv = async () => {
+            const { count } = await supabase
+                .from('rdv_requests').select('id', { count: 'exact', head: true })
+                .eq('statut', 'en_attente')
+            setRdvEnAttente(count || 0)
+        }
+
         fetchUnread()
         fetchRelances()
+        fetchRdv()
 
         // Realtime Subscription
         const channel = supabase.channel('agent_layout_badges')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'rdv_requests' }, fetchRdv)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchUnread)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'voice_messages' }, fetchUnread)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'partner_applications' }, fetchUnread)
@@ -406,7 +419,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         {
             label: t('ORGANISATION'),
             items: [
-                { title: t('Agenda'), icon: CalendarDays, href: '/agent/agenda' },
+                { title: t('Agenda'), icon: CalendarDays, href: '/agent/agenda', badge: rdvEnAttente },
                 { title: t('Événements'), icon: CalendarDays, href: '/agent/evenements' },
                 { title: t('Documents'), icon: FolderOpen, href: '/agent/documents' },
                 /* Les recaps MyAfroOrigins vivent EN BAS de la page Documents.
@@ -508,7 +521,9 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                     )}
 
                     {/* Badge */}
-                    {item.badge && item.badge > 0 && (
+                    {/* `item.badge && …` affichait un « 0 » littéral quand le
+                        compteur valait 0 (React rend le nombre 0). */}
+                    {item.badge !== undefined && item.badge > 0 && (
                         <span className={cn(
                             'flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-bold rounded-full bg-emerald-500 text-white',
                             compact ? 'absolute -top-0.5 -right-0.5' : 'ml-auto'

@@ -303,14 +303,20 @@ export default function PretresFaPage() {
 
     const remove = async () => {
         if (!deleteTarget) return
-        await fetch(`/api/admin/fa-priests?id=${deleteTarget.id}`, { method: 'DELETE' })
-        setDeleteTarget(null); fetchPriests()
+        const res = await fetch(`/api/admin/fa-priests?id=${deleteTarget.id}`, { method: 'DELETE' })
+        const data = await res.json().catch(() => ({}))
+        setDeleteTarget(null)
+        await fetchPriests()
+        // Après fetchPriests() (qui efface le bandeau) : l'échec reste visible.
+        if (!res.ok) setError(data.error || `Suppression impossible (HTTP ${res.status})`)
     }
 
     const openReviews = async (p: Priest) => {
         setReviewsFor(p); setReviews([])
         const res = await fetch(`/api/admin/fa-priests/reviews?priest_id=${p.id}`, { cache: 'no-store' })
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
+        // Sans ce contrôle, une erreur s'affichait comme « aucun avis ».
+        if (!res.ok) { alert(data.error || `Chargement des avis impossible (HTTP ${res.status})`); return }
         setReviews(data.reviews || [])
     }
 
@@ -337,7 +343,8 @@ export default function PretresFaPage() {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...newReview, priest_id: reviewsFor.id, is_published: true }),
         })
-        if (res.ok) { setNewReview({ author_name: '', rating: 5, comment: '' }); openReviews(reviewsFor); fetchPriests() }
+        if (!res.ok) { alert((await res.json().catch(() => ({}))).error || `Avis non ajouté (HTTP ${res.status})`); return }
+        setNewReview({ author_name: '', rating: 5, comment: '' }); openReviews(reviewsFor); fetchPriests()
     }
 
     const filtered = useMemo(() => {

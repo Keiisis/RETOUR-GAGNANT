@@ -47,10 +47,11 @@ export default function AgentWikiPage() {
     const [saving, setSaving] = useState(false)
 
     const fetchArticles = async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('wiki_articles')
             .select('*')
             .order('category', { ascending: true })
+        if (error) alert(`Base de connaissances non chargée : ${error.message}`)
         setArticles((data || []) as WikiArticle[])
         setLoading(false)
     }
@@ -129,8 +130,13 @@ export default function AgentWikiPage() {
                     context: articles.map(a => ({ title: a.title, content: a.content }))
                 })
             })
-            const data = await res.json()
-            setAiResponse(data.answer)
+            const data = await res.json().catch(() => ({}))
+            // Réponse d'erreur (429, 500…) : `answer` absent → encadré vide auparavant.
+            if (!res.ok || !data.answer) {
+                setAiResponse(`L'IA n'a pas pu répondre : ${data.error || `erreur ${res.status}`}`)
+            } else {
+                setAiResponse(data.answer)
+            }
         } catch (error) {
             console.error(error)
             setAiResponse("L'IA n'a pas pu répondre à cette requête.")

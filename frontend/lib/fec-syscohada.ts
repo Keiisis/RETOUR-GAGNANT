@@ -44,6 +44,7 @@ export interface FecDepense {
     titre?: string | null
     categorie?: string | null
     montant: number
+    devise?: string | null
     date_depense: string
 }
 
@@ -244,7 +245,9 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
 
     // ── Journal des achats (AC) : dépenses ──
     for (const e of depenses) {
-        const montant = toXof(Number(e.montant) || 0, 'XOF') // dépenses en XOF
+        // Devise réelle de la dépense (colonne `devise`) : forcée à 'XOF'
+        // auparavant, une dépense en EUR entrait pour sa valeur faciale.
+        const montant = toXof(Number(e.montant) || 0, e.devise || 'XOF')
         if (montant <= 0) continue
         const charge = chargeAccount(e.categorie)
         const num = nextNum('AC')

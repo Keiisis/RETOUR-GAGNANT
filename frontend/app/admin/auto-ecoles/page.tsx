@@ -112,11 +112,14 @@ export default function AutoEcolesAdmin() {
     }
 
     const toggleActive = async (s: School) => {
-        await fetch('/api/admin/driving-schools', {
+        const res = await fetch('/api/admin/driving-schools', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
             body: JSON.stringify({ id: s.id, is_active: !s.is_active }),
         })
+        const data = await res.json().catch(() => ({}))
         await load()
+        // Après load() (qui efface le bandeau) : l'échec reste visible.
+        if (!res.ok) setErr(data.error || `Statut non modifié (HTTP ${res.status}).`)
     }
 
     return (

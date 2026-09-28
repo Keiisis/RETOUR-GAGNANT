@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireStaff } from '@/lib/api-guard'
+import { requireLogementManager } from '@/lib/api-guard'
+
+// Garde : admins + agent nommément autorisé (lib/logement-access).
+// requireStaff(…, 'admin') renvoyait 403 à Justamielle alors que le
+// middleware et la page /agent/logements l'autorisent : onglet inutilisable.
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -23,7 +27,7 @@ function pick(body: Record<string, unknown>): Record<string, unknown> {
 
 // GET : liste complète (staff), triée par ordre.
 export async function GET(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!
     const { data, error } = await supabase
         .from('logements')
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
 
 // POST : création.
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!
     const body = await request.json().catch(() => ({}))
     const row = pick(body)
@@ -48,14 +52,18 @@ export async function POST(request: NextRequest) {
 // PATCH : mise à jour d'un logement { id, ...champs } OU réordonnancement en lot
 // { reorder: [{ id, ordre }] }.
 export async function PATCH(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!
     const body = await request.json().catch(() => ({}))
 
     if (Array.isArray(body.reorder)) {
+        const echecs: string[] = []
         for (const r of body.reorder) {
-            if (r?.id) await supabase.from('logements').update({ ordre: Number(r.ordre) || 0 }).eq('id', r.id)
+            if (!r?.id) continue
+            const { error } = await supabase.from('logements').update({ ordre: Number(r.ordre) || 0 }).eq('id', String(r.id))
+            if (error) echecs.push(`${r.id}: ${error.message}`)
         }
+        if (echecs.length) return NextResponse.json({ error: 'Réordonnancement partiel', echecs }, { status: 500 })
         return NextResponse.json({ success: true })
     }
 
@@ -70,7 +78,7 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE ?id=…
 export async function DELETE(request: NextRequest) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireLogementManager(request)
     if (!garde.ok) return garde.response!
     const id = request.nextUrl.searchParams.get('id') || ''
     if (!id) return NextResponse.json({ error: 'id requis' }, { status: 400 })

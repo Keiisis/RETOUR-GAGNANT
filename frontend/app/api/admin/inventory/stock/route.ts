@@ -19,7 +19,7 @@ type Mouvement = typeof MOUVEMENTS[number]
 const CONFLIT = 'Le stock a changé entre-temps (vente en cours ?). Rechargez la page puis recommencez.'
 
 export async function POST(request: NextRequest) {
-    const garde = await requireStaff(request, 'agent')
+    const garde = await requireStaff(request, 'admin')
     if (!garde.ok) return garde.response!
 
     let body: Record<string, unknown>

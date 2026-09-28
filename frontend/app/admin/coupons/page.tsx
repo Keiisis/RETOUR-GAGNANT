@@ -88,13 +88,18 @@ export default function CouponsPage() {
         loadCoupons()
     }
 
+    // .select('id') : sous RLS, une écriture refusée ne lève pas d'erreur (0 ligne touchée).
     const toggleCoupon = async (id: string, active: boolean) => {
-        await supabase.from('coupons').update({ is_active: !active }).eq('id', id)
+        const { data, error } = await supabase.from('coupons').update({ is_active: !active }).eq('id', id).select('id')
+        if (error || !data?.length) alert(`Statut du coupon non modifié : ${error?.message || 'aucune ligne mise à jour (droits insuffisants ?)'}`)
         loadCoupons()
     }
 
     const deleteCoupon = async (id: string) => {
-        await supabase.from('coupons').delete().eq('id', id)
+        if (!confirm('Supprimer définitivement ce coupon ?')) return
+        const { data, error } = await supabase.from('coupons').delete().eq('id', id).select('id')
+        // Un coupon déjà utilisé par une commande (orders.coupon_id) peut être protégé par clé étrangère.
+        if (error || !data?.length) alert(`Suppression impossible : ${error?.message || 'aucune ligne supprimée (droits insuffisants ?)'}`)
         loadCoupons()
     }
 

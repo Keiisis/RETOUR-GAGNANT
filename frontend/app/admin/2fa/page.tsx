@@ -9,7 +9,7 @@ export default function Admin2FAPage() {
     const searchParams = useSearchParams()
     // Validation stricte du paramètre next : prévient l'open redirect post-2FA
     const rawNext = searchParams.get('next') || ''
-    const next = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(rawNext) ? rawNext : '/admin/dashboard'
+    const next = /^\/admin\/[a-zA-Z0-9/_-]*$/.test(rawNext) ? rawNext : '/admin'  // /admin/dashboard n'existe pas (404)
 
     const [code, setCode] = useState('')
     const [loading, setLoading] = useState(false)

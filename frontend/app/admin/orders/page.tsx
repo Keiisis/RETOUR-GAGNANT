@@ -4,7 +4,9 @@ import { useTranslation, T } from '@/lib/translation';
 import { useList, useUpdate } from '@refinedev/core'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Receipt, MagnifyingGlass as Search, CircleNotch as Loader2, CheckCircle as CheckCircle2, Clock, XCircle, ArrowCounterClockwise as RefreshCcw, Truck, X } from '@phosphor-icons/react';
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
+import { COMMANDE_PAIEMENT_STATUTS, COMMANDE_LIVRAISON_STATUTS } from '@/lib/constants/statuts'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
@@ -27,30 +29,23 @@ interface OrderItem {
     shipping_status?: string | null
 }
 
-const SHIPPING_STATUSES = [
-    { value: 'pending',    label: 'En attente' },
-    { value: 'preparing',  label: 'En préparation' },
-    { value: 'shipped',    label: 'Expédié' },
-    { value: 'in_transit', label: 'En transit' },
-    { value: 'delivered',  label: 'Livré' },
-    { value: 'failed',     label: 'Échec' },
-    { value: 'returned',   label: 'Retourné' },
-]
+// Référence unique (validée côté serveur par /api/admin/orders/[id]/tracking).
+const SHIPPING_STATUSES = COMMANDE_LIVRAISON_STATUTS.map(d => ({ value: d.value, label: d.label }))
 
-const statusConfig: Record<string, { icon: typeof Clock, label: string, classes: string }> = {
-    pending: { icon: Clock, label: 'En attente', classes: 'bg-[#FCD116]/15 text-[#FCD116] border-[#FCD116]/30' },
-    completed: { icon: CheckCircle2, label: 'Payé', classes: 'bg-[#008751]/15 text-[#008751] border-[#008751]/30' },
-    abandoned: { icon: XCircle, label: 'Abandonné', classes: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
-    failed: { icon: XCircle, label: 'Échouée', classes: 'bg-[#E8112D]/15 text-[#E8112D] border-[#E8112D]/30' },
-    refunded: { icon: RefreshCcw, label: 'Remboursé', classes: 'bg-[#4A90D9]/15 text-[#4A90D9] border-[#4A90D9]/30' },
-    cancelled: { icon: XCircle, label: 'Annulé', classes: 'bg-gray-500/15 text-gray-400 border-gray-500/30' },
-}
+// orders.payment_status : libellés/couleurs de la référence unique ; icônes locales.
+const ICONES_PAIEMENT: Record<string, typeof Clock> = { pending: Clock, completed: CheckCircle2, abandoned: XCircle, failed: XCircle, refunded: RefreshCcw }
+const statusConfig: Record<string, { icon: typeof Clock, label: string, classes: string }> =
+    Object.fromEntries(COMMANDE_PAIEMENT_STATUTS.map(d => [d.value, { icon: ICONES_PAIEMENT[d.value] || Clock, label: d.label, classes: d.badge }]))
+// Statut inconnu : affiché tel quel (avant : présenté comme « En attente »).
+const statutPaiement = (v?: string) => statusConfig[v || ''] || { icon: Clock, label: v || '—', classes: 'bg-gray-500/15 text-gray-400 border border-gray-500/25' }
 
 export default function AdminOrdersPage() {
     const { t } = useTranslation();
     const queryResult = useList<OrderItem>({
         resource: 'orders',
-        pagination: { pageSize: 100 },
+        // Avant : 100 commandes max sans pagination à l'écran ; au-delà, revenus et
+        // compteurs ignoraient les plus anciennes.
+        pagination: { mode: 'off' },
         sorters: [{ field: 'created_at', order: 'desc' }],
     })
     useUpdate() // Refine context : required by parent layout
@@ -135,9 +130,14 @@ export default function AdminOrdersPage() {
     }
 
     // Stats
+    // Taux réels (table currencies) avant d'agréger : une commande EUR/USD
+    // n'est plus additionnée comme des FCFA.
+    // (le setState provoque le re-rendu qui recalcule le total avec les vrais taux)
+    const [, setTauxPrets] = useState(0)
+    useEffect(() => { loadExchangeRates().finally(() => setTauxPrets(n => n + 1)) }, [])
     const totalRevenue = items
         .filter((i) => i.payment_status === 'completed')
-        .reduce((sum: number, i) => sum + (i.amount || 0), 0)
+        .reduce((sum: number, i) => sum + toXOF(i.amount || 0, i.currency), 0)
     const pendingCount = items.filter((i) => i.payment_status === 'pending').length
     const completedCount = items.filter((i) => i.payment_status === 'completed').length
     const abandonedCount = items.filter((i) => i.payment_status === 'abandoned').length
@@ -219,7 +219,7 @@ export default function AdminOrdersPage() {
 
                         <AnimatePresence mode="popLayout">
                             {filtered.map((order) => {
-                                const status = statusConfig[order.payment_status as string] || statusConfig.pending
+                                const status = statutPaiement(order.payment_status as string)
                                 const StatusIcon = status.icon
 
                                 return (

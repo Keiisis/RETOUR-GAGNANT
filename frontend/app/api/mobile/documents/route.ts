@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { lienSigne } from '@/lib/livrables'
+import { motifEmailExact } from '@/lib/email-motif'
 
 /* ═══════════════════════════════════════════════════════════
    GET /api/mobile/documents — tout ce qui appartient au client, en un appel.
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
        caractères qui servent de séparateurs à PostgREST, et une requête mal
        échappée renverrait les documents de tout le monde. La route des
        factures avait déjà tiré cette leçon ; on ne la réapprend pas. */
-    const champsFichiers = 'id, origine, categorie, titre, nom_fichier, storage_path, taille, created_at'
+    const champsFichiers = 'id, origine, categorie, titre, file_name, storage_path, file_size, created_at'
 
     const parCompte = await supabase
         .from('client_documents')
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
         const parEmail = await supabase
             .from('client_documents')
             .select(champsFichiers)
-            .ilike('client_email', email)
+            .ilike('client_email', motifEmailExact(email) ?? '\u0000')
             .is('client_id', null)      // le compte a déjà été servi ci-dessus
             .order('created_at', { ascending: false })
             .limit(200)
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
         documents.push({
             id: `doc-${f.id}`,
             categorie: estLivrable ? 'livrable' : 'piece',
-            titre: String(f.titre || f.nom_fichier || 'Document'),
+            titre: String(f.titre || f.file_name || 'Document'),
             detail: estLivrable ? 'Remis par Retour Gagnant' : 'Pièce que vous avez déposée',
             date: String(f.created_at || ''),
             lien,
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
             const finEmail = await supabase
                 .from('documents_financiers')
                 .select(champsFin)
-                .ilike('client_email', email)
+                .ilike('client_email', motifEmailExact(email) ?? '\u0000')
                 .is('client_id', null)
                 .order('created_at', { ascending: false })
                 .limit(100)
@@ -198,7 +199,7 @@ export async function GET(request: NextRequest) {
             const propEmail = await supabase
                 .from('ai_client_proposals')
                 .select(champsProp)
-                .ilike('client_email', email)
+                .ilike('client_email', motifEmailExact(email) ?? '\u0000')
                 .eq('sent_to_mobile', true)
                 .is('client_id', null)
                 .order('created_at', { ascending: false })

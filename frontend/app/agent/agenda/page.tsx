@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { statutRdv } from '@/lib/constants/statuts'
 import { CalendarDots as CalendarDays, Plus, Clock, MapPin, User, VideoCamera as Video, Phone, Envelope as Mail, CaretLeft as ChevronLeft, CaretRight as ChevronRight, X, CircleNotch as Loader2, ArrowSquareOut as ExternalLink, Trash as Trash2, PaperPlaneTilt as Send, CheckCircle } from '@phosphor-icons/react';
 
 interface Event {
@@ -65,15 +66,20 @@ export default function AgentAgendaPage() {
     const [newClient, setNewClient] = useState('')
     const [newLocation, setNewLocation] = useState('')
 
+    const [erreur, setErreur] = useState<string | null>(null)
+
     const fetchData = async () => {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        // Session expirée : fin du chargement + message (évite le spinner infini)
+        if (!user) { setErreur('Session expirée : reconnectez-vous.'); setLoading(false); return }
 
         const [eventsRes, rdvRes] = await Promise.all([
             supabase.from('agent_events').select('*').eq('agent_id', user.id).order('date', { ascending: true }),
             supabase.from('rdv_requests').select('*, client_profiles(nom, prenom, phone)').order('created_at', { ascending: false }),
         ])
 
+        const err = eventsRes.error || rdvRes.error
+        setErreur(err ? `Chargement incomplet : ${err.message}` : null)
         setEvents((eventsRes.data || []) as Event[])
         setRdvList((rdvRes.data || []) as RDV[])
         setLoading(false)
@@ -85,7 +91,7 @@ export default function AgentAgendaPage() {
         if (!newTitle.trim() || !newDate) return
         setSaving(true)
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user) { setSaving(false); alert('Session expirée : reconnectez-vous.'); return }
 
         const { error } = await supabase.from('agent_events').insert({
             agent_id: user.id, title: newTitle, date: newDate, time: newTime,
@@ -151,14 +157,34 @@ export default function AgentAgendaPage() {
                 setEmailSent(true)
                 setReplyMsg('')
                 setTimeout(() => { setEmailSent(false); setReplyMode(false) }, 3000)
+            } else {
+                // Échec affiché : le message saisi reste en place pour un nouvel essai.
+                const data = await res.json().catch(() => ({}))
+                alert(`Email non envoyé : ${data.error || `erreur ${res.status}`}`)
             }
-        } catch { /* non-blocking */ }
+        } catch (e) {
+            alert(`Email non envoyé : ${e instanceof Error ? e.message : 'réseau indisponible'}`)
+        }
         setSendingEmail(false)
     }
 
+    // Même chemin que l'admin (/api/rdv/[id]) : contrôle serveur + notification
+    // du client. L'écriture directe en base ne prévenait jamais le client.
     const updateRdvStatus = async (rdvId: string, statut: RDV['statut']) => {
-        const { error } = await supabase.from('rdv_requests').update({ statut }).eq('id', rdvId)
-        if (error) { alert(`Mise à jour du statut impossible : ${error.message}`); return }
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/rdv/${rdvId}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+            },
+            body: JSON.stringify({ statut }),
+        }).catch(() => null)
+        if (!res || !res.ok) {
+            const data = res ? await res.json().catch(() => ({})) : {}
+            alert(`Mise à jour du statut impossible : ${data.error || (res ? `erreur ${res.status}` : 'réseau indisponible')}`)
+            return
+        }
         const applyUpdate = (r: RDV): RDV => r.id === rdvId ? { ...r, statut } : r
         setRdvList(prev => prev.map(applyUpdate))
         setSelectedRDV(prev => prev ? applyUpdate(prev) : null)
@@ -219,6 +245,10 @@ export default function AgentAgendaPage() {
                     <Plus size={16} /> Nouvel Événement
                 </button>
             </div>
+
+            {erreur && (
+                <div className="px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-semibold">{erreur}</div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* Calendar */}
@@ -354,13 +384,8 @@ export default function AgentAgendaPage() {
                                             <div key={rdv.id} onClick={() => setSelectedRDV(rdv)} className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/10 hover:border-amber-500/30 cursor-pointer transition-all">
                                                 <div className="flex items-center justify-between">
                                                     <p className="text-xs font-bold text-white">{getClientName(rdv)}</p>
-                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                                                        rdv.statut === 'en_attente' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        rdv.statut === 'confirme' ? 'bg-emerald-500/20 text-emerald-400' :
-                                                        rdv.statut === 'annule' ? 'bg-red-500/20 text-red-400' :
-                                                        'bg-gray-500/20 text-gray-400'
-                                                    }`}>
-                                                        {rdv.statut === 'en_attente' ? 'En attente' : rdv.statut === 'confirme' ? 'Confirmé' : rdv.statut === 'annule' ? 'Annulé' : 'Terminé'}
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${statutRdv(rdv.statut).badge}`}>
+                                                        {statutRdv(rdv.statut).label}
                                                     </span>
                                                 </div>
                                                 <p className="text-[10px] text-gray-500 mt-0.5">
@@ -416,15 +441,8 @@ export default function AgentAgendaPage() {
                             </div>
                             <div className="space-y-3">
                                 {/* Statut */}
-                                <span className={`inline-flex items-center text-[11px] font-bold px-3 py-1 rounded-full border ${
-                                    selectedRDV.statut === 'confirme' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                    selectedRDV.statut === 'annule' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                    selectedRDV.statut === 'termine' ? 'bg-gray-500/10 text-gray-400 border-gray-500/20' :
-                                    'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                                }`}>
-                                    {selectedRDV.statut === 'en_attente' ? 'En attente de confirmation' :
-                                     selectedRDV.statut === 'confirme' ? 'Confirmé' :
-                                     selectedRDV.statut === 'annule' ? 'Annulé' : 'Terminé'}
+                                <span className={`inline-flex items-center text-[11px] font-bold px-3 py-1 rounded-full ${statutRdv(selectedRDV.statut).badge}`}>
+                                    {selectedRDV.statut === 'en_attente' ? 'En attente de confirmation' : statutRdv(selectedRDV.statut).label}
                                 </span>
 
                                 {/* Infos client */}

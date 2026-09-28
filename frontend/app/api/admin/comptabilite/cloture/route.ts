@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createHash } from 'crypto'
 import { verifyApiAuth } from '@/lib/api-auth'
+import { getRatesXOF } from '@/lib/server-rates'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -84,25 +85,45 @@ export async function POST(request: NextRequest) {
     // Snapshot : on calcule les totaux figés sur la période
     const [docsRes, paiemRes, depRes] = await Promise.all([
         supabase.from('documents_financiers')
-            .select('id, type, total, total_tva, status, created_at')
+            .select('id, type, total, total_tva, status, created_at, currency, exchange_rate_applied')
             .gte('created_at', start).lt('created_at', end),
         supabase.from('paiements_manuels')
             .select('id, montant, date_paiement')
             .gte('date_paiement', start.slice(0, 10)).lt('date_paiement', end.slice(0, 10)),
         supabase.from('depenses')
-            .select('id, montant, date_depense')
+            .select('id, montant, devise, date_depense')
             .gte('date_depense', start.slice(0, 10)).lt('date_depense', end.slice(0, 10)),
     ])
+
+    // Une lecture ratée donnait un snapshot à ZÉRO, haché puis figé : la
+    // période était close sur des totaux faux. On refuse de clôturer.
+    const erreurLecture = docsRes.error || paiemRes.error || depRes.error
+    if (erreurLecture) {
+        return NextResponse.json({ error: `Lecture comptable impossible, clôture refusée : ${erreurLecture.message}` }, { status: 500 })
+    }
 
     const docs = docsRes.data || []
     const paiements = paiemRes.data || []
     const depenses = depRes.data || []
 
+    // Multi-devises : factures EUR/USD et dépenses en devise étaient sommées
+    // telles quelles avec le XOF (250 € comptés 250 FCFA). Conversion au taux
+    // FIGÉ de la facture s'il existe, sinon au taux courant de `currencies`.
+    const taux = await getRatesXOF()
+    const enXof = (montant: unknown, devise: unknown, fige?: unknown) => {
+        const n = Number(montant || 0)
+        const cur = String(devise || 'XOF').toUpperCase()
+        if (cur === 'XOF' || cur === 'FCFA') return n
+        const t = Number(fige) > 0 && Number(fige) !== 1 ? Number(fige) : (taux[cur] || 1)
+        return n * t
+    }
+
+    // paiements_manuels n'a pas de colonne devise : montants saisis en XOF.
     const totalEncaisse = round2(paiements.reduce((s, p) => s + Number(p.montant || 0), 0))
-    const totalDepenses = round2(depenses.reduce((s, d) => s + Number(d.montant || 0), 0))
+    const totalDepenses = round2(depenses.reduce((s, d) => s + enXof(d.montant, d.devise), 0))
     const totalTVA = round2(docs
         .filter(d => d.type === 'facture' && d.status === 'paye')
-        .reduce((s, d) => s + Number(d.total_tva || 0), 0))
+        .reduce((s, d) => s + enXof(d.total_tva, d.currency, d.exchange_rate_applied), 0))
     const beneficeNet = round2(totalEncaisse - totalDepenses)
 
     // Commissions agents : déduites APRÈS la marge opérationnelle (visibilité)
@@ -166,8 +187,8 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    // Trace d'audit permanente (jamais supprimée)
-    await supabase.from('clotures_audit').insert({
+    // Trace d'audit permanente (jamais supprimée) — erreur journalisée, plus tue.
+    const { error: errAuditCloture } = await supabase.from('clotures_audit').insert({
         periode,
         action: isRecloture ? 're-cloture' : 'cloture',
         acteur_id: auth.userId,
@@ -176,6 +197,7 @@ export async function POST(request: NextRequest) {
         hash_apres: hash,
         details: { totalEncaisse, totalDepenses, beneficeNet, totalCommissions, beneficeNetFinal },
     })
+    if (errAuditCloture) console.error('[cloture] trace d’audit non écrite :', errAuditCloture.message)
 
     return NextResponse.json({ success: true, cloture: inserted })
 }
@@ -229,7 +251,7 @@ export async function DELETE(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    await supabase.from('clotures_audit').insert({
+    const { error: errAuditReouv } = await supabase.from('clotures_audit').insert({
         periode,
         action: 'reopen',
         acteur_id: auth.userId,
@@ -238,6 +260,7 @@ export async function DELETE(request: NextRequest) {
         hash_apres: null,
         details: { reopen_count: (Number(existing.reopen_count) || 0) + 1 },
     })
+    if (errAuditReouv) console.error('[cloture] trace d’audit de réouverture non écrite :', errAuditReouv.message)
 
     return NextResponse.json({ success: true, reopened: true })
 }

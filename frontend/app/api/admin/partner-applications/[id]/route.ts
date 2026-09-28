@@ -26,6 +26,10 @@ export async function PATCH(
         const body = await request.json()
 
         const allowed: Record<string, unknown> = { updated_at: new Date().toISOString() }
+        // Statuts du cycle de candidature (voir GET /api/admin/partner-applications).
+        if (body.status !== undefined && !['pending', 'contacted', 'confirmed', 'rejected'].includes(String(body.status))) {
+            return NextResponse.json({ error: 'Statut invalide' }, { status: 400 })
+        }
         if (body.status !== undefined) allowed.status = body.status
         if (body.notes !== undefined) allowed.notes = body.notes
         if (body.is_read !== undefined) allowed.is_read = body.is_read
@@ -42,7 +46,7 @@ export async function PATCH(
         // Si on confirme la candidature → créer automatiquement le partenaire
         if (body.status === 'confirmed' && body.create_partner) {
             const app = data
-            await supabase.from('partners').insert({
+            const { error: errPartenaire } = await supabase.from('partners').insert({
                 name: app.company_name,
                 description: app.activity_description,
                 category: app.category,
@@ -57,6 +61,13 @@ export async function PATCH(
                 sort_order: 999,
                 products: [],
             })
+            // Erreur tue auparavant : « confirmée » affiché, partenaire jamais créé.
+            if (errPartenaire) {
+                return NextResponse.json({
+                    application: data,
+                    error: `Candidature confirmée, mais fiche partenaire non créée : ${errPartenaire.message}`,
+                }, { status: 500 })
+            }
         }
 
         return NextResponse.json({ application: data })

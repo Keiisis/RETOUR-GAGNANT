@@ -11,9 +11,15 @@
 //  dossier : mêmes colonnes, même statut de départ, même progression.
 // ══════════════════════════════════════════════════════════════
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { motifEmailExact } from '@/lib/email-motif'
+import { DOSSIER_STATUTS_ACTIFS } from '@/lib/constants/statuts'
 
-/** Statuts considérés comme « dossier encore ouvert ». */
-export const STATUTS_ACTIFS = ['reception', 'en_cours', 'en_attente', 'traitement', 'validation']
+/** Statuts considérés comme « dossier encore ouvert » : référence unique
+ *  (lib/constants/statuts). L'ancienne liste locale omettait `verification`
+ *  et `finalisation` : un dossier à ces étapes était jugé clos et les pièces
+ *  suivantes partaient sur un autre dossier. Les alias historiques
+ *  (`en_cours`, `en_attente`) restent reconnus pour les lignes anciennes. */
+export const STATUTS_ACTIFS: string[] = [...DOSSIER_STATUTS_ACTIFS, 'en_cours', 'en_attente']
 
 function client(): SupabaseClient {
     return createClient(
@@ -51,8 +57,8 @@ export async function ouvrirDossier(o: OuvertureDossier): Promise<string | null>
     let clientId: string | null = null
     try {
         const { data } = await db
-            .from('client_profiles').select('id').ilike('email', o.email.trim()).maybeSingle()
-        clientId = data?.id || null
+            .from('client_profiles').select('id').ilike('email', motifEmailExact(o.email) ?? '').maybeSingle()
+        clientId = data?.id || null // motif échappé : `_` ne rattache plus le dossier à un autre compte
     } catch { /* pas de compte : le dossier existe quand même */ }
 
     const maintenant = new Date().toISOString()
@@ -115,7 +121,7 @@ export async function dossierCourantDe(email: string): Promise<string | null> {
     const { data } = await db
         .from('dossier_tracking')
         .select('id, statut, created_at')
-        .ilike('client_email', email.trim())
+        .ilike('client_email', motifEmailExact(email) ?? '') // jokers échappés
         .order('created_at', { ascending: false })
         .limit(10)
 

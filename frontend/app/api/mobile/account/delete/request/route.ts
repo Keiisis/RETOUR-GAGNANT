@@ -21,7 +21,7 @@ import { empreinteCodeSuppression, VALIDITE_CODE_MINUTES } from '@/lib/suppressi
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-export const VALIDITE_MINUTES = VALIDITE_CODE_MINUTES
+const VALIDITE_MINUTES = VALIDITE_CODE_MINUTES
 
 function corpsEmail(code: string, prenom: string): string {
     return `

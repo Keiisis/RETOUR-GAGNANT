@@ -19,7 +19,8 @@ export default function AdminFaqPage() {
     const [saving, setSaving] = useState(false)
 
     const load = async () => {
-        const { data } = await supabase.from('nationality_faq').select('*').order('sort_order')
+        const { data, error } = await supabase.from('nationality_faq').select('*').order('sort_order')
+        if (error) alert(`FAQ non chargée : ${error.message}`)
         setFaqs((data || []) as FAQ[])
     }
 
@@ -46,34 +47,34 @@ export default function AdminFaqPage() {
 
     const remove = async (id: string) => {
         if (!confirm('Supprimer cette question ?')) return
-        await supabase.from('nationality_faq').delete().eq('id', id)
+        // .select('id') : sous RLS un refus touche 0 ligne sans lever d'erreur.
+        const { data, error } = await supabase.from('nationality_faq').delete().eq('id', id).select('id')
+        if (error || !data?.length) alert(`Suppression impossible : ${error?.message || 'aucune ligne supprimée (droits insuffisants ?)'}`)
         load()
     }
 
     const toggle = async (id: string, active: boolean) => {
-        await supabase.from('nationality_faq').update({ is_active: !active }).eq('id', id)
+        const { data, error } = await supabase.from('nationality_faq').update({ is_active: !active }).eq('id', id).select('id')
+        if (error || !data?.length) alert(`Visibilité non modifiée : ${error?.message || 'aucune ligne mise à jour (droits insuffisants ?)'}`)
         load()
     }
 
-    const moveUp = async (idx: number) => {
-        if (idx === 0) return
-        const a = faqs[idx], b = faqs[idx - 1]
-        await Promise.all([
-            supabase.from('nationality_faq').update({ sort_order: b.sort_order }).eq('id', a.id),
-            supabase.from('nationality_faq').update({ sort_order: a.sort_order }).eq('id', b.id),
-        ])
+    /* Échange puis renumérotation 1..n. Avant : échange des deux sort_order ;
+       à valeurs égales (doublons) rien ne bougeait, et les erreurs étaient ignorées. */
+    const deplacer = async (idx: number, cible: number) => {
+        if (cible < 0 || cible >= faqs.length) return
+        const ordre = [...faqs]
+        ;[ordre[idx], ordre[cible]] = [ordre[cible], ordre[idx]]
+        const res = await Promise.all(ordre
+            .map((f, i) => ({ f, rang: i + 1 }))
+            .filter(({ f, rang }) => f.sort_order !== rang)
+            .map(({ f, rang }) => supabase.from('nationality_faq').update({ sort_order: rang }).eq('id', f.id)))
+        const ko = res.find(r => r.error)
+        if (ko?.error) alert(`Ordre non enregistré : ${ko.error.message}`)
         load()
     }
-
-    const moveDown = async (idx: number) => {
-        if (idx >= faqs.length - 1) return
-        const a = faqs[idx], b = faqs[idx + 1]
-        await Promise.all([
-            supabase.from('nationality_faq').update({ sort_order: b.sort_order }).eq('id', a.id),
-            supabase.from('nationality_faq').update({ sort_order: a.sort_order }).eq('id', b.id),
-        ])
-        load()
-    }
+    const moveUp = (idx: number) => deplacer(idx, idx - 1)
+    const moveDown = (idx: number) => deplacer(idx, idx + 1)
 
     return (
         <div className="min-h-screen bg-[#0a0f14] py-8 px-4">

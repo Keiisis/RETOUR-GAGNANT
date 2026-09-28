@@ -254,7 +254,7 @@ export default function RecapMyafroSection() {
             {migration && (
                 <div className="mb-4 flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                     <WarningCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
-                    <p className="text-xs text-amber-200">
+                    <p className="text-xs text-amber-200 [[data-theme=light]_&]:text-amber-700">
                         La table <code className="font-mono">myafro_recap_requests</code> n’existe pas encore :
                         exécutez la migration <code className="font-mono">20260820_recap_myafroorigins.sql</code> dans Supabase.
                     </p>
@@ -459,7 +459,7 @@ export default function RecapMyafroSection() {
                                         type="button"
                                         onClick={() => genererFiche(ouverte.id)}
                                         disabled={generation}
-                                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-black hover:bg-emerald-500/25 disabled:opacity-50"
+                                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 [[data-theme=light]_&]:text-emerald-700 text-[11px] font-black hover:bg-emerald-500/25 disabled:opacity-50"
                                     >
                                         {generation
                                             ? <CircleNotch size={12} className="animate-spin" />

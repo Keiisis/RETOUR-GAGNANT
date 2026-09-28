@@ -34,6 +34,9 @@ export default function MessagesList() {
 
     const { mutate: deleteItem } = useDelete();
     const { mutate: updateItem } = useUpdate();
+    // Aucun notificationProvider Refine : sans onError, un échec était muet.
+    const echec = (quoi: string) => (err: unknown) =>
+        alert(`${quoi} : ${(err as { message?: string })?.message || 'erreur'}`);
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
@@ -120,7 +123,7 @@ export default function MessagesList() {
                                         !item.lu && "bg-white/[0.01]"
                                     )}
                                     onClick={() => {
-                                        if (!item.lu) updateItem({ resource: "messages", id: item.id, values: { lu: true } });
+                                        if (!item.lu) updateItem({ resource: "messages", id: item.id, values: { lu: true } }, { onError: echec("Message non marqué comme lu") });
                                         show("messages", item.id);
                                     }}
                                 >
@@ -198,7 +201,7 @@ export default function MessagesList() {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (confirm("Confirmer la suppression archivée ?")) deleteItem({ resource: "messages", id: item.id });
+                                                    if (confirm("Confirmer la suppression archivée ?")) deleteItem({ resource: "messages", id: item.id }, { onError: echec("Suppression impossible") });
                                                 }}
                                                 title="Supprimer ce message"
                                                 className="p-3 rounded-xl bg-white/5 text-gray-600 hover:bg-red-500/10 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"

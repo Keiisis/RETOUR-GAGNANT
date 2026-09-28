@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { motifEmailExact } from '@/lib/email-motif'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
         .from('myafro_recap_requests')
         .select('id, reference, email, statut, situation, recap_ia, montant, devise, created_at')
-        .ilike('email', email)
+        .ilike('email', motifEmailExact(email) ?? '\u0000')
         .order('created_at', { ascending: false })
 
     if (error) {

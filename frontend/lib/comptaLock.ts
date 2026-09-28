@@ -18,10 +18,14 @@ export const isPeriodLocked = async (
 ): Promise<boolean> => {
     if (!date) return false
     const periode = dateToPeriode(date)
+    // Une période ROUVERTE (status = 'reopened', la ligne est conservée pour
+    // l'audit) n'est plus verrouillée. L'ancien test « la ligne existe »
+    // laissait la période bloquée après réouverture : constaté le 28/09/2026
+    // sur 2026-07 (status reopened) — tout ajout/modification y répondait 423.
     const { data } = await supabase
         .from('clotures_mensuelles')
-        .select('id')
+        .select('id, status')
         .eq('periode', periode)
         .maybeSingle()
-    return !!data
+    return !!data && (data as { status?: string | null }).status !== 'reopened'
 }

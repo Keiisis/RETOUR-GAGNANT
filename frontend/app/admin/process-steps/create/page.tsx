@@ -17,6 +17,8 @@ export default function ProcessStepCreate() {
         resource: 'process_steps',
         redirect: 'list',
         action: 'create',
+        // Aucun notificationProvider Refine : sans ceci un refus restait muet.
+        onMutationError: (err) => alert(`Enregistrement impossible : ${err?.message || 'erreur'}`),
     })
 
     const [formData, setFormData] = useState({
