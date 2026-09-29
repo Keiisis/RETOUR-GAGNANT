@@ -130,6 +130,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         conditions: f.conditions || undefined,
         validite: f.validite || undefined,
         docType: estDevis ? 'devis' : 'facture',
+        statut: f.status || undefined,
+        signedAt: f.signed_at || undefined,
         clientSignatureDataUrl: paraphe || undefined,
     })
 

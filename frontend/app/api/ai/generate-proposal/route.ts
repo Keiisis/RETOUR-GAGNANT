@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import Groq from 'groq-sdk'
 import { requireStaff } from '@/lib/api-guard'
 import { getRatesXOF } from '@/lib/server-rates'
+import { reheberger } from '@/lib/proposal-image-rehost'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -198,6 +199,9 @@ Format :
         if (proposalError) throw new Error(proposalError.message || 'Erreur création proposition')
         if (!proposal) throw new Error('Proposition non créée')
 
+        // Photos Google Maps = liens temporaires (403 après quelques jours) :
+        // copiées dans partner-assets/proposals/items, null si irrécupérables.
+        const imagesDurables = await Promise.all(items.map(item => reheberger(supabase, item.image_url)))
         const proposalItemsToInsert = items.map((item: ProposalItem, index: number) => ({
             proposal_id: proposal!.id,
             type: item.type,
@@ -206,7 +210,7 @@ Format :
             description: item.description,
             location: item.location || destination,
             highlights: item.highlights || [],
-            image_url: item.image_url,
+            image_url: imagesDurables[index],
             original_price: item.original_price || 0,
             selling_price: item.original_price || 0,
             order_index: index,

@@ -29,6 +29,7 @@ export interface FactureMobile {
     currency: string
     status: string
     paid_at: string | null
+    signed_at: string | null
     created_at: string | null
     client_id: string | null
     client_nom: string | null
@@ -52,7 +53,7 @@ export interface ResolutionFacture {
     facture?: FactureMobile | null
 }
 
-const CHAMPS = 'id, numero, type, total, currency, status, paid_at, created_at, client_id, '
+const CHAMPS = 'id, numero, type, total, currency, status, paid_at, signed_at, created_at, client_id, '
     + 'client_nom, client_prenom, client_email, client_phone, client_adresse, '
     + 'items, sous_total, total_tva, remise, notes, payment_method'
 
