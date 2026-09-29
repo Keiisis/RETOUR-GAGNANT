@@ -9,6 +9,9 @@ import { useRouter } from 'next/navigation'
 import { AnimatePresence } from 'framer-motion'
 import { convertFromBaseSync, getCurrentRates, type CurrencyCode } from '@/lib/currency'
 import { TVA_RATE } from '@/lib/tax'
+import DescriptionEditeur from '@/components/shared/DescriptionEditeur'
+import DescriptionLignes from '@/components/shared/DescriptionLignes'
+import { normaliserDescription } from '@/lib/description-lignes'
 
 interface DevisItem {
     description: string
@@ -124,7 +127,7 @@ export default function AgentCreateDocumentPage() {
                 currency,
                 exchange_rate_applied: currentRate,
                 items: items.map(it => ({
-                    description: it.description,
+                    description: normaliserDescription(it.description),
                     quantity: it.quantity,
                     unit_price: it.unit_price,
                     tva: it.tva,
@@ -133,8 +136,8 @@ export default function AgentCreateDocumentPage() {
                 sous_total: (currency === 'XOF') ? Math.round(sousTotal) : Math.round(sousTotal * 100) / 100,
                 total_tva: (currency === 'XOF') ? Math.round(totalTVA) : Math.round(totalTVA * 100) / 100,
                 remise: (currency === 'XOF') ? Math.round(remise) : Math.round(remise * 100) / 100,
-                total: ((currency === 'XOF') ? Math.round(sousTotal) : Math.round(sousTotal * 100) / 100) + 
-                       ((currency === 'XOF') ? Math.round(totalTVA) : Math.round(totalTVA * 100) / 100) - 
+                total: ((currency === 'XOF') ? Math.round(sousTotal) : Math.round(sousTotal * 100) / 100) +
+                       ((currency === 'XOF') ? Math.round(totalTVA) : Math.round(totalTVA * 100) / 100) -
                        ((currency === 'XOF') ? Math.round(remise) : Math.round(remise * 100) / 100),
                 status,
                 notes,
@@ -182,7 +185,7 @@ export default function AgentCreateDocumentPage() {
                         <div className="flex gap-2 p-1 bg-white/[0.02] border border-white/5 rounded-xl">
                             {(['devis', 'facture'] as const).map(t => (
                                 <button key={t} type="button" onClick={() => setFormType(t)} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${formType === t ? (t === 'devis' ? 'bg-blue-500/20 text-blue-400 shadow-md' : 'bg-emerald-500/20 text-emerald-400 shadow-md') : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-                                    {t === 'devis' ? <FileText size={16} /> : <Receipt size={16} />} 
+                                    {t === 'devis' ? <FileText size={16} /> : <Receipt size={16} />}
                                     {t === 'devis' ? 'Devis Pro-forma' : 'Facture Officielle'}
                                 </button>
                             ))}
@@ -229,14 +232,13 @@ export default function AgentCreateDocumentPage() {
                         {items.map((item, i) => (
                             <div key={i} className="flex flex-col sm:flex-row gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5 group">
                                 <div className="flex-1 w-full relative">
-                                    <input 
-                                        type="text" 
+                                    <DescriptionEditeur
                                         title="Description"
-                                        placeholder="Création de Société, Visa..." 
-                                        value={item.description} 
-                                        onChange={e => handleProductSelect(i, e.target.value)} 
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 text-sm" 
-                                        list="services-list"
+                                        placeholder="Création de Société, Visa... (Entrée = élément suivant, même prix)"
+                                        value={item.description}
+                                        onChange={v => handleProductSelect(i, v)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 text-sm"
+                                        suggestions="services-list"
                                     />
                                     <datalist id="services-list">
                                         {services.map(s => <option key={s.id} value={s.title}>{s.base_price} XOF</option>)}
@@ -292,7 +294,7 @@ export default function AgentCreateDocumentPage() {
                             <textarea title="Conditions" value={conditions} onChange={e => setConditions(e.target.value)} rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm resize-none" />
                         </div>
                     </div>
-                    
+
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 self-start">
                         <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-4">Récapitulatif TTC</p>
                         <div className="space-y-3 font-mono text-sm text-gray-300">
@@ -321,7 +323,7 @@ export default function AgentCreateDocumentPage() {
                 {/* Submits */}
                 <div className="mt-8 pt-8 border-t border-white/5 flex flex-wrap items-center justify-end gap-3">
                     <Link href="/agent/devis" className="px-6 py-3.5 text-sm font-bold text-gray-400 hover:text-white mr-auto">Annuler</Link>
-                    
+
                     <button type="button" onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/20 font-bold text-sm transition-colors">
                         <Eye size={16} /> Aperçu avant sauvegarde
                     </button>
@@ -334,7 +336,7 @@ export default function AgentCreateDocumentPage() {
                         {saving ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                         Générer et Obtenir le Lien
                     </button>
-                    
+
                 </div>
 
             </div>
@@ -397,7 +399,7 @@ export default function AgentCreateDocumentPage() {
                                         <tbody>
                                             {items.map((it, i) => (
                                                 <tr key={i} className="border-t border-white/5">
-                                                    <td className="p-3 text-gray-300">{it.description || '...'}</td>
+                                                    <td className="p-3 text-gray-300"><DescriptionLignes texte={it.description} /></td>
                                                     <td className="p-3 text-gray-400 text-center">{it.quantity}</td>
                                                     <td className="p-3 text-gray-400 text-right font-mono">{it.unit_price.toLocaleString('fr-FR')}</td>
                                                     <td className="p-3 text-gray-400 text-right">{it.tva}%</td>

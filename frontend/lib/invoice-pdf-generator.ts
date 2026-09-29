@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import { LOGO_BASE64, STAMP_BASE64 } from './logoBase64'
+import { descriptionPourPdf } from '@/lib/description-lignes'
 
 export interface InvoicePdfItem {
     description: string
@@ -273,7 +274,7 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
 
     // Table Rows
     data.items.forEach((item, i) => {
-        const itemLines = pdf.splitTextToSize(item.description, cols[0].w - 4)
+        const itemLines = pdf.splitTextToSize(descriptionPourPdf(item.description), cols[0].w - 4)
         const rowH = Math.max(9, itemLines.length * 4.5 + 3)
         const even = i % 2 === 0
 

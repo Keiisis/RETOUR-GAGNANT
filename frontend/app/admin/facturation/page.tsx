@@ -12,6 +12,8 @@ import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { FinancialAnalytics } from '@/components/dashboard/FinancialAnalytics'
 import { CURRENCIES, asCurrency } from '@/lib/currency'
 import { DOC_FIN_STATUTS, DOC_FIN_RGB } from '@/lib/constants/statuts'
+import DescriptionLignes from '@/components/shared/DescriptionLignes'
+import { descriptionPourPdf } from '@/lib/description-lignes'
 
 interface DevisItem {
     description: string
@@ -383,7 +385,7 @@ export default function AdminFacturationPage() {
             const statusColorMap: Record<string, [number, number, number]> = DOC_FIN_RGB
             const sc = statusColorMap[doc.status] || [90, 90, 90]
             const statusText = statusLabels[doc.status] || doc.status.toUpperCase()
-            
+
             const badgeY = headerTop + 37
             const badgeW = 32
             const badgeH = 8
@@ -489,7 +491,7 @@ export default function AdminFacturationPage() {
             doc.items.forEach((item: DevisItem, i: number) => {
                 // Intitulé complet du service : multi-lignes, la hauteur de la
                 // rangée s'adapte (plus jamais de description tronquée)
-                const descLines: string[] = pdf.splitTextToSize(safe(item.description || '-'), cols[0].w - 5)
+                const descLines: string[] = pdf.splitTextToSize(safe(descriptionPourPdf(item.description)), cols[0].w - 5)
                 const rowH = Math.max(9.5, descLines.length * 4.2 + 5)
                 const even = i % 2 === 0
                 pdf.setFillColor(even ? 252 : 247, even ? 253 : 249, even ? 254 : 252)
@@ -828,13 +830,13 @@ export default function AdminFacturationPage() {
                                     </td>
                                     <td className="py-3 px-5 text-right">
                                         <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     const url = `${window.location.origin}/portail/${doc.id}`
                                                     navigator.clipboard.writeText(url)
                                                     alert('Lien Magique Client copié dans le presse-papier ! Envoye-le via WhatsApp.')
-                                                }} 
-                                                className="p-2 text-gray-400 hover:text-amber-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all" 
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-amber-400 hover:bg-[var(--panel-surface-alt)] rounded-lg transition-all"
                                                 title="Copier le Lien Client"
                                             >
                                                 <LinkIcon size={16} />
@@ -1072,7 +1074,7 @@ export default function AdminFacturationPage() {
                                         <tbody>
                                             {showPreview.items.map((it, i) => (
                                                 <tr key={i} className="border-t border-white/5">
-                                                    <td className="p-3 text-gray-300">{it.description}</td>
+                                                    <td className="p-3 text-gray-300"><DescriptionLignes texte={it.description} /></td>
                                                     <td className="p-3 text-gray-400 text-center">{it.quantity}</td>
                                                     <td className="p-3 text-gray-400 text-right font-mono">{it.unit_price.toLocaleString('fr-FR')}</td>
                                                     <td className="p-3 text-gray-400 text-right">{it.tva}%</td>
@@ -1082,7 +1084,7 @@ export default function AdminFacturationPage() {
                                         </tbody>
                                     </table>
                                 </div>
-                                
+
                                 {/* Status Update */}
                                 <div className="border-t border-white/5 pt-4">
                                     <p className="text-xs text-gray-400 mb-2">Changer le statut manuellement :</p>
