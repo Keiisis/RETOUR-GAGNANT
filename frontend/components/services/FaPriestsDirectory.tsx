@@ -28,15 +28,27 @@ interface Priest {
 function Stars({ value, size = 14, onChange }: { value: number; size?: number; onChange?: (v: number) => void }) {
     const [hover, setHover] = useState(0)
     const shown = hover || value
+    // Lecture seule : de simples icônes. Des <button> ici étaient imbriqués dans le
+    // <button> de la carte du prêtre (HTML invalide → erreur d'hydratation).
+    if (!onChange) {
+        return (
+            <span className="flex items-center gap-0.5" aria-label={`${Math.round(value * 10) / 10} sur 5`}>
+                {[1, 2, 3, 4, 5].map(i => (
+                    <Star key={i} size={size} className={i <= Math.round(value) ? 'text-amber-400' : 'text-gray-300'}
+                        fill={i <= Math.round(value) ? '#fbbf24' : 'none'} />
+                ))}
+            </span>
+        )
+    }
     return (
         <div className="flex items-center gap-0.5">
             {[1, 2, 3, 4, 5].map(i => (
-                <button key={i} type="button" disabled={!onChange}
+                <button key={i} type="button"
                     aria-label={`${i} étoile${i > 1 ? 's' : ''}`}
-                    onClick={() => onChange?.(i)}
-                    onMouseEnter={() => onChange && setHover(i)}
-                    onMouseLeave={() => onChange && setHover(0)}
-                    className={onChange ? 'transition-transform hover:scale-125' : 'cursor-default'}>
+                    onClick={() => onChange(i)}
+                    onMouseEnter={() => setHover(i)}
+                    onMouseLeave={() => setHover(0)}
+                    className="transition-transform hover:scale-125">
                     <Star size={size} className={i <= Math.round(shown) ? 'text-amber-400' : 'text-gray-300'}
                         fill={i <= Math.round(shown) ? '#fbbf24' : 'none'} />
                 </button>

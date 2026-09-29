@@ -417,18 +417,16 @@ function AdminLayoutContent({
 
                         <div className="flex items-center gap-2">
                             <ThemeToggle />
-                            <button title="Notifications" className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-all">
+                            <Link href="/admin/notifications" title="Notifications" aria-label="Notifications" className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-all">
                                 <Bell size={17} />
-                            </button>
-                            <button title="Aide" className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-all hidden sm:flex">
-                                <HelpCircle size={17} />
-                            </button>
+                            </Link>
+                            {/* « Aide » retiré : aucune page d'aide admin n'existe (bouton sans effet). */}
 
-                            {/* KAGE IA Button */}
-                            <button className="flex items-center gap-1.5 bg-[#FCD116]/10 hover:bg-[#FCD116]/20 text-[#FCD116] border border-[#FCD116]/20 px-3 py-1.5 rounded-xl transition-all text-[10px] font-black tracking-widest">
+                            {/* KAGE IA : ouvre l'assistant du tableau de bord (ancre #kage-ia). */}
+                            <Link href="/admin#kage-ia" className="flex items-center gap-1.5 bg-[#FCD116]/10 hover:bg-[#FCD116]/20 text-[#FCD116] border border-[#FCD116]/20 px-3 py-1.5 rounded-xl transition-all text-[10px] font-black tracking-widest">
                                 <Sparkles size={14} className="animate-pulse" />
                                 <span className="hidden sm:inline"><T>KAGE IA</T></span>
-                            </button>
+                            </Link>
 
                             {/* Avatar */}
                             <div className="w-8 h-8 rounded-full bg-benin-gradient flex items-center justify-center text-white font-bold text-[11px] shadow-lg cursor-pointer">

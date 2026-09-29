@@ -278,10 +278,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
                     </div>
                     <div className="flex items-center gap-2">
                         <ThemeToggle />
-                        <button className="relative p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all">
+                        <Link href="/client/notifications" title="Notifications" aria-label="Notifications" className="relative p-2 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-all">
                             <Bell size={16} />
                             {unreadMessages > 0 && <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--panel-accent)] rounded-full" />}
-                        </button>
+                        </Link>
                         <div className="w-8 h-8 rounded-full bg-[var(--panel-accent)] flex items-center justify-center text-white font-bold text-[11px]">
                             {initials}
                         </div>

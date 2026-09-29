@@ -8,44 +8,13 @@ import { MagnifyingGlass as Search, CircleNotch as Loader2 } from '@phosphor-ico
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
 
-const FALLBACK_PARTNERS: Partner[] = [
-    {
-        id: 1, name: 'Immo Bénin Prestige', isPremium: true,
-        description: 'Agence immobilière de luxe spécialisée dans les villas et appartements meublés à Cotonou et Ouidah.',
-        logo: '', coverImage: '', category: 'Immobilier', location: 'Cotonou, Haie Vive',
-        email: 'contact@immobeninprestige.bj', phone: '+229 97000000', whatsapp: '+22997000000',
-        products: [],
-    },
-    {
-        id: 2, name: 'Saveurs du Terroir',
-        description: 'Exportation de produits agroalimentaires béninois bio certifiés vers la diaspora.',
-        logo: '', coverImage: '', category: 'Agro-Business', location: 'Abomey-Calavi',
-        email: 'info@saveursterroir.bj', whatsapp: '+22996000000',
-        products: [],
-    },
-    {
-        id: 3, name: 'Art & Racines', isPremium: true,
-        description: 'Galerie d\'art proposant des sculptures et toiles d\'artistes béninois reconnus.',
-        logo: '', coverImage: '', category: 'Art & Culture', location: 'Ouidah',
-        email: 'galerie@artracines.bj', phone: '+229 95000000', whatsapp: '+22995000000',
-        products: [],
-    },
-    {
-        id: 4, name: 'Tech Hub Cotonou',
-        description: 'Espace de coworking et incubateur pour startups numériques de l\'Afrique de l\'Ouest.',
-        logo: '', coverImage: '', category: 'Services & Tech', location: 'Cotonou, Ganhi',
-        email: 'hello@techubcotonou.bj',
-        products: [],
-    },
-]
-
 const CATEGORIES = [
     'Tous', 'Immobilier', 'Agro-Business', 'Art & Culture', 'Services & Tech',
     'Mode & Beauté', 'Tourisme & Hôtellerie', 'Santé & Bien-être', 'Finance & Investissement',
 ]
 
 export default function PartnerDirectory() {
-    const [partners, setPartners] = useState<Partner[]>(FALLBACK_PARTNERS)
+    const [partners, setPartners] = useState<Partner[]>([])
     const [selectedCategory, setSelectedCategory] = useState('Tous')
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
@@ -62,7 +31,7 @@ export default function PartnerDirectory() {
 
                 if (!error && data && data.length > 0) {
                     setPartners(data.map((p: Record<string, unknown>) => ({
-                        id: Number(p.id) || 0,
+                        id: String(p.id),
                         name: String(p.name || ''),
                         description: String(p.description || ''),
                         logo: p.logo ? String(p.logo) : '',
@@ -81,13 +50,21 @@ export default function PartnerDirectory() {
                     })))
                 }
             } catch {
-                console.warn('Using fallback partners data.')
+                // Plus de partenaires fictifs de repli : la liste reste vide et l'écran le dit.
+                setPartners([])
             } finally {
                 setLoading(false)
             }
         }
         fetchPartners()
     }, [])
+
+    // Filtres = catégories réellement présentes (ordre de CATEGORIES, puis les autres) :
+    // « Commerce & Distribution », « Autre »… n'avaient aucun filtre.
+    const presentes = Array.from(new Set(partners.map(p => p.category).filter(Boolean)))
+    const categories = ['Tous',
+        ...CATEGORIES.slice(1).filter(c => presentes.includes(c)),
+        ...presentes.filter(c => !CATEGORIES.includes(c)).sort((x, y) => x.localeCompare(y, 'fr'))]
 
     const filteredPartners = partners.filter(partner => {
         const matchesCategory = selectedCategory === 'Tous' || partner.category === selectedCategory
@@ -104,7 +81,7 @@ export default function PartnerDirectory() {
                     {/* Filters */}
                     <div className="flex flex-col md:flex-row gap-6 justify-between items-center mb-12">
                         <div className="flex gap-2 overflow-x-auto pb-2 w-full md:w-auto no-scrollbar">
-                            {CATEGORIES.map(cat => (
+                            {categories.map(cat => (
                                 <Button
                                     key={cat}
                                     variant={selectedCategory === cat ? 'default' : 'outline'}

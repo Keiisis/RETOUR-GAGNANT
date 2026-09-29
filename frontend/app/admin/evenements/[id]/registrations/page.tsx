@@ -127,7 +127,20 @@ export default function EventRegistrationsPage() {
                         className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all border ${scanMode ? 'bg-[#FCD116] text-black border-[#FCD116]' : 'bg-white/[0.04] text-white border-white/[0.08] hover:bg-white/[0.08]'}`}>
                         <QrCode size={14} /> {scanMode ? 'Fermer le Scanner' : 'Scanner QR Code'}
                     </button>
-                    <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.04] text-gray-300 text-xs font-black hover:bg-white/[0.08] border border-white/[0.08] transition-all">
+                    <button type="button" onClick={() => {
+                        // CSV (séparateur « ; », BOM UTF-8 : ouverture correcte dans Excel FR).
+                        const cell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+                        const lignes = [
+                            ['Nom', 'Email', 'Téléphone', 'WhatsApp', 'Billet', 'Paiement', 'Moyen', 'Montant', 'Devise', 'Inscrit le', 'Codes billets'],
+                            ...regs.map(r => [r.full_name, r.email, r.phone, r.whatsapp, r.ticket_type, r.payment_status, r.payment_method,
+                                r.amount_paid, r.currency, new Date(r.created_at).toLocaleString('fr-FR'),
+                                (r.event_tickets || []).map((tk: { ticket_code?: string }) => tk.ticket_code).filter(Boolean).join(' ')]),
+                        ].map(l => l.map(cell).join(';')).join('\r\n')
+                        const url = URL.createObjectURL(new Blob(['\ufeff' + lignes], { type: 'text/csv;charset=utf-8' }))
+                        const a = document.createElement('a'); a.href = url; a.download = `inscrits-${eventId}.csv`; a.click()
+                        URL.revokeObjectURL(url)
+                    }} disabled={regs.length === 0}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.04] text-gray-300 text-xs font-black hover:bg-white/[0.08] border border-white/[0.08] transition-all disabled:opacity-40">
                         <Download size={14} /> Exporter CSV
                     </button>
                 </div>

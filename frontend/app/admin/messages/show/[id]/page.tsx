@@ -545,10 +545,26 @@ export default function MessageShow() {
 
                     {/* Quick Tools */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <ToolButton icon={Printer} label="Imprimer Dossier" />
-                        <ToolButton icon={Download} label="Export JSON" />
-                        <ToolButton icon={Share2} label="Relayer" />
-                        <ToolButton icon={AlertCircle} label="Signaler" />
+                        <ToolButton icon={Printer} label="Imprimer Dossier" onClick={() => window.print()} />
+                        <ToolButton icon={Download} label="Exporter (.txt)" onClick={() => {
+                            if (!record) return
+                            // Texte lisible (pas de JSON : décision du 13/08/2026).
+                            const texte = [
+                                `Message du ${new Date(record.created_at).toLocaleString('fr-FR')}`,
+                                `De : ${record.prenom || ''} ${record.nom || ''} <${record.email}>${record.telephone ? ' — ' + record.telephone : ''}`,
+                                `Type : ${record.type}${record.sujet ? ' — Sujet : ' + record.sujet : ''}`,
+                                '', record.message || '',
+                            ].join('\n')
+                            const url = URL.createObjectURL(new Blob([texte], { type: 'text/plain;charset=utf-8' }))
+                            const a = document.createElement('a'); a.href = url; a.download = `message-${record.id.slice(0, 8)}.txt`; a.click()
+                            URL.revokeObjectURL(url)
+                        }} />
+                        <ToolButton icon={Share2} label="Relayer par email" onClick={() => {
+                            if (!record) return
+                            const corps = `Message de ${record.prenom || ''} ${record.nom || ''} (${record.email}) :\n\n${record.message || ''}`
+                            window.location.href = `mailto:?subject=${encodeURIComponent('Fwd : ' + (record.sujet || 'Message client'))}&body=${encodeURIComponent(corps)}`
+                        }} />
+                        {/* « Signaler » retiré : aucun circuit de signalement n'existe (bouton sans effet). */}
                     </div>
                 </div>
             </div>
@@ -584,9 +600,9 @@ function DataField({ label, value, icon: Icon, color }: { label: string, value: 
     );
 }
 
-function ToolButton({ icon: Icon, label }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string }) {
+function ToolButton({ icon: Icon, label, onClick }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string, onClick: () => void }) {
     return (
-        <button className="flex flex-col items-center justify-center p-6 bg-[#0a0f18] border border-white/5 rounded-[1.5rem] hover:bg-white/10 transition-all group">
+        <button type="button" onClick={onClick} className="flex flex-col items-center justify-center p-6 bg-[#0a0f18] border border-white/5 rounded-[1.5rem] hover:bg-white/10 transition-all group">
             <Icon size={20} className="text-gray-600 group-hover:text-white transition-colors mb-2" />
             <span className="text-[9px] font-black text-gray-700 uppercase tracking-widest group-hover:text-white">{label}</span>
         </button>
