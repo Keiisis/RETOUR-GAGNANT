@@ -8,6 +8,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { convertFromBaseSync, getCurrentRates, formatCurrencySync, refreshRates } from '@/lib/currency'
 import { TVA_RATE } from '@/lib/tax'
+import DescriptionEditeur from '@/components/shared/DescriptionEditeur'
+import { normaliserDescription } from '@/lib/description-lignes'
 
 interface DevisItem {
     description: string
@@ -84,10 +86,10 @@ export default function CreateDocumentPage() {
             // Converts from DB Base (XOF) to selected currency
             const convertedPrice = convertFromBaseSync(service.base_price, currency)
             const convertedCost = convertFromBaseSync(service.cost_price, currency)
-            
-            setItems(prev => prev.map((it, idx) => idx === i ? { 
-                ...it, 
-                description: service.title, 
+
+            setItems(prev => prev.map((it, idx) => idx === i ? {
+                ...it,
+                description: service.title,
                 unit_price: convertedPrice,
                 unit_cost: convertedCost
             } : it))
@@ -122,14 +124,14 @@ export default function CreateDocumentPage() {
             agent_id: user.id,
             type: formType,
             numero,
-            client_nom: clientNom, 
-            client_prenom: clientPrenom, 
+            client_nom: clientNom,
+            client_prenom: clientPrenom,
             client_email: clientEmail,
-            client_phone: clientPhone, 
+            client_phone: clientPhone,
             client_adresse: clientAdresse,
             currency: currency,
             exchange_rate_applied: currentRate,
-            items: items.map(it => ({ description: it.description, quantity: it.quantity, unit_price: it.unit_price, tva: it.tva, unit_cost: it.unit_cost })), 
+            items: items.map(it => ({ description: normaliserDescription(it.description), quantity: it.quantity, unit_price: it.unit_price, tva: it.tva, unit_cost: it.unit_cost })),
             sous_total: sousTotal,
             total_tva: totalTVA,
             remise,
@@ -173,7 +175,7 @@ export default function CreateDocumentPage() {
                         <div className="flex gap-2 p-1 bg-white/[0.02] border border-white/5 rounded-xl">
                             {(['devis', 'facture'] as const).map(t => (
                                 <button key={t} type="button" onClick={() => setFormType(t)} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${formType === t ? (t === 'devis' ? 'bg-blue-500/20 text-blue-400 shadow-md' : 'bg-emerald-500/20 text-emerald-400 shadow-md') : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-                                    {t === 'devis' ? <FileText size={16} /> : <Receipt size={16} />} 
+                                    {t === 'devis' ? <FileText size={16} /> : <Receipt size={16} />}
                                     {t === 'devis' ? 'Devis Pro-forma' : 'Facture Officielle'}
                                 </button>
                             ))}
@@ -220,13 +222,12 @@ export default function CreateDocumentPage() {
                         {items.map((item, i) => (
                             <div key={i} className="flex flex-col sm:flex-row gap-3 items-start bg-white/[0.02] p-3 rounded-xl border border-white/5 group">
                                 <div className="flex-1 w-full relative">
-                                    <input 
-                                        type="text" 
-                                        placeholder="Description du service (ou tapez un nom de forfait...)" 
-                                        value={item.description} 
-                                        onChange={e => handleProductSelect(i, e.target.value)} 
-                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 text-sm" 
-                                        list="services-list"
+                                    <DescriptionEditeur
+                                        placeholder="Description du service (Entrée = élément suivant, même prix)"
+                                        value={item.description}
+                                        onChange={v => handleProductSelect(i, v)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500 text-sm"
+                                        suggestions="services-list"
                                     />
                                     <datalist id="services-list">
                                         {services.map(s => <option key={s.id} value={s.title}>{formatCurrencySync(convertFromBaseSync(s.base_price, currency), currency)}</option>)}
@@ -282,7 +283,7 @@ export default function CreateDocumentPage() {
                             <textarea value={conditions} onChange={e => setConditions(e.target.value)} rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/50 text-sm resize-none" />
                         </div>
                     </div>
-                    
+
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 self-start">
                         <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-4">Récapitulatif TTC</p>
                         <div className="space-y-3 font-mono text-sm text-gray-300">
@@ -304,7 +305,7 @@ export default function CreateDocumentPage() {
                                 <span className="text-gray-400 font-sans font-bold uppercase tracking-wider text-xs">Total général</span>
                                 <span className="text-2xl font-black text-emerald-400">{formatCurrencySync(totalFinal, currency)}</span>
                             </div>
-                            
+
                             {/* Marge Commerciale UI */}
                             {margeNette > 0 && (
                                 <div className="flex justify-between items-center pt-4 mt-4 border-t border-dashed border-white/10">
@@ -319,7 +320,7 @@ export default function CreateDocumentPage() {
                 {/* Submits */}
                 <div className="mt-8 pt-8 border-t border-white/5 flex flex-wrap items-center justify-end gap-3">
                     <Link href="/admin/facturation" className="px-6 py-3.5 text-sm font-bold text-gray-400 hover:text-white mr-auto">Annuler</Link>
-                    
+
                     <button type="button" onClick={() => handleSave('brouillon')} disabled={saving} className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 font-bold text-sm transition-colors border border-white/5">
                         <Save size={16} /> Enregistrer Brouillon
                     </button>
@@ -328,7 +329,7 @@ export default function CreateDocumentPage() {
                         {saving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
                         Enregistrer en {formType === 'devis' ? 'Devis Actif' : 'Facture À Payer'}
                     </button>
-                    
+
                 </div>
 
             </div>

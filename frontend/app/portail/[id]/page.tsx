@@ -13,6 +13,8 @@ import { TVA_RATE } from '@/lib/tax'
 import { useTranslation } from '@/lib/translation'
 import CurrencySelector from '@/components/boutique/CurrencySelector'
 import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
+import DescriptionLignes from '@/components/shared/DescriptionLignes'
+import { descriptionPourPdf } from '@/lib/description-lignes'
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined) => {
@@ -56,7 +58,7 @@ async function chargerPortail(id: string): Promise<{ doc: DocumentFinancier; dej
 export default function ClientPortalPage() {
     const params = useParams()
     const id = params?.id as string
-    
+
     const [doc, setDoc] = useState<DocumentFinancier | null>(null)
     const [loading, setLoading] = useState(true)
     const [generating, setGenerating] = useState(false)
@@ -150,7 +152,7 @@ export default function ClientPortalPage() {
         const rect = canvas.getBoundingClientRect()
         let x = 0
         let y = 0
-        
+
         if ('touches' in e) {
             x = e.touches[0].clientX - rect.left
             y = e.touches[0].clientY - rect.top
@@ -236,26 +238,26 @@ export default function ClientPortalPage() {
 
     // ─── Paiement multi-provider Logic ────────────────────────────────────
     const activeProviders = [
-        { 
-            id: 'fedapay', 
-            name: 'FedaPay', 
-            subtitle: 'Mobile Money / Carte', 
-            color: 'bg-[#2ECC71]/20 border-[#2ECC71]/40 text-[#2ECC71]', 
-            isReady: (paymentSettings.fedapay_enabled === 'true' || paymentSettings.fedapay_enabled === true) && !!paymentSettings.fedapay_public_key 
+        {
+            id: 'fedapay',
+            name: 'FedaPay',
+            subtitle: 'Mobile Money / Carte',
+            color: 'bg-[#2ECC71]/20 border-[#2ECC71]/40 text-[#2ECC71]',
+            isReady: (paymentSettings.fedapay_enabled === 'true' || paymentSettings.fedapay_enabled === true) && !!paymentSettings.fedapay_public_key
         },
-        { 
-            id: 'kkiapay', 
-            name: 'Kkiapay', 
-            subtitle: 'Mobile Money / Carte', 
-            color: 'bg-[#4A90D9]/20 border-[#4A90D9]/40 text-[#4A90D9]', 
-            isReady: (paymentSettings.kkiapay_enabled === 'true' || paymentSettings.kkiapay_enabled === true) && !!paymentSettings.kkiapay_public_key 
+        {
+            id: 'kkiapay',
+            name: 'Kkiapay',
+            subtitle: 'Mobile Money / Carte',
+            color: 'bg-[#4A90D9]/20 border-[#4A90D9]/40 text-[#4A90D9]',
+            isReady: (paymentSettings.kkiapay_enabled === 'true' || paymentSettings.kkiapay_enabled === true) && !!paymentSettings.kkiapay_public_key
         },
-        { 
-            id: 'zeyow', 
-            name: 'Zeyow', 
-            subtitle: 'Carte Virtuelle', 
-            color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]', 
-            isReady: (paymentSettings.zeyow_enabled === 'true' || paymentSettings.zeyow_enabled === true) && !!paymentSettings.zeyow_redirect_url 
+        {
+            id: 'zeyow',
+            name: 'Zeyow',
+            subtitle: 'Carte Virtuelle',
+            color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]',
+            isReady: (paymentSettings.zeyow_enabled === 'true' || paymentSettings.zeyow_enabled === true) && !!paymentSettings.zeyow_redirect_url
         },
     ].filter(p => p.isReady)
 
@@ -305,7 +307,7 @@ export default function ClientPortalPage() {
         try {
             // KKiapay : toujours XOF (pas de paramètre devise)
             const amountXOF = aPayerXOF
-            
+
             // Config minimale et conforme : pas de `paymentmethod` (tableau rejeté
             // par le widget → « paramètres invalides ») ni de `callback` (forcerait
             // une redirection qui contourne le listener de succès).
@@ -455,21 +457,21 @@ export default function ClientPortalPage() {
                 .replace(/\u2022/g, '-')    // bullet
 
             // ── BENIN FLAG STRIPE (PRINT-OPTIMIZED) ───────────────
-            // Pour garantir l'impression sur toutes les imprimantes, on utilise des lignes 
+            // Pour garantir l'impression sur toutes les imprimantes, on utilise des lignes
             // très épaisses au lieu de rectangles (souvent ignorés comme "background").
             const stripeThickness = 6
             const stripeYPos = 3 // Milieu de la ligne
-            
+
             pdf.setLineWidth(stripeThickness)
-            
+
             // Vert
             pdf.setDrawColor(0, 135, 81)
             pdf.line(0, stripeYPos, pw / 3, stripeYPos)
-            
+
             // Jaune
             pdf.setDrawColor(252, 209, 22)
             pdf.line(pw / 3, stripeYPos, (pw * 2) / 3, stripeYPos)
-            
+
             // Rouge
             pdf.setDrawColor(232, 17, 45)
             pdf.line((pw * 2) / 3, stripeYPos, pw, stripeYPos)
@@ -494,7 +496,7 @@ export default function ClientPortalPage() {
                 // Background blanc pour le logo transparent
                 pdf.setFillColor(255, 255, 255)
                 pdf.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 1, 'F')
-                
+
                 // Le logo fourni est désormais transparent, donc on utilise 'PNG'
                 const logoData = LOGO_BASE64.startsWith('data:') ? LOGO_BASE64 : `data:image/png;base64,${LOGO_BASE64}`
                 pdf.addImage(logoData, 'PNG', logoX, logoY, logoSize, logoSize)
@@ -565,7 +567,7 @@ export default function ClientPortalPage() {
             }
             const sc = statusColorMap[doc.status] || [90, 90, 90]
             const statusText = statusLabels[doc.status] || doc.status.toUpperCase()
-            
+
             const badgeY = headerTop + 37
             const badgeW = 32
             const badgeH = 8
@@ -670,7 +672,11 @@ export default function ClientPortalPage() {
 
             // Table rows
             doc.items.forEach((item: any, i: number) => {
-                const rowH = 9
+                // Description complète (plusieurs éléments = une ligne « - » chacun) :
+                // avant, hauteur fixe et seule la 1re ligne imprimée → texte tronqué.
+                pdf.setFontSize(7.5)
+                const descLignes: string[] = pdf.splitTextToSize(safe(descriptionPourPdf(item.description)), cols[0].w - 4)
+                const rowH = Math.max(9, descLignes.length * 3.4 + 5.6)
                 const even = i % 2 === 0
                 pdf.setFillColor(even ? 252 : 245, even ? 253 : 247, even ? 255 : 250)
                 pdf.rect(ml, y, cw, rowH, 'F')
@@ -698,8 +704,7 @@ export default function ClientPortalPage() {
                     } else if (cell.align === 'center') {
                         pdf.text(cell.text, colX + cell.w / 2, y + 6, { align: 'center' })
                     } else {
-                        const lines = pdf.splitTextToSize(cell.text, cell.w - 4)
-                        pdf.text(lines[0] || '', colX + 3, y + 6)
+                        descLignes.forEach((l, li) => pdf.text(l, colX + 3, y + 6 + li * 3.4))
                     }
                     colX += cell.w
                 })
@@ -794,12 +799,12 @@ export default function ClientPortalPage() {
                 pdf.setFillColor(242, 245, 255)
                 pdf.setDrawColor(100, 110, 200)
                 pdf.roundedRect(sig2X, y, sigW, sigBoxH, 2, 2, 'FD')
-                
+
                 pdf.setFont('helvetica', 'bold')
                 pdf.setFontSize(6.5)
                 pdf.setTextColor(70, 80, 170)
                 pdf.text(presidentTitle.toUpperCase(), sig2X + 4, y + 7)
-                
+
                 pdf.setFontSize(5.5)
                 pdf.setTextColor(0, 0, 0)
                 pdf.text('La Responsable de Signature :', sig2X + 4, y + 18)
@@ -845,12 +850,12 @@ export default function ClientPortalPage() {
             pdf.setFillColor(10, 16, 24)
             pdf.rect(0, footerY, pw, footH, 'F')
             const footerLines = devisFooter.split('\n')
-            
+
             pdf.setFont('helvetica', 'normal')
             pdf.setFontSize(6)
             pdf.setTextColor(180, 190, 210) // Plus clair pour l'impression sur fond noir
             if (footerLines.length > 0) pdf.text(safe(footerLines[0]), pw / 2, footerY + 6, { align: 'center' })
-            
+
             pdf.setFont('helvetica', 'bold')
             pdf.setFontSize(6.5)
             pdf.setTextColor(255, 255, 255)
@@ -884,8 +889,8 @@ export default function ClientPortalPage() {
     // Facture émise manuellement (preuve d'un paiement déjà reçu) :
     // pas issue d'un devis signé → aucun bouton de paiement à afficher
     const isManualFacture = doc.type === 'facture' && !doc.parent_devis_id
-    const statusColor = isPaid ? 'text-emerald-600 bg-emerald-500/10' : 
-                       isAccepted ? 'text-emerald-600 bg-emerald-500/10' : 
+    const statusColor = isPaid ? 'text-emerald-600 bg-emerald-500/10' :
+                       isAccepted ? 'text-emerald-600 bg-emerald-500/10' :
                        'text-blue-600 bg-blue-500/10'
 
     return (
@@ -901,7 +906,7 @@ export default function ClientPortalPage() {
             </div>
 
             <div className="max-w-4xl mx-auto px-4 py-8 lg:py-12">
-                
+
                 {/* Header Portail */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
                     <div className="flex items-center gap-4">
@@ -935,9 +940,9 @@ export default function ClientPortalPage() {
                 </div>
 
                 {/* Main Paper Document */}
-                <motion.div 
-                    initial={{ opacity: 0, scale: 0.98 }} 
-                    animate={{ opacity: 1, scale: 1 }} 
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl relative"
                 >
                     {/* Watermark */}
@@ -990,7 +995,7 @@ export default function ClientPortalPage() {
                                 <tbody>
                                     {doc.items.map((it, i) => (
                                         <tr key={i} className="border-b border-slate-200 last:border-0 hover:bg-white/[0.01]">
-                                            <td className="py-4 px-3 md:px-5 text-sm text-slate-600 min-w-[150px]">{it.description}</td>
+                                            <td className="py-4 px-3 md:px-5 text-sm text-slate-600 min-w-[150px]"><DescriptionLignes texte={it.description} /></td>
                                             <td className="py-4 px-5 text-sm text-slate-500 text-center">{it.quantity}</td>
                                             <td className="py-4 px-5 text-sm text-slate-500 text-right font-mono">{it.unit_price.toLocaleString('fr-FR')}</td>
                                             <td className="py-4 px-5 text-sm text-slate-500 text-right">{it.tva}%</td>
@@ -1096,11 +1101,11 @@ export default function ClientPortalPage() {
                                             <p className="text-sm text-gray-900 font-bold mt-1">Nathalie RIFFERT GERMANY</p>
                                         </div>
                                         {STAMP_BASE64 && (
-                                            <Image 
-                                                src={`data:image/png;base64,${STAMP_BASE64}`} 
-                                                alt="Cachet PDG" 
-                                                width={260} 
-                                                height={260} 
+                                            <Image
+                                                src={`data:image/png;base64,${STAMP_BASE64}`}
+                                                alt="Cachet PDG"
+                                                width={260}
+                                                height={260}
                                                 className="absolute inset-0 m-auto object-contain opacity-95 rotate-[-5deg] z-0"
                                             />
                                         )}
@@ -1129,10 +1134,10 @@ export default function ClientPortalPage() {
 
                 {/* ─── ACTION AREA (BOTTOM FLOATING OR STATIC) ─── */}
                 <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4">
-                    
+
                     {/* CASE 1: Devis not accepted -> Require Signature */}
                     {doc.type === 'devis' && !isAccepted && !signing && (
-                        <button 
+                        <button
                             onClick={() => setSigning(true)}
                             className="w-full md:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-8 py-4 rounded-2xl font-black text-lg shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:scale-105 transition-all"
                         >
@@ -1218,7 +1223,7 @@ export default function ClientPortalPage() {
 
                     {/* CASE 3: Download Button (Always available unless signing) */}
                     {!signing && (
-                        <button 
+                        <button
                             onClick={generatePDF}
                             disabled={generating}
                             className="w-full md:w-auto flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 px-6 py-4 rounded-2xl font-bold transition-all hover:bg-slate-100 disabled:opacity-50"
@@ -1276,11 +1281,11 @@ export default function ClientPortalPage() {
             {/* ─── SIGNATURE MODAL OVERLAY ─── */}
             <AnimatePresence>
                 {signing && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-50 bg-[#F4F7F5]/90 backdrop-blur-md flex items-center justify-center p-4"
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
                             className="bg-[#F4F7F5] border border-slate-200 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl relative"
                         >
@@ -1293,7 +1298,7 @@ export default function ClientPortalPage() {
                                     <X size={20} />
                                 </button>
                             </div>
-                            
+
                             <div className="p-6">
                                 <div className="bg-white rounded-2xl shadow-inner border-[3px] border-emerald-500/30 overflow-hidden relative touch-none">
                                     {/* Ligne pointillée pour guider */}
@@ -1316,12 +1321,12 @@ export default function ClientPortalPage() {
                                         onTouchEnd={endDrawing}
                                     />
                                 </div>
-                                
+
                                 <div className="flex justify-between items-center mt-4">
                                     <button onClick={clearSignature} className="text-sm font-bold text-slate-500 hover:text-slate-900 px-4 py-2">
                                         Effacer
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={saveSignature}
                                         disabled={isProcessing}
                                         className="flex items-center gap-2 bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg hover:bg-emerald-600 transition-colors disabled:opacity-50"
@@ -1335,15 +1340,15 @@ export default function ClientPortalPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
-            
+
             {/* ─── PAYMENT METHODS MODAL ─── */}
             <AnimatePresence>
                 {showPaymentMethods && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className="fixed inset-0 z-[60] bg-[#F4F7F5]/90 backdrop-blur-md flex items-center justify-center p-4"
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
                             className="bg-[#F4F7F5] border border-slate-200 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
                         >
@@ -1380,7 +1385,7 @@ export default function ClientPortalPage() {
 
                             <div className="p-6 space-y-4">
                                 {activeProviders.map(p => (
-                                    <button 
+                                    <button
                                         key={p.id}
                                         onClick={() => {
                                             if (p.id === 'fedapay') handleFedaPay()

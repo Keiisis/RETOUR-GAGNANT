@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, FileText, Receipt, ArrowSquareOut as ExternalLink, Download, PenNib as PenTool, CreditCard, CheckCircle as CheckCircle2, Clock, WarningCircle as AlertCircle, Shield, Lightning as Zap, BellSlash as BellOff, X, Pen, Warning as AlertTriangle } from '@phosphor-icons/react';
 import Image from 'next/image'
+import DescriptionLignes from '@/components/shared/DescriptionLignes'
 
 interface Doc {
     id: string
@@ -477,7 +478,7 @@ export default function ClientDocumentDetailPage() {
                             <tbody className="divide-y divide-white/[0.04]">
                                 {(doc.items || []).map((item: any, i: number) => (
                                     <tr key={i} className="hover:bg-white/[0.02]">
-                                        <td className="py-3.5 px-4 text-sm text-white">{item.description}</td>
+                                        <td className="py-3.5 px-4 text-sm text-white"><DescriptionLignes texte={item.description} /></td>
                                         <td className="py-3.5 px-4 text-sm text-gray-300 text-center">{item.quantity}</td>
                                         <td className="py-3.5 px-4 text-sm text-gray-300 text-right font-mono">{fmtN(item.unit_price)}</td>
                                         <td className="py-3.5 px-4 text-sm text-white font-mono font-bold text-right">{fmtN(item.quantity * item.unit_price)}</td>

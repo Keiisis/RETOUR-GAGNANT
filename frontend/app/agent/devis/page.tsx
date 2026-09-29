@@ -9,6 +9,8 @@ import { LOGO_BASE64, STAMP_BASE64 } from '@/lib/logoBase64'
 import { convertCurrency, refreshRates, CURRENCIES, asCurrency, type CurrencyCode } from '@/lib/currency'
 import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
 import { DOC_FIN_STATUTS, DOC_FIN_RGB, DOC_FIN_CLOS, type DocFinStatut } from '@/lib/constants/statuts'
+import DescriptionLignes from '@/components/shared/DescriptionLignes'
+import { descriptionPourPdf, descriptionEnLigne } from '@/lib/description-lignes'
 
 // Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
 /* Delegue a la table UNIQUE des devises (`lib/currency.ts`).
@@ -379,7 +381,7 @@ export default function AgentDevisPage() {
 
             doc.items.forEach((it, i) => {
                 // Dynamic row height for full description text
-                const descLines = pdf.splitTextToSize(it.description, cols[0].w - 6)
+                const descLines = pdf.splitTextToSize(descriptionPourPdf(it.description), cols[0].w - 6)
                 const rh = Math.max(9, descLines.length * 4 + 3)
                 pdf.setFillColor(i % 2 === 0 ? 252 : 246, i % 2 === 0 ? 253 : 248, i % 2 === 0 ? 255 : 252)
                 pdf.rect(ml, y, cw, rh, 'F')
@@ -534,7 +536,7 @@ export default function AgentDevisPage() {
                 body: JSON.stringify({
                     to: doc.client_email,
                     subject: `${typeLabel} N° ${doc.numero}${statusLabel} : Retour Gagnant Bénin`,
- message: `Bonjour ${doc.client_prenom || ''} ${doc.client_nom || ''},\n\nVeuillez trouver ci-joint votre ${typeLabel.toLowerCase()} N° ${doc.numero} d'un montant de ${doc.total.toLocaleString('fr-FR')} XOF.\n\n Détails :\n${doc.items?.map(i => `• ${i.description} : ${i.quantity} x ${i.unit_price.toLocaleString('fr-FR')} XOF`).join('\n') || ''}\n\n Total : ${doc.total.toLocaleString('fr-FR')} XOF\n${doc.notes ? `\n Notes : ${doc.notes}`: ''}\n${doc.conditions ? `\n Conditions : ${doc.conditions}`: ''}\n\nCordialement,\nL'équipe Retour Gagnant Bénin`,
+ message: `Bonjour ${doc.client_prenom || ''} ${doc.client_nom || ''},\n\nVeuillez trouver ci-joint votre ${typeLabel.toLowerCase()} N° ${doc.numero} d'un montant de ${doc.total.toLocaleString('fr-FR')} XOF.\n\n Détails :\n${doc.items?.map(i => `• ${descriptionEnLigne(i.description)} : ${i.quantity} x ${i.unit_price.toLocaleString('fr-FR')} XOF`).join('\n') || ''}\n\n Total : ${doc.total.toLocaleString('fr-FR')} XOF\n${doc.notes ? `\n Notes : ${doc.notes}`: ''}\n${doc.conditions ? `\n Conditions : ${doc.conditions}`: ''}\n\nCordialement,\nL'équipe Retour Gagnant Bénin`,
                     clientName: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim(),
                     context: 'document_financier',
                     relatedId: doc.id,
@@ -832,13 +834,13 @@ export default function AgentDevisPage() {
                                     </td>
                                     <td className="py-3 px-5 text-right">
                                         <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     const url = `${window.location.origin}/portail/${doc.id}`
                                                     navigator.clipboard.writeText(url)
                                                     alert('Lien Magique Client copié dans le presse-papier !')
-                                                }} 
-                                                className="p-2 text-gray-400 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-all" 
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-amber-400 hover:bg-white/5 rounded-lg transition-all"
                                                 title="Copier le Lien Client (WhatsApp)"
                                             >
                                                 <LinkIcon size={16} />
@@ -960,7 +962,7 @@ export default function AgentDevisPage() {
                                         <tbody>
                                             {showPreview.items.map((it, i) => (
                                                 <tr key={i} className="border-t border-white/5">
-                                                    <td className="p-3 text-gray-300">{it.description}</td>
+                                                    <td className="p-3 text-gray-300"><DescriptionLignes texte={it.description} /></td>
                                                     <td className="p-3 text-gray-400 text-center">{it.quantity}</td>
                                                     <td className="p-3 text-gray-400 text-right font-mono">{it.unit_price.toLocaleString('fr-FR')}</td>
                                                     <td className="p-3 text-gray-400 text-right">{it.tva}%</td>
@@ -970,10 +972,10 @@ export default function AgentDevisPage() {
                                         </tbody>
                                     </table>
                                 </div>
-                                
+
                                 <div className="border-t border-white/5 pt-4">
                                     <p className="text-xs text-info-400 mb-2 flex items-center gap-2">
-                                        <AlertCircle size={14}/> 
+                                        <AlertCircle size={14}/>
                                         En tant qu'Agent, laissez le système changer le statut automatiquement lorsque le client signe ou paie via le lien.
                                     </p>
                                 </div>
