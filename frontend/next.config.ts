@@ -95,6 +95,21 @@ const nextConfig: NextConfig = {
       source: '/(.*)',
       headers: securityHeaders,
     },
+    /* Document A4 du contrat, affiché DANS la page /contrat/[token] (iframe).
+       `frame-ancestors 'none'` + `X-Frame-Options: DENY` le rendaient vide pour
+       le client (audit 29/09/2026). Cadrage autorisé par le site lui-même
+       seulement ; la règle placée après remplace les mêmes clés. */
+    {
+      source: '/api/contracts/print',
+      headers: [
+        { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        {
+          key: 'Content-Security-Policy',
+          value: String(securityHeaders.find(h => h.key === 'Content-Security-Policy')?.value)
+            .replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+        },
+      ],
+    },
   ],
   images: {
     remotePatterns: [

@@ -44,6 +44,8 @@ interface ProposalItem {
 interface Proposal {
     id: string
     secret_key: string
+    /** ready | accepted | paid… — `paid` bloque un second règlement. */
+    status?: string
     client_name: string
     client_email: string | null
     destination: string
@@ -579,6 +581,24 @@ export default function ProposalPaymentPage({ params }: { params: Promise<{ secr
     }
     if (!proposal) {
         return <div className="min-h-screen bg-[#EEF2F6] flex items-center justify-center text-slate-900"><p>Proposition introuvable</p></div>
+    }
+    // Déjà réglée (audit 29/09/2026) : le formulaire restait affiché → second
+    // paiement possible. Le serveur le refuse aussi (/api/checkout → 409).
+    if (proposal.status === 'paid') {
+        return (
+            <div className="min-h-screen bg-[#EEF2F6] flex items-center justify-center px-6 text-slate-900">
+                <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-sm">
+                    <CheckCircle2 className="w-14 h-14 text-emerald-600 mx-auto mb-4" />
+                    <h1 className="text-2xl font-black mb-2">Proposition déjà réglée</h1>
+                    <p className="text-sm text-slate-500 mb-6">
+                        Le paiement de cette proposition a bien été reçu. Aucun nouveau règlement n&apos;est nécessaire.
+                    </p>
+                    <Link href={`/p/${secret}`} className="inline-flex items-center gap-2 text-sm font-bold text-amber-600 hover:underline">
+                        <ArrowLeft className="w-4 h-4" /> Revoir la proposition
+                    </Link>
+                </div>
+            </div>
+        )
     }
 
     const billableItems = items.filter(i => i.type !== 'hero' && i.type !== 'pricing' && i.selling_price > 0)
