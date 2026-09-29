@@ -98,6 +98,8 @@ export async function GET(
         validite: doc.validite || undefined,
         // Sans ce type, un DEVIS téléchargé ici s'intitulait « FACTURE ».
         docType: estDevis ? 'devis' : 'facture',
+        statut: doc.status || undefined,
+        signedAt: doc.signed_at || undefined,
         clientSignatureDataUrl: paraphe,
     })
 

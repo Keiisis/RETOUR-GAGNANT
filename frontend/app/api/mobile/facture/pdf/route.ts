@@ -76,6 +76,8 @@ export async function GET(req: NextRequest) {
         notes: f.notes || undefined,
         conditions: 'Paiement effectué en ligne.',
         docType: f.type === 'devis' ? 'devis' : 'facture',
+        statut: f.status || undefined,
+        signedAt: f.signed_at || undefined,
         /* Facture acquittée : le cadre de droite affiche la confirmation de
            paiement. Le paraphe, lui, rouvre le « Bon pour accord » à gauche. */
         isManual: acquittee,

@@ -190,7 +190,9 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
 
                 const finalSousTotal = isXof ? Math.round(Number(doc.sous_total) || 0) : Math.round((Number(doc.sous_total) || 0) * 100) / 100
                 const finalTotal = isXof ? Math.round(Number(doc.total) || 0) : Math.round((Number(doc.total) || 0) * 100) / 100
-                const finalTva = finalTotal - finalSousTotal
+                // TVA = TTC − (HT − remise) ; l'ancien « TTC − HT » devenait NÉGATIF dès qu'une remise existait.
+                const finalRemise = isXof ? Math.round(Number(doc.remise) || 0) : Math.round((Number(doc.remise) || 0) * 100) / 100
+                const finalTva = Math.max(0, finalTotal - (finalSousTotal - finalRemise))
 
                 pdfBase64 = generateInvoicePdf({
                     invoiceRef: numero,
@@ -212,6 +214,8 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                     notes: doc.notes || `Paiement en ligne via ${provider}\nTransaction: ${txId}`,
                     conditions: 'Paiement effectué en ligne.',
                     isManual: true,
+                    statut: 'paye',
+                    paymentMethod: provider || undefined,
                     clientSignatureDataUrl: paraphe,
                 })
             } catch (pdfErr) {

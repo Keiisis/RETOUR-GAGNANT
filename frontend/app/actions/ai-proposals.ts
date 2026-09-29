@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { exigerEquipe } from '@/lib/action-auth'
+import { rehebergerImagesItem } from '@/lib/proposal-image-rehost'
 
 /* ⚠️ Une action serveur est appelable par n'importe qui. Ces fonctions
    lisaient toutes les propositions (avec leur clé secrète), réécrivaient les
@@ -117,14 +118,16 @@ export async function updateProposalAndItems(proposalId: string, newTotal: numbe
             .from('ai_proposal_items').select('*').eq('proposal_id', proposalId)
         if (errLecture) throw errLecture
 
-        const itemsToInsert = items.map((item, idx) => {
+        // Images externes (photos Google Maps temporaires, liens collés)
+        // copiées dans partner-assets AVANT la suppression des anciennes lignes.
+        const itemsToInsert = await Promise.all(items.map(async (item, idx) => {
             const { id, ...rest } = item
             void id; // ignore id
-            return {
+            return rehebergerImagesItem(supabaseAdmin, {
                 ...rest,
                 order_index: idx
-            }
-        })
+            })
+        }))
 
         const { error: errSuppr } = await supabaseAdmin.from('ai_proposal_items').delete().eq('proposal_id', proposalId)
         if (errSuppr) throw errSuppr

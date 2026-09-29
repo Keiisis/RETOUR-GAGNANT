@@ -557,7 +557,10 @@ function toInvoiceData(row: Row, signature?: string): InvoicePdfData {
         notes: s(row.notes) || undefined,
         conditions: s(row.conditions) || undefined,
         validite: s(row.validite) || undefined,
-        docType: s(row.type).toLowerCase() === 'devis' ? 'devis' : 'facture',
+        docType: s(row.type).toLowerCase() === 'devis' ? 'devis' : s(row.type).toLowerCase() === 'avoir' ? 'avoir' : 'facture',
+        statut: s(row.status) || undefined,
+        signedAt: s(row.signed_at) || undefined,
+        paymentMethod: s(row.payment_method) || undefined,
         clientSignatureDataUrl: signature,
     }
 }
