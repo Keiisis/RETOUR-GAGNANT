@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslation, T } from '@/lib/translation';
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Eye, ChatText as MessageSquare, MapTrifold as Map, ShieldCheck, TrendUp as TrendingUp, WarningCircle as AlertCircle, Sparkle as Sparkles, CircleNotch as Loader2, Pulse as Activity, Clock, Globe, Lightning as Zap, ArrowUpRight, ShoppingBag, Receipt, CreditCard, Package, Image as ImageIcon, Gear as Settings } from '@phosphor-icons/react';
@@ -177,7 +178,7 @@ export default function AdminDashboard() {
             {/* AI Assistant - Floating Interface */}
             <motion.div variants={item} className="relative group">
                 <div className="absolute -inset-1 bg-benin-gradient rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-                <AIAssistant />
+                <div id="kage-ia" className="scroll-mt-24"><AIAssistant /></div>
             </motion.div>
 
             {/* ═══════════════════════════════════════════ */}
@@ -355,10 +356,10 @@ export default function AdminDashboard() {
 
                     {/* Quick Access Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <QuickAction icon={Map} label="Patrimoine" />
-                        <QuickAction icon={ImageIcon} label="Galerie" />
-                        <QuickAction icon={Settings} label="Réseau" />
-                        <QuickAction icon={ShieldCheck} label="Sécurité" />
+                        <QuickAction icon={Map} label="Patrimoine" href="/admin/patrimoine" />
+                        <QuickAction icon={ImageIcon} label="Galerie" href="/admin/gallery" />
+                        <QuickAction icon={Settings} label="Réseau" href="/admin/partenaires" />
+                        <QuickAction icon={ShieldCheck} label="Sécurité" href="/admin/securite" />
                     </div>
                 </motion.div>
             </div>
@@ -410,11 +411,11 @@ function 健康Status({ label, value, color }: { label: string, value: number, c
     );
 }
 
-function QuickAction({ icon: Icon, label }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string }) {
+function QuickAction({ icon: Icon, label, href }: { icon: React.ComponentType<{ size?: number; className?: string }>, label: string, href: string }) {
     return (
-        <button className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/5 rounded-[1.5rem] hover:bg-white/10 hover:border-white/20 transition-all group">
+        <Link href={href} className="flex flex-col items-center justify-center p-6 bg-white/5 border border-white/5 rounded-[1.5rem] hover:bg-white/10 hover:border-white/20 transition-all group">
             <Icon size={24} className="text-gray-400 group-hover:text-[#FCD116] transition-colors mb-3" />
             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest group-hover:text-white">{label}</span>
-        </button>
+        </Link>
     );
 }

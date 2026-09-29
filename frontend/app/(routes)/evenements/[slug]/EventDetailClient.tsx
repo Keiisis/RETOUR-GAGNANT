@@ -309,6 +309,17 @@ export default function EventDetailPage() {
                                     {t(event.category)}
                                 </span>
                                 <button type="button"
+                                    title={t('Partager')}
+                                    aria-label={t('Partager')}
+                                    onClick={async () => {
+                                        // Partage natif (mobile) ; sinon copie du lien.
+                                        const url = window.location.href
+                                        try {
+                                            if (navigator.share) { await navigator.share({ title: event.title, url }); return }
+                                            await navigator.clipboard.writeText(url)
+                                            alert(t('Lien copié dans le presse-papiers.'))
+                                        } catch { /* partage annulé par l'utilisateur */ }
+                                    }}
                                     className="w-9 h-9 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#008751] hover:border-[#008751]/20 transition-all cursor-pointer">
                                     <Share2 size={14} />
                                 </button>

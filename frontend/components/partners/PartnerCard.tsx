@@ -15,7 +15,8 @@ export interface PartnerProduct {
 }
 
 export interface Partner {
-    id: number
+    // UUID en base (avant : converti en nombre → 0 pour tous les partenaires).
+    id: string | number
     name: string
     description: string
     logo: string
