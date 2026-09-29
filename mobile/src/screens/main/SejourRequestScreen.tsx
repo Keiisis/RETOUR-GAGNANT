@@ -119,6 +119,9 @@ export default function SejourRequestScreen({ navigation }: { navigation: any })
             'disponibilites-21j',
             async () => {
                 const r = await fetchWithTimeout(`${API_BASE}/api/availability?days=21`, { timeoutMs: 12000 })
+                /* 500 → `{ error, jours: [] }` était mémorisé comme « aucun
+                   créneau » pendant 30 s, à la place des créneaux connus. */
+                if (!r.ok) throw new Error(`HTTP ${r.status}`)
                 return await r.json()
             },
             (j) => {

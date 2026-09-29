@@ -24,6 +24,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { colors, typography, spacing, radius, shadows } from '../../config/theme'
 import { FlagBar, Card, IconTile } from '../../components/ui'
 import { thankYouMessage } from '../../lib/serviceCompletion'
+import { statutDossierMobile } from '../../lib/statuts'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -32,11 +33,9 @@ interface DossierInfo { status: string; progress: number; service_type: string |
 /* Étapes réelles du cycle de vie d'un dossier (voir mobile/CLAUDE.md).
    Sert à afficher « Étape n sur 5 » sans inventer de valeur. */
 const STATUS_STEPS = ['soumis', 'verifie', 'traitement', 'validation', 'termine'] as const
-/* Statut global (dossier_tracking, partagé admin/agent) -> statut d'affichage mobile. */
-const TRACKING_TO_MOBILE: Record<string, string> = {
-    reception: 'soumis', verification: 'verifie', traitement: 'traitement',
-    validation: 'validation', finalisation: 'validation', termine: 'termine', annule: 'annule',
-}
+/* Statut global (dossier_tracking, partagé admin/agent) -> statut d'affichage
+   mobile : table de référence copiée du web (lib/statuts), valeurs historiques
+   (`en_cours`, `en_attente`…) comprises — elles tombaient sur « soumis ». */
 const STATUS_LABEL: Record<string, string> = {
     soumis: 'Dossier soumis', verifie: 'En vérification', traitement: 'En traitement',
     validation: 'En validation', termine: 'Terminé', annule: 'Annulé',
@@ -104,35 +103,59 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (ro
         }>(
             cleAccueil,
             async () => {
-            const [dossierRes, notifRes, conversationRes] = await Promise.all([
+            /* Rattachement par identifiant OU par email de la session : 23
+               dossiers sur 25 et la plupart des fils de messages créés hors
+               application ne portent QUE l'email (mesuré le 2026-08-18). Filtrer
+               sur le seul client_id affichait « aucun dossier » et un compteur
+               de messages à 0 alors que l'onglet Dossier / Messages en montrait.
+               `ilike` : la règle RLS compare en minuscules. */
+            const email = String(profile.email || '').trim().toLowerCase()
+            const parDossier = [`client_id.eq.${profile.id}`]
+            const parFil = [`client_id.eq.${profile.id}`]
+            if (email) {
+                parDossier.push(`client_email.ilike.${email}`)
+                parFil.push(`email.ilike.${email}`)
+            }
+            const [dossierRes, notifRes, filsRes] = await Promise.all([
                 // Source = dossier_tracking (la table `dossiers` est celle de la
                 // généalogie). On mappe le statut global vers l'affichage mobile.
                 supabase.from('dossier_tracking').select('statut, progression, service_type')
-                    .eq('client_id', profile.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
-                supabase.from('notifications').select('*', { count: 'exact', head: true })
+                    .or(parDossier.join(',')).order('created_at', { ascending: false }).limit(1),
+                supabase.from('notifications').select('id', { count: 'exact', head: true })
                     .eq('user_id', profile.id).eq('is_read', false),
+                // TOUS les fils du client (rdv, contact, chat…) : l'agent répond
+                // dans celui qu'il a sous les yeux — même source que Messages.
                 supabase.from('messages').select('id')
-                    .eq('client_id', profile.id).eq('type', 'chat')
-                    .order('created_at', { ascending: false }).limit(1).maybeSingle(),
+                    .or(parFil.join(','))
+                    .order('created_at', { ascending: false }).limit(50),
             ])
+            /* Une erreur (jeton expiré, réseau) ne doit pas se déguiser en
+               « aucun dossier, 0 message » : on lève, la mémoire garde la
+               dernière valeur connue. */
+            const erreur = dossierRes.error || notifRes.error || filsRes.error
+            if (erreur) throw new Error(erreur.message)
 
-            const tr = dossierRes.data as { statut: string; progression: number | null; service_type: string | null } | null
+            const tr = (dossierRes.data?.[0] ?? null) as { statut: string; progression: number | null; service_type: string | null } | null
             const resume: DossierInfo | null = tr
                 ? {
-                    status: TRACKING_TO_MOBILE[tr.statut] || 'soumis',
+                    status: statutDossierMobile(tr.statut),
                     progress: typeof tr.progression === 'number' ? tr.progression : 0,
                     service_type: tr.service_type,
                 }
                 : null
 
             let messages = 0
-            if (conversationRes.data?.id) {
+            const fils = (filsRes.data || []).map(f => String(f.id))
+            if (fils.length > 0) {
                 const lastSeenIso = lire(`@rg_chat_last_seen_${profile.id}`) ?? null
+                // Tout ce qui n'est pas écrit par le client : agent ET messages
+                // système de l'équipe (relances, factures) — comme l'écran Messages.
                 let q = supabase.from('chat_messages')
                     .select('id', { count: 'exact', head: true })
-                    .eq('conversation_id', conversationRes.data.id).eq('role', 'agent')
+                    .in('conversation_id', fils).neq('role', 'client')
                 if (lastSeenIso) q = q.gt('created_at', lastSeenIso)
-                const { count } = await q
+                const { count, error: errMsg } = await q
+                if (errMsg) throw new Error(errMsg.message)
                 messages = count || 0
             }
 

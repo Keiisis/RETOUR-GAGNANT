@@ -220,29 +220,29 @@ export default function ProfilScreen() {
             async () => {
                 const email = String(profile.email || '').trim().toLowerCase()
 
+                /* Un échec LÈVE : la mémoire garde les derniers compteurs connus.
+                   Avant, toute panne (jeton expiré, réseau) affichait « 00 » et
+                   écrasait la valeur mémorisée. */
                 // Dossiers : même source que l'onglet Dossier.
-                let dossiers = 0
-                try {
-                    const res = await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
-                        timeoutMs: 12000,
-                        headers: { ...(await authHeaders()) },
-                    })
-                    const json = await res.json().catch(() => ({}))
-                    dossiers = Array.isArray(json.dossiers) ? json.dossiers.length : 0
-                } catch { /* on garde 0 */ }
+                const res = await fetchWithTimeout(`${API_BASE}/api/mobile/dossiers`, {
+                    timeoutMs: 12000,
+                    headers: { ...(await authHeaders()) },
+                })
+                const json = await res.json().catch(() => ({}))
+                if (!res.ok || !Array.isArray(json.dossiers)) throw new Error(`dossiers HTTP ${res.status}`)
+                const dossiers = json.dossiers.length
 
-                // Rendez-vous : par identifiant OU par email, annulés exclus.
-                let rdv = 0
-                try {
-                    const criteres = [`client_id.eq.${profile.id}`]
-                    if (email) criteres.push(`client_email.eq.${email}`)
-                    const { count } = await supabase
-                        .from('rdv_requests')
-                        .select('id', { count: 'exact', head: true })
-                        .or(criteres.join(','))
-                        .neq('statut', 'annule')
-                    rdv = count || 0
-                } catch { /* on garde 0 */ }
+                // Rendez-vous : par identifiant OU par email (ilike : la règle
+                // RLS compare en minuscules), annulés exclus.
+                const criteres = [`client_id.eq.${profile.id}`]
+                if (email) criteres.push(`client_email.ilike.${email}`)
+                const { count, error } = await supabase
+                    .from('rdv_requests')
+                    .select('id', { count: 'exact', head: true })
+                    .or(criteres.join(','))
+                    .neq('statut', 'annule')
+                if (error) throw new Error(error.message)
+                const rdv = count || 0
 
                 return { dossiers, appointments: rdv, payments: 0 }
             },
@@ -311,9 +311,13 @@ export default function ProfilScreen() {
                 .from('avatars')
                 .getPublicUrl(filePath)
 
-            await supabase.from('client_profiles').update({
+            // Erreur (ou 0 ligne sous RLS) : la photo est déposée mais le profil
+            // ne pointe pas dessus — on le dit au lieu d'afficher « mise à jour ».
+            const { data: majAvatar, error: errProfil } = await supabase.from('client_profiles').update({
                 avatar_url: publicUrl, avatar_type: 'photo', avatar_preset: null,
-            }).eq('id', userId)
+            }).eq('id', userId).select('id')
+            if (errProfil) throw errProfil
+            if (!majAvatar || majAvatar.length === 0) throw new Error(t('Profil introuvable : photo non enregistrée.'))
             await refreshProfile()
 
             toast(t('Photo mise à jour'), t('Votre photo de profil a été modifiée avec succès.'))
@@ -359,9 +363,13 @@ export default function ProfilScreen() {
             if (uploadError) throw uploadError
 
             const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
-            await supabase.from('client_profiles').update({
+            // Erreur (ou 0 ligne sous RLS) : la photo est déposée mais le profil
+            // ne pointe pas dessus — on le dit au lieu d'afficher « mise à jour ».
+            const { data: majAvatar, error: errProfil } = await supabase.from('client_profiles').update({
                 avatar_url: publicUrl, avatar_type: 'photo', avatar_preset: null,
-            }).eq('id', userId)
+            }).eq('id', userId).select('id')
+            if (errProfil) throw errProfil
+            if (!majAvatar || majAvatar.length === 0) throw new Error(t('Profil introuvable : photo non enregistrée.'))
             await refreshProfile()
 
             toast(t('Photo mise à jour'), t('Photo de profil modifiée avec succès.'))

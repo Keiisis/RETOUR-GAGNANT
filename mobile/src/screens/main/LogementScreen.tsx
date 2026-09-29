@@ -190,8 +190,10 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                     fetchWithTimeout(`${API_BASE}/api/logements`, { timeoutMs: 12000 }),
                     fetchWithTimeout(`${API_BASE}/api/logements/dossier-fee`, { timeoutMs: 12000 }),
                 ])
+                // Catalogue en erreur : lever, sinon une liste VIDE écrasait la mémoire.
+                if (!lRes.ok) throw new Error(`HTTP ${lRes.status}`)
                 const json = await lRes.json().catch(() => ({}))
-                const fee = await fRes.json().catch(() => ({}))
+                const fee = fRes.ok ? await fRes.json().catch(() => ({})) : {}
                 return {
                     logements: Array.isArray(json.logements) ? json.logements : [],
                     amount: typeof fee?.amount === 'number' && fee.amount > 0 ? fee.amount : null,
@@ -236,7 +238,7 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
             /* Par la file de reprise : si le réseau tombe à cet instant, l'envoi
                est conservé sur le téléphone et rejoué tout seul. La route
                dédoublonne par `payment_tx_id`, rejouer ne crée pas de doublon. */
-            await envoyerOuMettreEnFile({
+            const { transmis } = await envoyerOuMettreEnFile({
                 chemin: '/api/mobile/dossiers',
                 service: 'Logement',
                 reference: transactionId,
@@ -254,10 +256,14 @@ export default function LogementScreen({ navigation }: { navigation: any }) {
                 },
             })
 
+            /* « Succès » seulement si le serveur a enregistré le dossier ;
+               sinon l'envoi est en file de reprise → état « attente ». */
             navigation.navigate('ResultatPaiement', {
-                etat: 'succes',
+                etat: transmis ? 'succes' : 'attente',
                 objet: t('Frais de dossier — Logement'),
-                message: t('Notre équipe constitue votre dossier et le transmet à notre partenaire. Suivez son avancement dans « Mon Dossier ».'),
+                message: transmis
+                    ? t('Notre équipe constitue votre dossier et le transmet à notre partenaire. Suivez son avancement dans « Mon Dossier ».')
+                    : undefined,
                 reference: transactionId,
                 montant: feeXof,
                 devise: 'XOF',

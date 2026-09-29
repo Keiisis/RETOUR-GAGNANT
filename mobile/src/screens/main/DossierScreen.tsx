@@ -150,6 +150,7 @@ export default function DossierScreen({ navigation }: any) {
     const [uploading, setUploading] = useState(false)
     const [showUploadModal, setShowUploadModal] = useState(false)
     const [uploadTargetDossier, setUploadTargetDossier] = useState<Dossier | null>(null)
+    const [erreurChargement, setErreurChargement] = useState<string | null>(null)
 
     /* ── Animations Corporate ── */
     const headerAnim = useSharedValue(0)
@@ -180,24 +181,40 @@ export default function DossierScreen({ navigation }: any) {
         } catch { /* la base locale n'est qu'un confort : jamais bloquante */ }
 
         try {
-            const text = await fetchWithTimeout(
+            const res = await fetchWithTimeout(
                 `${API_BASE}/api/mobile/dossiers`,
                 { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
-            ).then(r => r.text())
-            let json: { dossiers?: Dossier[] } = {}
-            try { json = JSON.parse(text) } catch { /* ignore */ }
-            const list = json.dossiers || []
+            )
+            let json: { dossiers?: Dossier[]; error?: string } = {}
+            try { json = JSON.parse(await res.text()) } catch { /* ignore */ }
+            /* Réponse en erreur (401 jeton expiré, 500, page WAF…) : on NE
+               remplace PAS la liste. Avant, `json.dossiers` absent devenait []
+               et écrasait l'écran, la mémoire ET la base locale : le client
+               lisait « Aucun dossier » alors qu'il en avait. */
+            if (!res.ok || !Array.isArray(json.dossiers)) {
+                setErreurChargement(res.status === 401
+                    ? t('Session expirée. Reconnectez-vous pour actualiser vos dossiers.')
+                    : t('Actualisation impossible pour le moment. Tirez pour réessayer.'))
+                return
+            }
+            setErreurChargement(null)
+            // Pièces toujours présentes en tableau (lecture de `.length` au rendu).
+            const list = json.dossiers.map(d => ({ ...d, documents: Array.isArray(d.documents) ? d.documents : [] }))
             setDossiers(list)
             ecrireMemoire(cleAffichage, list)
             // Miroir local : c'est cette liste qui s'affichera au prochain lancement.
             void enregistrerDossiers(profile.id, list as unknown as Array<Record<string, unknown>>)
-            if (list.length > 0 && !selected) setSelected(list[0])
-            else if (selected) {
-                const updated = list.find(d => d.id === selected.id)
-                if (updated) setSelected(updated)
-            }
-        } catch { /* silent */ } finally { setLoading(false) }
-    }, [profile])
+            // Forme fonctionnelle : `selected` lu ici était figé à sa valeur du
+            // premier rendu (dépendances [profile]) — le dossier affiché ne se
+            // mettait pas à jour après un envoi de pièce.
+            setSelected(prev => {
+                if (!prev) return list[0] ?? null
+                return list.find(d => d.id === prev.id) ?? list[0] ?? null
+            })
+        } catch {
+            setErreurChargement(t('Réseau indisponible. Les dossiers affichés sont ceux de votre dernière connexion.'))
+        } finally { setLoading(false) }
+    }, [profile, t])
 
 
     /* La callback est lue via une ref : sans cela, `fetchDossiers` (recréé à
@@ -268,15 +285,24 @@ export default function DossierScreen({ navigation }: any) {
                 .from('dossier-documents')
                 .createSignedUrl(filePath, 60 * 60)
             const secureUrl = signedData?.signedUrl || filePath
+            // RLS dossier_documents : INSERT autorisé si client_id = auth.uid().
             const { error: dbErr } = await supabase.from('dossier_documents').insert({
                 dossier_id: target.id, client_id: profile.id,
                 file_name: safeName, file_url: secureUrl, file_type: mimeType, status: 'pending',
             })
             if (dbErr) {
-                await supabase.from('documents').insert({
+                /* Repli sur la table historique — mais son échec n'était pas
+                   lu : le fichier partait dans le stockage sans aucune fiche,
+                   invisible pour l'agent, et l'écran affichait « Document
+                   envoyé ». Échec des deux = échec déclaré. */
+                const { error: errRepli } = await supabase.from('documents').insert({
                     dossier_id: target.id, client_id: profile.id,
                     file_name: safeName, file_url: secureUrl, file_type: mimeType, status: 'pending',
                 })
+                if (errRepli) {
+                    await supabase.storage.from('dossier-documents').remove([filePath]).catch(() => undefined)
+                    throw new Error(dbErr.message || errRepli.message)
+                }
             }
             toast(t('Document envoyé'), t('Notre équipe le vérifiera sous 24-48h.'))
             await fetchDossiers()
@@ -410,6 +436,10 @@ export default function DossierScreen({ navigation }: any) {
                                 ? t('Aucun dossier pour le moment. Commandez un service pour commencer.')
                                 : `${dossiers.length} ${t('dossier')}${dossiers.length > 1 ? 's' : ''} ${t('en cours de traitement par nos équipes.')}`}
                     </Text>
+                    {/* Échec d'actualisation DIT, jamais déguisé en « aucun dossier ». */}
+                    {!loading && erreurChargement ? (
+                        <Text style={[styles.subtitle, { color: C.error, marginTop: 6 }]}>{erreurChargement}</Text>
+                    ) : null}
                 </Animated.View>
 
                 {/* ═══ LOADING SKELETON ═══ */}
@@ -637,7 +667,7 @@ export default function DossierScreen({ navigation }: any) {
                                                 <View style={{ flex: 1 }}>
                                                     <Text style={styles.cardTitle}>{t('Documents')}</Text>
                                                     <Text style={styles.cardSubtitle}>
-                                                        {selected.documents.length} {t('fichier')}{selected.documents.length !== 1 ? 's' : ''} {t('joint')}{selected.documents.length !== 1 ? 's' : ''}
+                                                        {(selected.documents || []).length} {t('fichier')}{(selected.documents || []).length !== 1 ? 's' : ''} {t('joint')}{(selected.documents || []).length !== 1 ? 's' : ''}
                                                     </Text>
                                                 </View>
                                                 <TouchableOpacity
@@ -666,9 +696,9 @@ export default function DossierScreen({ navigation }: any) {
                                                 </View>
                                             )}
 
-                                            {selected.documents.length > 0 ? (
+                                            {(selected.documents || []).length > 0 ? (
                                                 <View style={{ gap: 10 }}>
-                                                    {selected.documents.map((doc) => {
+                                                    {(selected.documents || []).map((doc) => {
                                                         const st = docStatusInfo(doc.status)
                                                         return (
                                                             <View key={doc.id} style={styles.docCard}>

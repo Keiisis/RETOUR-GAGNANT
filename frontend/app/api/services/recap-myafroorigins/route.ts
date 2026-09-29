@@ -25,6 +25,7 @@ import { ouvrirDossier } from '@/lib/dossier-service'
 import { facturerPaiementService } from '@/lib/service-invoice'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { decodeMyafroToken } from '@/lib/nationality-token'
+import { usagesTransaction, appartientAuClient } from '@/lib/mobile-paiement'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -232,6 +233,17 @@ export async function POST(request: NextRequest) {
             .eq('paiement_ref', String(body.payment_ref)).maybeSingle()
         if (deja?.reference) {
             return NextResponse.json({ success: true, reference: deja.reference, deja_enregistre: true })
+        }
+
+        /* Transaction déjà consommée par un AUTRE parcours (commande, billet,
+           dossier, nationalité) : sans ce contrôle, un reçu d'un montant au
+           moins égal payait aussi le récap. Sa propre facture (même email,
+           rejeu après échec d'insertion) ne compte pas. */
+        const { usages, erreur } = await usagesTransaction(supabase, String(body.payment_ref))
+        if (erreur) return NextResponse.json({ error: 'Vérification indisponible.' }, { status: 503 })
+        if (usages.some(u => !(u.table === 'documents_financiers' && appartientAuClient(u, null, email)))) {
+            console.warn(`[recap-myafro] transaction déjà utilisée (${email})`)
+            return NextResponse.json({ error: 'Transaction déjà utilisée.' }, { status: 409 })
         }
     }
 

@@ -29,7 +29,8 @@ import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { lireMemoire, ecrireMemoire } from '../../lib/memoire'
+import { lireMemoire, ecrireMemoire, oublierMemoire, cleDuClient } from '../../lib/memoire'
+import { useAuth } from '../../contexts/AuthContext'
 import { authHeaders } from '../../config/api'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -40,6 +41,11 @@ type AutoSign = 'ask' | 'auto' | 'never'
 export default function SignatureDevisScreen({ navigation, route }: { navigation: any; route: any }) {
     const insets = useSafeAreaInsets()
     const { t } = useLang()
+    const { profile } = useAuth()
+    /* Même clé que l'écran Signature, PROPRE AU CLIENT. L'ancienne clé fixe
+       « signature-parapheur » survivait à la déconnexion : sur un téléphone
+       partagé, le compte suivant voyait le paraphe du précédent. */
+    const cleParaphe = cleDuClient(profile?.id, 'signature')
 
     const proposalId: string = route?.params?.proposalId
     const secretKey: string | undefined = route?.params?.secretKey
@@ -48,7 +54,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
        été écarté. */
     const selection: string[] | undefined = route?.params?.selection
 
-    const [chargement, setChargement] = useState(() => !lireMemoire('signature-parapheur'))
+    const [chargement, setChargement] = useState(() => !lireMemoire(cleParaphe))
     const [envoi, setEnvoi] = useState(false)
     const [signee, setSignee] = useState(false)
     const [automatique, setAutomatique] = useState(false)
@@ -78,7 +84,8 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
             })
             const json = await res.json().catch(() => ({}))
             if (!res.ok || !json.success) throw new Error(json.error || 'Signature impossible.')
-            setAutomatique(!!json.automatique)
+            // `deja_signee` ne porte pas `automatique` : ne pas écraser l'état connu.
+            if (!json.deja_signee) setAutomatique(!!json.automatique)
             setSignee(true)
         } catch (e) {
             toast(t('Signature impossible'), e instanceof Error ? e.message : t('Réessayez dans un instant.'))
@@ -87,20 +94,32 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
         }
     }, [proposalId, memoriser, autoSign, selection, t])
 
+    /* L'effet de montage lisait `signer` en dépendance : `setAutoSign(mode)` ou
+       cocher « mémoriser » recréait `signer`, relançait l'effet, refaisait la
+       lecture — et en mode « auto » signait une SECONDE fois (réponse
+       `deja_signee`, qui effaçait le message « appliquée automatiquement »).
+       Référence stable : l'effet ne tourne qu'une fois. */
+    const signerRef = useRef(signer)
+    useEffect(() => { signerRef.current = signer }, [signer])
+
     /* Au montage : on lit ce que le client a déjà décidé. Si c'est « auto »,
        on signe immédiatement — lui redemander serait contredire son réglage. */
     useEffect(() => {
         let vivant = true
         ;(async () => {
             try {
-                const memorise = lireMemoire<{ signature_data?: string; auto_sign?: string }>('signature-parapheur')
+                const memorise = lireMemoire<{ signature_data?: string; auto_sign?: string }>(cleParaphe)
                 const res = await fetchWithTimeout(`${API_BASE}/api/mobile/signature`, {
                     headers: { ...(await authHeaders()) },
                     timeoutMs: 15000,
-                })
-                const json = await res.json().catch(() => ({}))
-                const sig = json?.signature ?? memorise
-                if (sig) ecrireMemoire('signature-parapheur', sig)
+                }).catch(() => null)
+                const json = res ? await res.json().catch(() => ({})) : {}
+                /* Réponse du serveur = vérité, y compris « aucune signature ».
+                   Avant, `json.signature ?? memorise` ressortait un paraphe
+                   SUPPRIMÉ depuis la mémoire. Mémoire seulement hors ligne. */
+                const sig = res?.ok ? (json?.signature ?? null) : memorise
+                if (sig) ecrireMemoire(cleParaphe, sig)
+                else if (res?.ok) oublierMemoire(cleParaphe)
                 if (!vivant) return
 
                 const data = sig?.signature_data || null
@@ -110,7 +129,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
 
                 if (data && mode === 'auto') {
                     setChargement(false)
-                    await signer()      // aucun geste demandé : c'est le sens du réglage
+                    await signerRef.current()      // aucun geste demandé : c'est le sens du réglage
                     return
                 }
                 // Sans signature mémorisée, on ouvre directement le tracé.
@@ -122,7 +141,7 @@ export default function SignatureDevisScreen({ navigation, route }: { navigation
             }
         })()
         return () => { vivant = false }
-    }, [signer])
+    }, [])
 
     /* ── Confirmation ── */
     if (signee) {

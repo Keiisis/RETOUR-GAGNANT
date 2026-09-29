@@ -34,6 +34,10 @@ export async function pricingEnabled(): Promise<boolean> {
     if (cached !== null) return cached
     if (inFlight) return inFlight
 
+    /* Seule une réponse LUE est mise en cache. Une panne (réseau, 5xx) rend
+       `false` pour cet appel mais n'est plus retenue : avant, un premier
+       échec figeait « prix masqués » pour toute la session. */
+    let lu = false
     inFlight = (async () => {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/settings/frontend`, { timeoutMs: 8000 })
@@ -44,6 +48,7 @@ export async function pricingEnabled(): Promise<boolean> {
             const json = await res.json().catch(() => null)
             const settings = json?.settings
             if (!settings || typeof settings !== 'object') return false
+            lu = true
 
             const global = settings.services_show_calculator
             const legacy = settings.passeport_show_calculator
@@ -61,8 +66,9 @@ export async function pricingEnabled(): Promise<boolean> {
         }
     })()
 
-    cached = await inFlight
-    return cached
+    const valeur = await inFlight
+    if (lu) cached = valeur
+    return valeur
 }
 
 /** Doit-on afficher un tarif pour CETTE prestation ? */

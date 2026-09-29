@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { motifEmailExact } from '@/lib/email-motif'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,19 +28,28 @@ export async function GET(req: NextRequest) {
         .from('client_profiles').select('email').eq('id', clientId).maybeSingle()
     const email = String(cp?.email || '').trim().toLowerCase()
 
-    const criteres = [`client_id.eq.${clientId}`]
-    if (email) criteres.push(`and(sent_to_mobile.eq.true,client_email.eq.${email})`)
-
-    const { data, error } = await supabase
-        .from('ai_client_proposals')
-        .select(`
-            id, secret_key, client_name, destination, start_date, end_date,
-            total_amount, currency, status, notes,
-            sent_at, signed_at, signed_name, view_count, last_viewed_at, created_at
-        `)
-        .or(criteres.join(','))
-        .order('created_at', { ascending: false })
-        .limit(50)
+    /* DEUX lectures plutôt qu'un `.or()` : l'email était injecté brut dans le
+       filtre PostgREST (séparateurs non échappés) et comparé à la casse près. */
+    const CHAMPS = `
+        id, secret_key, client_name, destination, start_date, end_date,
+        total_amount, currency, status, notes,
+        sent_at, signed_at, signed_name, view_count, last_viewed_at, created_at
+    `
+    const [parCompte, parEmail] = await Promise.all([
+        supabase.from('ai_client_proposals').select(CHAMPS)
+            .eq('client_id', clientId).order('created_at', { ascending: false }).limit(50),
+        email
+            ? supabase.from('ai_client_proposals').select(CHAMPS)
+                .eq('sent_to_mobile', true).ilike('client_email', motifEmailExact(email) ?? '\u0000')
+                .order('created_at', { ascending: false }).limit(50)
+            : Promise.resolve({ data: [], error: null }),
+    ])
+    const error = parCompte.error || parEmail.error
+    const vus = new Set<string>()
+    const data = [...(parCompte.data || []), ...(parEmail.data || [])]
+        .filter(p => (vus.has(p.id) ? false : (vus.add(p.id), true)))
+        .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+        .slice(0, 50)
 
     if (error) {
         console.error('[mobile/proposals]', error)

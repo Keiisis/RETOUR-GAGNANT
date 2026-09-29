@@ -86,21 +86,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 loading: false,
             }))
             if (session?.user) {
-                fetchProfile(session.user.id)
+                fetchProfile(session.user)
                 registerPushToken(session.user.id).catch(() => {})
                 checkTwoFactor(session)
             }
         })
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setState(prev => ({
                 ...prev,
                 session,
                 user: session?.user ?? null,
                 loading: false,
             }))
+            /* Rafraîchissement horaire du jeton : même personne, même profil.
+               Relire le profil, réenregistrer le jeton push et revérifier la
+               2FA à chaque fois ne servait à rien (et pouvait redemander la
+               permission de notifier). */
+            if (event === 'TOKEN_REFRESHED') return
             if (session?.user) {
-                fetchProfile(session.user.id)
+                fetchProfile(session.user)
                 registerPushToken(session.user.id).catch(() => {})
                 checkTwoFactor(session)
             } else {
@@ -111,53 +116,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return () => subscription.unsubscribe()
     }, [])
 
-    const fetchProfile = async (userId: string) => {
+    /* Profil minimal tiré de la SESSION : sans ligne client_profiles (compte
+       créé hors app, ligne effacée) ou hors réseau, `profile` restait `null`
+       pour toujours — et chaque écran qui commence par `if (!profile) return`
+       tournait sans fin ou restait vide. L'identité (id, email) est celle du
+       jeton, donc exactement celle que les règles RLS reconnaissent. */
+    const profilDepuisSession = (user: User): UserProfile => {
+        const meta = (user.user_metadata || {}) as Record<string, unknown>
+        return {
+            id: user.id,
+            email: String(user.email || '').toLowerCase(),
+            prenom: typeof meta.prenom === 'string' ? meta.prenom : '',
+            nom: typeof meta.nom === 'string' ? meta.nom : '',
+            phone: typeof meta.phone === 'string' ? meta.phone : undefined,
+            role: 'client',
+        }
+    }
+
+    const fetchProfile = async (user: User) => {
         try {
             const { data, error } = await supabase
                 .from('client_profiles')
-                .select('id, prenom, nom, email, phone, ville, pays, avatar_url, avatar_type, avatar_preset')
-                .eq('id', userId)
-                .single()
+                .select('id, prenom, nom, email, phone, ville, pays, avatar_url, avatar_type, avatar_preset, push_token')
+                .eq('id', user.id)
+                .maybeSingle()
 
             if (!error && data) {
                 setState(prev => ({
                     ...prev,
                     profile: {
                         ...data,
+                        // Email de la session si la ligne n'en porte pas : c'est lui
+                        // que les règles RLS comparent (rgb_email_session()).
+                        email: data.email || String(user.email || '').toLowerCase(),
                         role: 'client',
                         avatar_url: data.avatar_url ?? undefined,
-                        push_token: undefined,
+                        // Lu en base : l'interrupteur « notifications » reflète
+                        // enfin l'état réel au lieu d'être toujours éteint.
+                        push_token: data.push_token ?? undefined,
                     } as UserProfile,
                 }))
+                return
             }
+            // Pas de ligne (ou erreur) : on garde l'existant, sinon la session.
+            setState(prev => ({ ...prev, profile: prev.profile ?? profilDepuisSession(user) }))
         } catch {
-            // Profil introuvable : pas bloquant
+            setState(prev => ({ ...prev, profile: prev.profile ?? profilDepuisSession(user) }))
         }
     }
 
     const signIn = async (email: string, password: string) => {
         try {
-            const { error, data } = await supabase.auth.signInWithPassword({ email, password })
-            console.log('Login attempt:', email, data, error)
+            // Plus de journal de `data` : il contenait la session complète
+            // (jeton d'accès ET jeton de rafraîchissement) en clair dans les logs.
+            const { error } = await supabase.auth.signInWithPassword({ email, password })
             return { error: error as Error | null }
         } catch (e: any) {
-            console.error('Login error:', e)
-            return { error: e }
+            return { error: e instanceof Error ? e : new Error('Erreur de connexion') }
         }
     }
 
     const signUp = async (email: string, password: string, metadata?: Record<string, unknown>) => {
         try {
-            const { error, data } = await supabase.auth.signUp({
+            const { error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: { data: metadata },
             })
-            console.log('Register attempt:', email, data, error)
             return { error: error as Error | null }
         } catch (e: any) {
-            console.error('Register error:', e)
-            return { error: e }
+            return { error: e instanceof Error ? e : new Error('Erreur de connexion') }
         }
     }
 
@@ -210,25 +238,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const updateProfile = async (data: Partial<UserProfile>) => {
         if (!state.user?.id) return { error: new Error('Non authentifié') }
 
-        const { role: _role, ...updateData } = data
-        const { error } = await supabase
+        const { role: _role, ...brut } = data
+        /* `undefined` disparaît du JSON envoyé à PostgREST : vider un champ
+           (téléphone effacé, push_token retiré) ne changeait RIEN en base alors
+           que l'écran annonçait « mis à jour ». Une clé présente mais vide
+           devient donc `null`, seule valeur qui efface réellement. */
+        const updateData: Record<string, unknown> = Object.fromEntries(
+            Object.entries(brut).map(([k, v]) => [k, v === undefined ? null : v]),
+        )
+
+        /* `.select('id')` : sous RLS, une mise à jour qui ne touche AUCUNE ligne
+           ne renvoie pas d'erreur. Sans ce retour, un profil absent donnait un
+           faux « Profil mis à jour ». On crée alors la ligne (règle
+           client_profiles_proprietaire : id = auth.uid()). */
+        const { data: lignes, error } = await supabase
             .from('client_profiles')
             .update(updateData)
             .eq('id', state.user.id)
+            .select('id')
 
-        if (!error) {
+        let erreur: Error | null = error as Error | null
+        if (!erreur && (!lignes || lignes.length === 0)) {
+            const { error: errInsert } = await supabase
+                .from('client_profiles')
+                .insert({ id: state.user.id, email: String(state.user.email || '').toLowerCase(), ...updateData })
+            erreur = errInsert as Error | null
+        }
+
+        if (!erreur) {
             setState(prev => ({
                 ...prev,
                 profile: prev.profile ? { ...prev.profile, ...data } : prev.profile,
             }))
         }
 
-        return { error: error as Error | null }
+        return { error: erreur }
     }
 
     const refreshProfile = async () => {
-        if (state.user?.id) {
-            await fetchProfile(state.user.id)
+        if (state.user) {
+            await fetchProfile(state.user)
         }
     }
 

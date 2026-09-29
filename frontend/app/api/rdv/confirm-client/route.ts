@@ -42,11 +42,34 @@ export async function POST(req: NextRequest) {
     if (trop) return trop
 
     try {
-        const { rdvId, clientName, clientEmail, service, date, heure, type } = await req.json();
+        const corps = await req.json().catch(() => ({}));
+        const { rdvId, clientName, service } = corps;
+        const clientEmailSaisi = String(corps.clientEmail || '').trim().toLowerCase();
 
-        if (!clientEmail || !clientName) {
+        if (!clientEmailSaisi || !clientName) {
             return NextResponse.json({ error: 'clientName et clientEmail sont requis.' }, { status: 400 });
         }
+
+        /* Relais d'email ouvert : n'importe qui pouvait faire partir un email
+           « Votre rendez-vous est enregistré » (et une alerte équipe) vers
+           n'importe quelle adresse. On exige désormais le rendez-vous RÉEL
+           (id rendu par l'insertion, côté site comme côté application) et que
+           l'adresse soit la sienne. Date, heure et canal viennent de la base. */
+        if (typeof rdvId !== 'string' || !/^[0-9a-f-]{36}$/i.test(rdvId)) {
+            return NextResponse.json({ error: 'Rendez-vous introuvable.' }, { status: 404 });
+        }
+        const { data: rdv } = await supabase
+            .from('rdv_requests')
+            .select('id, client_email, date, heure, type')
+            .eq('id', rdvId)
+            .maybeSingle();
+        if (!rdv || String(rdv.client_email || '').trim().toLowerCase() !== clientEmailSaisi) {
+            return NextResponse.json({ error: 'Rendez-vous introuvable.' }, { status: 404 });
+        }
+        const clientEmail = clientEmailSaisi;
+        const date = rdv.date || null;
+        const heure = rdv.heure || null;
+        const type = rdv.type || null;
 
         // Notification in-app pour les panels Admin + Agent (fire-and-forget)
         void supabase.from('messages').insert([{

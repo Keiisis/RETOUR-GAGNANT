@@ -38,10 +38,10 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { envoyerOuMettreEnFile } from '../../lib/file-envois'
+import { montantAEncaisserXof } from '../../lib/tarif'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const VERT_PROFOND = '#00643C'
-const EUR_TO_XOF = 655.957
 const TAILLE_MAX = 10 * 1024 * 1024
 const MINI_SITUATION = 40
 
@@ -126,7 +126,10 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                     headers: { ...(await authHeaders()) }, timeoutMs: 15000,
                 })
                 const json = await res.json().catch(() => ({}))
-                return Array.isArray(json.recaps) ? json.recaps : []
+                // 401/500 : on lève — la liste affichée (et mémorisée) reste,
+                // au lieu d'être remplacée par « aucune demande ».
+                if (!res.ok || !Array.isArray(json.recaps)) throw new Error(`recaps HTTP ${res.status}`)
+                return json.recaps
             },
             (liste) => { setRecaps(liste); setChargement(false) },
         )
@@ -142,8 +145,13 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
         void avecMemoire<{ amount: number; currency?: string; delai?: string }>(
             'recap-myafro-tarif',
             async () => {
-                const { data } = await supabase.from('page_sections').select('content')
-                    .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').single()
+                const { data, error } = await supabase.from('page_sections').select('content')
+                    .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').maybeSingle()
+                /* Lecture en échec : on lève, le bouton reste verrouillé. Avant,
+                   l'erreur passait pour une réponse fraîche et le repli (50)
+                   devenait « confirmé ». Section absente : repli 50, identique
+                   au serveur (tarifRecapXof). */
+                if (error) throw new Error(error.message)
                 const c = (data?.content || {}) as Record<string, unknown>
                 return {
                     amount: Number(c.amount) > 0 ? Number(c.amount) : 50,
@@ -176,13 +184,15 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
         }))
     }, [profile])
 
-    const montantXof = tarif === null
-        ? 0
-        : Math.round(devise.toUpperCase() === 'XOF' ? tarif : tarif * EUR_TO_XOF)
+    /* TTC en XOF (TVA en sus, lib/tarif). L'ancien calcul multipliait toute
+       devise non-XOF par la parité EUR : un tarif en USD ou GBP était faux.
+       `null` = devise sans parité fixe → paiement bloqué. */
+    const montantEncaisse = tarif === null ? null : montantAEncaisserXof(tarif, devise)
+    const montantXof = montantEncaisse ?? 0
 
     const champsOk = !!(form.prenom.trim() && form.nom.trim() && form.email.trim()
         && form.telephone.trim() && form.situation.trim().length >= MINI_SITUATION)
-    const pretAPayer = champsOk && consentement && tarif !== null && tarifConfirme
+    const pretAPayer = champsOk && consentement && tarif !== null && tarifConfirme && montantEncaisse !== null
 
     /* ── Paiement puis enregistrement ───────────────────────── */
     const surTransaction = async (transactionId: string) => {

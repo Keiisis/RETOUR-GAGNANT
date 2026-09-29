@@ -142,13 +142,20 @@ export default function KkiapayModal({ visible, amount, serviceName, onClose, on
        extrait le nombre, seule chose que la passerelle accepte. */
     const montant = (() => {
         const trouve = amount.match(/\d+([\s]?\d+)*/g)
-        return trouve?.length ? parseInt(trouve[0].replace(/\s/g, ''), 10) : 1000
+        // Illisible → 0 : on REFUSE d'ouvrir le paiement (avant : 1000 XOF encaissés
+        // en silence, sans rapport avec le prix réel).
+        const n = trouve?.length ? parseInt(trouve[0].replace(/\s/g, ''), 10) : 0
+        return Number.isFinite(n) && n > 0 ? n : 0
     })()
     const montantLisible = `${montant.toLocaleString(localeActuelle())} FCFA`
 
     const ouvrirWidget = useCallback(() => {
         if (!kkiapayKey) {
             toast(t('Paiement indisponible'), t('La clé de paiement n’est pas configurée. Contactez-nous.'))
+            return
+        }
+        if (montant <= 0) {
+            toast(t('Paiement indisponible'), t('Le montant à régler est introuvable. Réessayez ou contactez-nous.'))
             return
         }
         setLoading(true)

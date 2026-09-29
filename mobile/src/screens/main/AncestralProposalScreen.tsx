@@ -31,6 +31,7 @@ import { screenColors as C, spacing, radius, typography, shadows, fonts } from '
 import KkiapayModal from '../../components/KkiapayModal'
 import { localeActuelle } from '../../lib/dates'
 import { envoyerOuMettreEnFile } from '../../lib/file-envois'
+import { ttcFromHt } from '../../lib/tax'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -68,20 +69,24 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
     const amountEur: number = Number(route?.params?.amount) || 250
     const currency: string = String(route?.params?.currency || 'EUR')
     const symbol = CURRENCY_SYMBOL[currency.toUpperCase()] || currency
-    const amountXof = toXof(amountEur, currency)
+    /* TVA en sus : le serveur (/api/nationality/recherche-ancestrale) contrôle
+       l'encaissement contre ttcFromHt(tarif) — le HT seul serait refusé
+       APRÈS débit dès que la TVA est réactivée. */
+    const amountXof = ttcFromHt(toXof(amountEur, currency))
 
     const goHome = () => navigation.navigate('Main', { screen: 'Home' })
 
     const onPaid = async (transactionId: string) => {
         setShowKkiapay(false)
         setLoading(true)
+        let transmis = true
         try {
             /* Les deux envois passent par la file de reprise : ce qui échoue
                maintenant repartira seul au retour du réseau. */
 
             // 1) Marquer la demande de nationalité + notifier le staff.
             if (ref) {
-                await envoyerOuMettreEnFile({
+                const r1 = await envoyerOuMettreEnFile({
                     chemin: '/api/nationality/recherche-ancestrale',
                     besoinJeton: false,
                     service: 'Recherche Ancestrale',
@@ -94,10 +99,11 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                         amount_xof: amountXof,
                     },
                 })
+                transmis = transmis && r1.transmis
             }
 
             // 2) Ouvrir un dossier « Recherche Ancestrale » (dossier_tracking).
-            await envoyerOuMettreEnFile({
+            const r2 = await envoyerOuMettreEnFile({
                 chemin: '/api/mobile/dossiers',
                 service: 'Recherche Ancestrale',
                 reference: transactionId,
@@ -111,11 +117,18 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                         : "Recherche ancestrale souscrite depuis l'app.",
                 },
             })
+            transmis = transmis && r2.transmis
 
-            navigation.navigate('ResultatPaiement', {
-                etat: 'succes',
+            /* `replace` : l'écran de résultat PREND la place de la proposition.
+               Avant, `navigate` était suivi de `goHome()` — le résultat
+               s'effaçait aussitôt derrière l'accueil, référence comprise.
+               Et « succès » n'est dit que si le serveur a enregistré. */
+            navigation.replace('ResultatPaiement', {
+                etat: transmis ? 'succes' : 'attente',
                 objet: t('Recherche Ancestrale'),
-                message: t('Votre recherche est ouverte. Notre équipe vous contactera par messagerie pour affiner les informations.'),
+                message: transmis
+                    ? t('Votre recherche est ouverte. Notre équipe vous contactera par messagerie pour affiner les informations.')
+                    : undefined,
                 reference: transactionId,
                 montant: amountXof,
                 devise: 'XOF',
@@ -123,9 +136,8 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                 actionRoute: 'Main',
                 actionParams: { screen: 'Dossier' },
             })
-            goHome()
         } catch {
-            navigation.navigate('ResultatPaiement', {
+            navigation.replace('ResultatPaiement', {
                 etat: 'echec',
                 objet: t('Recherche Ancestrale'),
                 message: t('Votre paiement a été reçu mais l’ouverture du dossier a échoué. Conservez la référence ci-dessous : notre équipe régularise.'),
@@ -134,7 +146,6 @@ export default function AncestralProposalScreen({ navigation, route }: { navigat
                 devise: 'XOF',
                 motif: t('Ouverture du dossier interrompue'),
             })
-            goHome()
         } finally {
             setLoading(false)
         }

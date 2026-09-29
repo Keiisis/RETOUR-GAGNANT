@@ -82,6 +82,8 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
                     headers: { ...(await authHeaders()) },
                     timeoutMs: 15000,
                 })
+                // 401 / 500 : lever, sinon une liste VIDE remplaçait la mémoire.
+                if (!res.ok) throw new Error(`HTTP ${res.status}`)
                 const json = await res.json().catch(() => ({}))
                 return Array.isArray(json.proposals) ? json.proposals : []
             },
@@ -100,7 +102,9 @@ export default function MesPropositionsScreen({ navigation }: { navigation: any 
     }, [navigation, charger])
 
     const rendre = ({ item }: { item: Proposition }) => {
-        const e = ETATS[item.etat] || ETATS.nouvelle
+        /* La route ne dit « payee » que si la proposition est AUSSI signée : un
+           séjour réglé par lien sans signature s'affichait « Nouvelle ». */
+        const e = (item.status === 'paid' ? ETATS.payee : ETATS[item.etat]) || ETATS.nouvelle
         const prix = montant(item.total_amount, item.currency)
         return (
             <Pressable onPress={() => navigation.navigate('PropositionDetail', { proposalId: item.id })} style={styles.carte} accessibilityRole="button">

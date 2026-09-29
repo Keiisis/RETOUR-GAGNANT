@@ -81,6 +81,19 @@ const SHIPPING_CONFIG: Record<string, {
     returned: { label: 'Retourné', icon: 'arrow-undo-outline', color: C.error, bgRgba: C.dangerSoft, borderRgba: C.danger },
 }
 
+/* orders.payment_status — miroir de COMMANDE_PAIEMENT_STATUTS
+   (frontend/lib/constants/statuts.ts). Avant : tout ce qui n'était pas payé
+   s'affichait « En attente », y compris une commande abandonnée. */
+const PAIEMENT_CONFIG: Record<string, { label: string; icon: string; paye: boolean }> = {
+    pending: { label: 'En attente', icon: 'time-outline', paye: false },
+    completed: { label: 'Payé', icon: 'checkmark-circle', paye: true },
+    failed: { label: 'Échoué', icon: 'close-circle-outline', paye: false },
+    abandoned: { label: 'Abandonnée', icon: 'close-circle-outline', paye: false },
+    refunded: { label: 'Remboursé', icon: 'return-up-back-outline', paye: false },
+}
+/** Paiement clos sans encaissement : la commande n'est plus « en cours ». */
+const PAIEMENT_CLOS = ['failed', 'abandoned', 'refunded']
+
 type FilterKey = 'all' | 'active' | 'delivered'
 
 /* ═══════════════════════════════════════════════════════════
@@ -192,7 +205,9 @@ function OrderCard({
     t: (k: string, p?: any) => string
     delay: number
 }) {
-    const cfg = SHIPPING_CONFIG[order.shipping_status || 'pending']
+    // Statut inconnu (valeur hors liste) : repli, sinon `cfg.bgRgba` plantait l'écran.
+    const cfg = SHIPPING_CONFIG[order.shipping_status || 'pending'] || SHIPPING_CONFIG.pending
+    const pay = PAIEMENT_CONFIG[order.payment_status] || PAIEMENT_CONFIG.pending
     const entryAnim = useSharedValue(0)
     const pressAnim = useSharedValue(0)
 
@@ -259,17 +274,10 @@ function OrderCard({
                                 <Text style={styles.ocTotal}>{formatPrice(order.amount, order.currency)}</Text>
                             </View>
                             <View style={styles.ocFooterRight}>
-                                {['success', 'paid', 'completed'].includes(order.payment_status) ? (
-                                    <View style={styles.ocPayRow}>
-                                        <LucideIcon name="checkmark-circle" size={12} color={C.primary} />
-                                        <Text style={styles.ocPaidText}>{t('Payé')}</Text>
-                                    </View>
-                                ) : (
-                                    <View style={styles.ocPayRow}>
-                                        <LucideIcon name="time-outline" size={12} color={C.textSec} />
-                                        <Text style={styles.ocUnpaidText}>{t('En attente')}</Text>
-                                    </View>
-                                )}
+                                <View style={styles.ocPayRow}>
+                                    <LucideIcon name={pay.icon} size={12} color={pay.paye ? C.primary : C.textSec} />
+                                    <Text style={pay.paye ? styles.ocPaidText : styles.ocUnpaidText}>{t(pay.label)}</Text>
+                                </View>
                                 <View style={styles.ocDetailBtn}>
                                     <Text style={styles.ocDetailText}>{t('Voir le détail')}</Text>
                                     <LucideIcon name="chevron-forward" size={14} color={C.text} />
@@ -340,6 +348,9 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                     `${API_BASE}/api/mobile/orders`,
                     { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
                 )
+                /* 401 / 500 : sans ce contrôle, la liste devenait VIDE et
+                   écrasait la dernière version connue en mémoire. */
+                if (!res.ok) throw new Error(`HTTP ${res.status}`)
                 const data = await res.json().catch(() => ({}))
                 return data.orders || []
             },
@@ -368,6 +379,7 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
                 `${API_BASE}/api/mobile/orders?tracking=${encodeURIComponent(code)}`,
                 { timeoutMs: 10000 }
             )
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
             const data = await res.json().catch(() => ({}))
             if (data.found && data.order) {
                 setSearchCode('')
@@ -394,11 +406,13 @@ export default function OrdersScreen({ navigation }: { navigation: Nav }) {
 
     /* ── Filtres dérivés ── */
     const activeStatuses = ['pending', 'preparing', 'shipped', 'in_transit']
-    const activeCount = orders.filter(o => activeStatuses.includes(o.shipping_status || 'pending')).length
+    const estActive = (o: OrderListItem) =>
+        !PAIEMENT_CLOS.includes(o.payment_status) && activeStatuses.includes(o.shipping_status || 'pending')
+    const activeCount = orders.filter(estActive).length
     const deliveredCount = orders.filter(o => o.shipping_status === 'delivered').length
 
     const filteredOrders = useMemo(() => {
-        if (filter === 'active') return orders.filter(o => activeStatuses.includes(o.shipping_status || 'pending'))
+        if (filter === 'active') return orders.filter(estActive)
         if (filter === 'delivered') return orders.filter(o => o.shipping_status === 'delivered')
         return orders
     }, [filter, orders])

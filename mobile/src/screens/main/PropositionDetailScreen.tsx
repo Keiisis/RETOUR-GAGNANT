@@ -67,6 +67,8 @@ interface Prestation {
     selling_price: number | null
     original_price: number | null
     highlights: string[] | null
+    /* `client_retenu` : choix enregistré par /api/mobile/proposals/[id]/sign. */
+    metadata?: { client_retenu?: boolean } | null
 }
 
 interface Proposition {
@@ -525,7 +527,15 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                 setPrestations(v.prestations)
                 // Tout est retenu au départ : la proposition du conseiller est le
                 // point de départ, le client retire ce qu'il ne veut pas.
-                setRetenues(new Set(v.prestations.map(p => p.id)))
+                // Devis DÉJÀ signé : on reprend la sélection signée (metadata
+                // `client_retenu`). Avant, tout était recoché à la réouverture
+                // et « Régler » encaissait des prestations écartées.
+                const choixSigne = !!v.proposal?.signed_at
+                    && v.prestations.some(p => typeof p.metadata?.client_retenu === 'boolean')
+                setRetenues(new Set(
+                    (choixSigne ? v.prestations.filter(p => p.metadata?.client_retenu === true) : v.prestations)
+                        .map(p => p.id),
+                ))
                 setChargement(false)
             },
             { fraicheurMs: 0 },
@@ -537,6 +547,11 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
     useEffect(() => { charger() }, [charger])
 
     const basculer = (id: string) => {
+        // Devis signé : la sélection est celle du document signé.
+        if (prop?.signed_at) {
+            toast(t('Devis signé'), t('La sélection signée ne peut plus être modifiée. Contactez votre conseiller pour l’ajuster.'))
+            return
+        }
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined)
         setRetenues(prev => {
             const s = new Set(prev)
@@ -593,6 +608,12 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
 
     const signer = () => {
         if (!prop) return
+        /* Sélection vide : DevisPaiement lit un tableau vide comme « tout »
+           et encaissait l'intégralité du séjour. */
+        if (retenues.size === 0) {
+            toast(t('Aucune prestation retenue'), t('Sélectionnez au moins une prestation.'))
+            return
+        }
         navigation.navigate('SignatureDevis', {
             proposalId: prop.id, secretKey: prop.secret_key, selection: [...retenues],
         })
@@ -934,7 +955,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                                     <Check size={16} color={C.primary} strokeWidth={2.6} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.recapNom} numberOfLines={2}>{p.title || t('Prestation')}</Text>
+                                    <Text style={styles.recapNom}>{p.title || t('Prestation')}</Text>
                                     <Text style={styles.recapMeta} numberOfLines={1}>
                                         {[t(familleDe(p.type).l), p.location].filter(Boolean).join(' · ')}
                                     </Text>
@@ -959,7 +980,7 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                                     <Minus size={14} color={C.textMuted} strokeWidth={2.4} />
                                 </View>
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.recapNomOff} numberOfLines={2}>{p.title || t('Prestation')}</Text>
+                                    <Text style={styles.recapNomOff}>{p.title || t('Prestation')}</Text>
                                     <Text style={styles.recapMeta}>{t('Prestation décochée · toucher pour rajouter')}</Text>
                                 </View>
                                 <Text style={styles.recapPrixOff}>
@@ -1014,7 +1035,13 @@ export default function PropositionDetailScreen({ navigation, route }: { navigat
                         </View>
                     ) : signee ? (
                         <Pressable
-                            onPress={() => navigation.navigate('DevisPaiement', { secretKey: prop.secret_key, proposalId: prop.id, selection: [...retenues] })}
+                            onPress={() => {
+                                if (retenues.size === 0) {
+                                    toast(t('Aucune prestation retenue'), t('Sélectionnez au moins une prestation.'))
+                                    return
+                                }
+                                navigation.navigate('DevisPaiement', { secretKey: prop.secret_key, proposalId: prop.id, selection: [...retenues] })
+                            }}
                             style={({ pressed }) => [styles.ctaLarge, pressed && { transform: [{ scale: 0.98 }] }]}
                             accessibilityRole="button"
                         >

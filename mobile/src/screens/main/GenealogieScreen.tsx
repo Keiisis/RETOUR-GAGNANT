@@ -161,17 +161,29 @@ export default function GenealogieScreen({ navigation }: { navigation: any }) {
 
     const load = useCallback(async () => {
         // L'arbre s'affiche depuis la derniere version connue, puis se corrige.
-        const { data: { user } } = await supabase.auth.getUser()
+        /* getSession (lecture locale) et non getUser (appel réseau) : hors
+           ligne, getUser rendait `null` et l'écran effaçait l'arbre affiché
+           au lieu de montrer la dernière version connue. */
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user
         if (!user) { setTree(null); setPersons([]); return }
 
         await avecMemoire<{ tree: Tree | null; persons: Person[] }>(
             cleArbre,
             async () => {
-                const { data: treeData } = await supabase
-                    .from('trees').select('id, name').eq('user_id', user.id).maybeSingle()
+                /* `maybeSingle()` échoue dès qu'un client a DEUX arbres (erreur
+                   PGRST116), et l'erreur était ignorée : l'écran annonçait
+                   « aucun arbre ». On prend le plus récent. Toute erreur lève :
+                   la mémoire garde l'arbre déjà affiché. */
+                const { data: arbres, error: errArbre } = await supabase
+                    .from('trees').select('id, name').eq('user_id', user.id)
+                    .order('updated_at', { ascending: false }).limit(1)
+                if (errArbre) throw new Error(errArbre.message)
+                const treeData = arbres?.[0]
                 if (!treeData) return { tree: null, persons: [] }
-                const { data: ppl } = await supabase
+                const { data: ppl, error: errPersonnes } = await supabase
                     .from('persons').select('*').eq('tree_id', treeData.id)
+                if (errPersonnes) throw new Error(errPersonnes.message)
                 return { tree: treeData as Tree, persons: Array.isArray(ppl) ? ppl : [] }
             },
             (v) => { setTree(v.tree); setPersons(v.persons) },

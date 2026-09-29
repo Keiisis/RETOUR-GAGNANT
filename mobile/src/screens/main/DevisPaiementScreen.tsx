@@ -176,6 +176,12 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
     const [reference, setReference] = useState('')
     const [motif, setMotif] = useState('')
     const orderRef = useRef<string | null>(null)
+    /* Double appui sur « Payer » : chaque appui créait une commande. */
+    const enCreation = useRef(false)
+    const [creation, setCreation] = useState(false)
+    /* Vérification restée SANS réponse (réseau, 5xx) après un débit : ce n'est
+       pas un refus. On ne doit ni annuler la commande, ni proposer de repayer. */
+    const [nonConfirme, setNonConfirme] = useState(false)
 
     /* ── Chargement : proposition, taux, passerelles ─────────── */
     const charger = useCallback(async () => {
@@ -246,6 +252,15 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
 
     useEffect(() => { charger() }, [charger])
 
+    /* Retour arrière (geste, bouton Android) PENDANT la vérification : l'écran
+       disparaissait et le client ne voyait jamais l'issue de son paiement. */
+    useEffect(() => {
+        const off = navigation.addListener('beforeRemove', (e: { preventDefault: () => void }) => {
+            if (etat === 'encours') e.preventDefault()
+        })
+        return off
+    }, [navigation, etat])
+
     // Coordonnées pré-remplies : le client ne doit pas ressaisir ce que son
     // compte contient déjà.
     useEffect(() => {
@@ -285,6 +300,10 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
         if (!r) return null
         return money(Math.round((totalXof / r) * 100) / 100, afficheDevise)
     }, [afficheDevise, totalXof, taux])
+
+    /* Proposition déjà réglée (status `paid`, posé par /api/ai/proposal-paid) :
+       /api/checkout ne le refuse pas, l'écran laissait donc payer une 2e fois. */
+    const dejaRegle = prop?.status === 'paid'
 
     /* ── Paiement ────────────────────────────────────────────── */
     const creerCommande = async (methode: string): Promise<string | null> => {
@@ -341,10 +360,20 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
             toast(t('Devise non convertible'), t('Le taux de change est indisponible. Utilisez la page sécurisée.'))
             return
         }
-        setFeuille(false)
-        const oid = await creerCommande('kkiapay')
-        if (!oid) return
-        setKkiapayVisible(true)
+        if (dejaRegle) return
+        if (enCreation.current) return
+        enCreation.current = true
+        setCreation(true)
+        try {
+            setFeuille(false)
+            setNonConfirme(false)
+            const oid = await creerCommande('kkiapay')
+            if (!oid) return
+            setKkiapayVisible(true)
+        } finally {
+            enCreation.current = false
+            setCreation(false)
+        }
     }
 
     /* Kkiapay a rendu un identifiant de transaction : il ne prouve rien tant
@@ -357,16 +386,42 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
         const oid = orderRef.current
         if (!oid) { setMotif('Commande introuvable.'); setEtat('echec'); return }
 
+        setEtape(2)
+        /* Trois issues, pas deux :
+           · confirmé  → succès ;
+           · REFUSÉ par le serveur (4xx explicite) → échec, commande annulée ;
+           · SANS RÉPONSE (réseau, délai, 5xx) → on retente, puis on laisse la
+             commande en attente : l'annuler ici (comportement d'avant) passait
+             en « abandonnée » une commande dont le client venait d'être débité. */
+        let refus: string | null = null
+        let confirme = false
+        for (let essai = 0; essai < 3 && !confirme && !refus; essai++) {
+            try {
+                const res = await fetchWithTimeout(`${API_BASE}/api/checkout/verify`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    timeoutMs: 30000,
+                    body: JSON.stringify({ order_id: oid, transaction_id: transactionId, payment_method: 'kkiapay' }),
+                })
+                const json = await res.json().catch(() => ({}))
+                if (json.success) confirme = true
+                else if (res.status >= 400 && res.status < 500 && res.status !== 408 && res.status !== 429) {
+                    refus = json.error || 'Vérification refusée par la passerelle.'
+                }
+            } catch { /* réseau : nouvel essai */ }
+            if (!confirme && !refus && essai < 2) await new Promise(r => setTimeout(r, 2500))
+        }
+
+        if (!confirme && !refus) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined)
+            setNonConfirme(true)
+            setMotif(t('Vérification sans réponse. Référence : {tx}', { tx: transactionId }))
+            setEtat('echec')
+            return
+        }
+
         try {
-            setEtape(2)
-            const res = await fetchWithTimeout(`${API_BASE}/api/checkout/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                timeoutMs: 30000,
-                body: JSON.stringify({ order_id: oid, transaction_id: transactionId, payment_method: 'kkiapay' }),
-            })
-            const json = await res.json().catch(() => ({}))
-            if (!json.success) throw new Error(json.error || 'Vérification refusée par la passerelle.')
+            if (refus) throw new Error(refus)
 
             setEtape(3)
             // Marque la proposition réglée : la route refuse si aucune commande
@@ -612,10 +667,16 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                         </View>
                     </Animated.View>
 
-                    <Text style={styles.overlineRouge}>{t('Échec de la transaction')}</Text>
-                    <Text style={styles.titreSucces}>{t('Le paiement n’a pas abouti')}</Text>
+                    <Text style={styles.overlineRouge}>
+                        {nonConfirme ? t('Confirmation en attente') : t('Échec de la transaction')}
+                    </Text>
+                    <Text style={styles.titreSucces}>
+                        {nonConfirme ? t('Paiement en cours de vérification') : t('Le paiement n’a pas abouti')}
+                    </Text>
                     <Text style={styles.texteEtat}>
-                        {t('Aucun montant n’a été validé de notre côté. Si votre compte a été débité, la transaction sera automatiquement annulée par la passerelle.')}
+                        {nonConfirme
+                            ? t('Nos serveurs n’ont pas pu confirmer la transaction à temps. Si vous avez été débité, votre règlement sera rapproché par notre équipe : ne payez pas une seconde fois, contactez-nous avec la référence ci-dessous.')
+                            : t('Aucun montant n’a été validé de notre côté. Si votre compte a été débité, la transaction sera automatiquement annulée par la passerelle.')}
                     </Text>
 
                     <View style={styles.carteGriseBloc}>
@@ -625,7 +686,7 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                         </View>
                         <View style={[styles.ligneCarte, styles.ligneSep]}>
                             <Text style={styles.ligneLabel}>{t('Moyen utilisé')}</Text>
-                            <Text style={styles.ligneValeur}>{t('Mobile Money')}</Text>
+                            <Text style={styles.ligneValeur}>{t('Kkiapay (Mobile Money / carte)')}</Text>
                         </View>
                         <View style={[styles.ligneCarte, styles.ligneSep]}>
                             <Text style={styles.ligneLabel}>{t('Montant à régler')}</Text>
@@ -650,6 +711,16 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                 </ScrollView>
 
                 <View style={[styles.centreBas, { paddingBottom: insets.bottom + 16 }]}>
+                    {nonConfirme ? (
+                        <Pressable
+                            onPress={() => Linking.openURL(`tel:${AGENCE_TEL}`).catch(() => undefined)}
+                            style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
+                            accessibilityRole="button"
+                        >
+                            <Headphones size={16} color="#FFFFFF" strokeWidth={2.2} />
+                            <Text style={styles.ctaPleinText}>{t('Appeler l’agence')}</Text>
+                        </Pressable>
+                    ) : (
                     <Pressable
                         onPress={() => { setMotif(''); setEtat('recap'); setFeuille(true) }}
                         style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
@@ -658,6 +729,8 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                         <RotateCw size={16} color="#FFFFFF" strokeWidth={2.2} />
                         <Text style={styles.ctaPleinText}>{t('Réessayer le paiement')}</Text>
                     </Pressable>
+                    )}
+                    {!nonConfirme && (
                     <Pressable
                         onPress={ouvrirPageSecurisee}
                         style={({ pressed }) => [styles.ctaVide, pressed && { transform: [{ scale: 0.98 }] }]}
@@ -666,13 +739,14 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                         <Wallet size={16} color={C.text} strokeWidth={2.2} />
                         <Text style={styles.ctaVideText}>{t('Choisir un autre moyen')}</Text>
                     </Pressable>
+                    )}
                 </View>
             </View>
         )
     }
 
     /* ══ RÉCAPITULATIF ══ */
-    const complet = !!nom.trim() && !!email.trim() && !!tel.trim()
+    const complet = !!nom.trim() && !!email.trim() && !!tel.trim() && !dejaRegle
 
     return (
         <View style={styles.container}>
@@ -724,7 +798,9 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                                 return (
                                     <View key={p.id} style={styles.sejourLigne}>
                                         <Icone size={14} color={C.primary} strokeWidth={2.2} />
-                                        <Text style={styles.sejourLigneNom} numberOfLines={1}>
+                                        {/* Item multi-lignes (
+) : toutes les lignes affichées. */}
+                                        <Text style={styles.sejourLigneNom}>
                                             {p.title || t('Prestation')}
                                         </Text>
                                         <Text style={styles.sejourLignePrix}>
@@ -818,7 +894,7 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
                     ]}
                     accessibilityRole="button"
                 >
-                    <Text style={styles.ctaBarreText}>{t('Moyen de paiement')}</Text>
+                    <Text style={styles.ctaBarreText}>{dejaRegle ? t('Séjour déjà réglé') : t('Moyen de paiement')}</Text>
                     <ChevronRight size={16} color="#FFFFFF" strokeWidth={2.4} />
                 </Pressable>
             </View>
@@ -911,7 +987,8 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
 
                     <Pressable
                         onPress={() => (moyen === 'kkiapay' ? lancerKkiapay() : ouvrirPageSecurisee())}
-                        style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
+                        disabled={creation}
+                        style={({ pressed }) => [styles.ctaPlein, creation && { opacity: 0.6 }, pressed && { transform: [{ scale: 0.98 }] }]}
                         accessibilityRole="button"
                     >
                         <ShieldCheck size={18} color="#FFFFFF" strokeWidth={2.2} />

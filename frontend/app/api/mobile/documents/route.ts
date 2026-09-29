@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
         const { data: recaps } = await supabase
             .from('myafro_recap_requests')
             .select('id, reference, statut, recap_ia, created_at')
-            .eq('email', email)
+            .ilike('email', motifEmailExact(email) ?? '\u0000')
             .order('created_at', { ascending: false })
             .limit(50)
 

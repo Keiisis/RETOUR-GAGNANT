@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { motifEmailExact } from '@/lib/email-motif'
+import { elementsDescription } from '@/lib/description-lignes'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Devis et factures d'un client, pour l'application.
@@ -50,6 +51,7 @@ const STATUT_APP: Record<string, 'paid' | 'pending' | 'cancelled'> = {
     brouillon: 'pending',
     envoye: 'pending',
     accepte: 'pending',
+    en_retard: 'pending',
     signe: 'pending',
     en_attente: 'pending',
     impaye: 'pending',
@@ -66,7 +68,7 @@ function normaliser(d: any) {
     /* L'objet du document : la première ligne facturée. À défaut la première
        ligne des notes — jamais un libellé inventé. */
     const objet = String(
-        lignes[0]?.description || lignes[0]?.title || lignes[0]?.name
+        elementsDescription(lignes[0]?.description)[0] || lignes[0]?.title || lignes[0]?.name
         || String(d.notes || '').split('\n')[0]
         || (d.type === 'devis' ? 'Devis' : 'Facture'),
     )
@@ -100,6 +102,8 @@ function normaliser(d: any) {
         remise: d.remise,
         notes: d.notes,
         payment_method: d.payment_method || d.payment_provider,
+        // Référence de paiement : permet à l'app de dédoublonner facture et commande.
+        payment_transaction_id: d.payment_transaction_id || null,
         client_email: d.client_email,
         created_at: d.created_at,
     }
@@ -137,7 +141,8 @@ export async function GET(req: NextRequest) {
             )
             /* Le document d'un autre répond comme s'il n'existait pas :
                distinguer les deux cas renseignerait un tiers. */
-            if (!aLui) return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
+            // Brouillon = document interne, pas encore émis : jamais montré au client.
+            if (!aLui || data.status === 'brouillon') return NextResponse.json({ error: 'Document introuvable' }, { status: 404 })
 
             return NextResponse.json({ invoice: normaliser(data) })
         }
@@ -171,6 +176,7 @@ export async function GET(req: NextRequest) {
 
         const vus = new Set<string>()
         const docs = lignes
+            .filter(d => d.status !== 'brouillon')
             .filter(d => (vus.has(d.id) ? false : (vus.add(d.id), true)))
             .map(normaliser)
             .sort((a, b) => new Date(b.issued_at || 0).getTime() - new Date(a.issued_at || 0).getTime())

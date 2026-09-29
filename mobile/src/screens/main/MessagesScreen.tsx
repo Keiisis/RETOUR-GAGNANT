@@ -158,12 +158,15 @@ export default function MessagesScreen({ navigation }: any) {
 
        On rassemble donc tous les fils rattachés au client, par identifiant OU
        par email, quel que soit leur type. */
-    const findThreads = useCallback(async () => {
+    const findThreads = useCallback(async (): Promise<{ ids: string[]; writeId: string | null } | null> => {
         if (!profile) return { ids: [] as string[], writeId: null as string | null }
 
         const email = (profile.email || '').trim().toLowerCase()
         const filters = [`client_id.eq.${profile.id}`]
-        if (email) filters.push(`email.eq.${email}`)
+        // `ilike` : les emails saisis sur le site gardent leur casse
+        // (« Kevin@… ») ; la règle RLS compare lower(email) — `eq` sur
+        // l'email minuscule manquait ces fils.
+        if (email) filters.push(`email.ilike.${email}`)
 
         const { data, error } = await supabase
             .from('messages')
@@ -173,8 +176,11 @@ export default function MessagesScreen({ navigation }: any) {
             .limit(50)
 
         if (error) {
+            /* `null` = « inconnu », pas « aucun fil » : l'appelant garde la
+               conversation affichée. Rendre [] vidait l'écran ET la mémoire,
+               et le message suivant ouvrait une conversation EN DOUBLE. */
             console.warn('[Messages] Find threads error:', error.message)
-            return { ids: [], writeId: null }
+            return null
         }
 
         const rows = data || []
@@ -216,8 +222,13 @@ export default function MessagesScreen({ navigation }: any) {
     /* ── Init ── */
     useEffect(() => {
         const init = async () => {
-            const { ids } = await findThreads()
-            await fetchChatHistory(ids)
+            const fils = await findThreads()
+            if (!fils) {
+                setLoading(false)
+                if (!aEnMemoire(cleFil)) toast(t('Messagerie indisponible'), t('Vérifiez votre connexion puis revenez sur cet écran.'))
+                return
+            }
+            await fetchChatHistory(fils.ids)
             if (profile?.id) {
                 ecrire(`@rg_chat_last_seen_${profile.id}`, new Date().toISOString())
             }
@@ -228,8 +239,8 @@ export default function MessagesScreen({ navigation }: any) {
     /* Reprise au retour sur l'écran : un agent a pu écrire entre-temps. */
     useEffect(() => {
         const unsub = navigation?.addListener?.('focus', async () => {
-            const { ids } = await findThreads()
-            await fetchChatHistory(ids)
+            const fils = await findThreads()
+            if (fils) await fetchChatHistory(fils.ids)
         })
         return () => { if (typeof unsub === 'function') unsub() }
     }, [navigation, findThreads, fetchChatHistory])
@@ -294,6 +305,20 @@ export default function MessagesScreen({ navigation }: any) {
         setSending(true)
 
         let activeConvId = conversationId
+
+        /* Pas de fil connu : peut-être parce que la recherche a échoué (réseau).
+           On la refait AVANT d'ouvrir une conversation neuve, sinon chaque
+           coupure créait un fil en double côté agent. */
+        if (!activeConvId) {
+            const fils = await findThreads()
+            if (!fils) {
+                setNewMessage(text)
+                setSending(false)
+                toast(t('Erreur'), t('Impossible d\'envoyer le message. Vérifiez votre connexion.'))
+                return
+            }
+            activeConvId = fils.writeId
+        }
 
         if (!activeConvId) {
             const { data: convData, error: convErr } = await supabase

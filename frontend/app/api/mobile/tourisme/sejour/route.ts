@@ -152,6 +152,9 @@ export async function POST(req: NextRequest) {
             .eq('client_id', clientId)
             .eq('service_type', 'Tourisme & Culture')
             .in('statut', STATUTS_ACTIFS)
+            // Sans limite, deux dossiers actifs faisaient échouer maybeSingle()
+            // (erreur ignorée) : un TROISIÈME dossier était alors créé.
+            .limit(1)
             .maybeSingle()
 
         if (!dossierExistant) {

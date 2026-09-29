@@ -107,16 +107,28 @@ export default function PaymentsScreen({ navigation }: any) {
             cleAffichage,
             async () => {
             const headers = { ...(await authHeaders()) }
+            /* Une réponse en erreur (401, 500, réseau) LÈVE : avant, elle devenait
+               `{}`, donc une liste vide peinte puis mémorisée à la place de
+               l'historique réel (« Aucun règlement », total à 0). */
+            const lire = async (chemin: string) => {
+                const r = await fetchWithTimeout(`${API_BASE}${chemin}`, { timeoutMs: 10000, headers })
+                if (!r.ok) throw new Error(`HTTP ${r.status}`)
+                return r.json()
+            }
             const [ordersRes, invoicesRes] = await Promise.all([
-                fetchWithTimeout(`${API_BASE}/api/mobile/orders`, { timeoutMs: 10000, headers })
-                    .then(r => r.json()).catch(() => ({})),
-                fetchWithTimeout(`${API_BASE}/api/mobile/invoices`, { timeoutMs: 10000, headers })
-                    .then(r => r.json()).catch(() => ({})),
+                lire('/api/mobile/orders'),
+                lire('/api/mobile/invoices'),
             ])
 
-            const fromOrders: Entry[] = (ordersRes?.orders || []).map((o: any) => ({
+            const orders: any[] = ordersRes?.orders || []
+            // Transactions déjà comptées par une commande : leur facture ne doit
+            // pas doubler le « Total réglé ».
+            const txCommandes = new Set(orders.map((o: any) => o.transaction_id).filter(Boolean))
+
+            const fromOrders: Entry[] = orders.map((o: any) => ({
                 id: `o_${o.id}`,
-                title: o.product_title || t('Commande boutique'),
+                // Les commandes mobiles n'ont pas de product_title : premier article.
+                title: o.product_title || o.cart_items?.[0]?.title || t('Commande boutique'),
                 subtitle: `${t('Commande')} · ${String(o.payment_method || '').toUpperCase() || t('En ligne')}`,
                 amount: Number(o.amount) || 0,
                 currency: o.currency || 'XOF',
@@ -125,7 +137,12 @@ export default function PaymentsScreen({ navigation }: any) {
                 icon: 'bag-handle-outline',
             }))
 
-            const fromInvoices: Entry[] = (invoicesRes?.invoices || []).map((f: any) => ({
+            const fromInvoices: Entry[] = (invoicesRes?.invoices || [])
+                .filter((f: any) => {
+                    const tx = f.payment_transaction_id || f.transaction_id
+                    return !tx || !txCommandes.has(tx)
+                })
+                .map((f: any) => ({
                 id: `f_${f.id}`,
                 title: f.description || `${t('Facture')} ${f.invoice_ref || ''}`.trim(),
                 subtitle: `${t('Facture')} ${f.invoice_ref || ''}`.trim(),

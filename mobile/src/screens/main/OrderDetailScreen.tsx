@@ -58,7 +58,8 @@ interface OrderDetail {
     payment_method: string
     payment_status: string
     transaction_id: string | null
-    cart_items: Array<{ title: string; quantity: number; unit_price: number }> | null
+    /* `unit_price` (commandes mobiles) ou `price` (commandes web / propositions). */
+    cart_items: Array<{ title: string; quantity: number; unit_price?: number; price?: number }> | null
     product_title: string | null
     shipping_address: string | null
     shipping_city: string | null
@@ -97,6 +98,16 @@ const SHIPPING_CONFIG: Record<string, {
     delivered: { label: 'Livré', icon: 'checkmark-done', color: C.success, bgRgba: 'rgba(0, 135, 81, 0.10)', borderRgba: 'rgba(0, 135, 81, 0.25)' },
     failed: { label: 'Échec', icon: 'close-circle-outline', color: C.error, bgRgba: 'rgba(232, 17, 45, 0.08)', borderRgba: 'rgba(232, 17, 45, 0.25)' },
     returned: { label: 'Retourné', icon: 'arrow-undo-outline', color: C.error, bgRgba: 'rgba(232, 17, 45, 0.08)', borderRgba: 'rgba(232, 17, 45, 0.25)' },
+}
+
+/* orders.payment_status — miroir de COMMANDE_PAIEMENT_STATUTS
+   (frontend/lib/constants/statuts.ts). */
+const PAIEMENT_LIBELLE: Record<string, string> = {
+    pending: 'En attente',
+    completed: 'Payée',
+    failed: 'Échouée',
+    abandoned: 'Abandonnée',
+    refunded: 'Remboursée',
 }
 
 const STAGES = ['preparing', 'shipped', 'in_transit', 'delivered']
@@ -208,13 +219,13 @@ function ShippingStepper({ currentIdx, statusColor }: { currentIdx: number; stat
 ═══════════════════════════════════════════════════════════ */
 export default function OrderDetailScreen({ navigation, route }: { navigation: Nav; route: Route }) {
     const insets = useSafeAreaInsets()
-    const { orderId } = route.params
+    const { orderId, trackingCode } = route.params
     const { t } = useLang()
     const { profile } = useAuth()
     const cleCommande = cleDuClient(profile?.id, `commande:${orderId}`)
     const memorise = etatMemorise<{ order: OrderDetail | null; events: TrackingEvent[] } | null>(cleCommande, null)
     const [order, setOrder] = useState<OrderDetail | null>(memorise?.order ?? null)
-    const [events, setEvents] = useState<TrackingEvent[]>([])
+    const [events, setEvents] = useState<TrackingEvent[]>(memorise?.events ?? [])
     const [loading, setLoading] = useState(() => !aEnMemoire(cleCommande))
 
     /* ── Animations Corporate ── */
@@ -236,9 +247,28 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
     }))
 
     useEffect(() => {
+        /* Recherche par code de suivi (écran Commandes) : la route publique
+           `?tracking=` sert la commande. Avant, seul `?order_id=` (réservé au
+           propriétaire) était appelé : un colis suivi par code — ou un visiteur
+           non connecté — tombait toujours sur « Commande introuvable ». */
+        const parCode = async (): Promise<{ order: OrderDetail | null; events: TrackingEvent[] } | null> => {
+            if (!trackingCode) return null
+            const res = await fetchWithTimeout(
+                `${API_BASE}/api/mobile/orders?tracking=${encodeURIComponent(trackingCode)}`,
+                { timeoutMs: 10000 },
+            )
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const data = await res.json().catch(() => ({}))
+            return data.found && data.order ? { order: data.order, events: data.events || [] } : null
+        }
         const fetchOrder = async () => {
             // client_id requis par le WAF (vérif de propriété anti-IDOR côté serveur)
-            if (!profile?.id) { setLoading(false); return }
+            if (!profile?.id) {
+                const v = await parCode().catch(() => null)
+                if (v?.order) { setOrder(v.order); setEvents(v.events) }
+                setLoading(false)
+                return
+            }
             // Commande deja consultee : reaffichee sans attendre.
             await avecMemoire<{ order: OrderDetail | null; events: TrackingEvent[] }>(
                 cleCommande,
@@ -248,7 +278,8 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
                     )
                     const data = await res.json().catch(() => ({}))
-                    return data.order ? { order: data.order, events: data.events || [] } : null
+                    if (data.order) return { order: data.order, events: data.events || [] }
+                    return await parCode()
                 },
                 (v) => {
                     if (v.order) { setOrder(v.order); setEvents(v.events) }
@@ -258,7 +289,7 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
             setLoading(false)
         }
         fetchOrder()
-    }, [orderId, profile?.id])
+    }, [orderId, trackingCode, profile?.id])
 
     const formatPrice = (n: number, c: string) => {
         if (c === 'XOF' || c === 'XAF') return `${n.toLocaleString(localeActuelle())} FCFA`
@@ -501,11 +532,11 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                                         {t(item.title)}
                                     </Text>
                                     <Text style={styles.itemUnitPrice}>
-                                        {formatPrice(item.unit_price || 0, order.currency)} / {t('unité')}
+                                        {formatPrice(item.unit_price ?? item.price ?? 0, order.currency)} / {t('unité')}
                                     </Text>
                                 </View>
                                 <Text style={styles.itemPrice}>
-                                    {formatPrice((item.unit_price || 0) * (item.quantity || 1), order.currency)}
+                                    {formatPrice((item.unit_price ?? item.price ?? 0) * (item.quantity || 1), order.currency)}
                                 </Text>
                             </View>
                         ))}
@@ -513,7 +544,14 @@ export default function OrderDetailScreen({ navigation, route }: { navigation: N
                         {/* Total massif */}
                         <View style={styles.totalSection}>
                             <View style={styles.totalRow}>
-                                <Text style={styles.totalLabel}>{t('Total payé')}</Text>
+                                {/* « Total payé » seulement si le paiement est confirmé
+                                    (payment_status = completed) : une commande en
+                                    attente ou abandonnée l'affichait aussi. */}
+                                <Text style={styles.totalLabel}>
+                                    {order.payment_status === 'completed'
+                                        ? t('Total payé')
+                                        : `${t('Total')} · ${t(PAIEMENT_LIBELLE[order.payment_status] || 'En attente')}`}
+                                </Text>
                                 <Text style={styles.totalValue}>{formatPrice(order.amount, order.currency)}</Text>
                             </View>
                             {order.transaction_id ? (

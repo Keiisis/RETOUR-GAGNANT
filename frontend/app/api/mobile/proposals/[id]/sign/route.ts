@@ -62,6 +62,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         .maybeSingle()
 
     const traceFournie = String(body.signature_data || '').trim()
+    // Même contrôle que /api/mobile/signature : une image, de taille bornée.
+    if (traceFournie && (!traceFournie.startsWith('data:image/') || traceFournie.length > 700_000)) {
+        return NextResponse.json({ error: 'Format de signature invalide.' }, { status: 400 })
+    }
     // Valeurs autorisées : 'ask' | 'auto' | 'never' (cf. /api/mobile/signature).
     // 'never' interdit la signature automatique, même si un tracé est mémorisé.
     const automatique = !traceFournie && sig?.auto_sign === 'auto' && !!sig?.signature_data
@@ -77,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const nom = `${cp?.prenom || ''} ${cp?.nom || ''}`.trim() || String(body.signed_name || '').trim() || null
     const nowIso = new Date().toISOString()
 
-    const { error: majErr } = await supabase
+    const { data: signee, error: majErr } = await supabase
         .from('ai_client_proposals')
         .update({
             signed_at: nowIso,
@@ -91,8 +95,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         // Garde anti-concurrence : deux signatures simultanées ne peuvent pas
         // toutes deux aboutir.
         .is('signed_at', null)
+        .select('id')
 
     if (majErr) return NextResponse.json({ error: majErr.message }, { status: 500 })
+    // Perdu la course : une autre signature est passée entre-temps.
+    if (!signee || signee.length === 0) {
+        return NextResponse.json({ success: true, deja_signee: true })
+    }
 
     // Prestations retenues par le client. L'écran de lecture laisse décocher ce
     // dont il ne veut pas : sans cette trace, le conseiller signerait un devis
@@ -115,7 +124,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         await supabase.from('client_signatures').upsert({
             client_id: clientId,
             signature_data: traceFournie,
-            auto_sign: String(body.auto_sign || 'ask'),
+            // Liste fermée (cf. /api/mobile/signature) : une valeur libre
+            // passait telle quelle en base.
+            auto_sign: ['ask', 'auto', 'never'].includes(String(body.auto_sign)) ? String(body.auto_sign) : 'ask',
             updated_at: nowIso,
         }, { onConflict: 'client_id' }).then(() => undefined, () => undefined)
     }

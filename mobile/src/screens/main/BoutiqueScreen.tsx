@@ -32,6 +32,7 @@ import { useMouvementReduit } from '../../lib/motion'
 import { RootStackParamList, BoutiqueProduct } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
+import { ttcFromHt, TVA_ENABLED, TVA_LABEL } from '../../lib/tax'
 
 /* ═══════════════════════════════════════════════════════════
    BoutiqueScreen : THEME "CORPORATE PREMIUM 2026"
@@ -547,6 +548,9 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     const [products, setProducts] = useState<BoutiqueProduct[]>(() => etatMemorise<BoutiqueProduct[]>(cleAffichage, []))
     const [loading, setLoading] = useState(() => !aEnMemoire(cleAffichage))
     const [refreshing, setRefreshing] = useState(false)
+    /* Echec reseau sans cache : avant, l'ecran annoncait « Collection secrete,
+       revenez bientot » — une panne presentee comme une boutique vide. */
+    const [erreurChargement, setErreurChargement] = useState(false)
     const [showCart, setShowCart] = useState(false)
     const { t, lang, isTranslating, preloadTexts } = useLang()
     const { cart, addToCart, removeFromCart, cartCount, cartTotal } = useCart()
@@ -578,7 +582,7 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
     const fetchProducts = useCallback(async () => {
         // Catalogue affiche depuis la derniere version connue, puis rafraichi.
         try {
-            await avecMemoire<BoutiqueProduct[]>(
+            const r = await avecMemoire<BoutiqueProduct[]>(
                 cleAffichage,
                 async () => {
                     const res = await fetchWithTimeout(`${API_BASE}/api/products`, { timeoutMs: 10000 })
@@ -589,7 +593,10 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                 (liste) => { setProducts(liste); setLoading(false) },
                 { fraicheurMs: 60_000 },
             )
+            // avecMemoire ne leve jamais : l'echec se lit dans `ok`.
+            setErreurChargement(!r.ok)
         } catch (e: any) {
+            setErreurChargement(true)
             console.warn('[Boutique] Fetch failed:', e?.message)
         } finally {
             setLoading(false)
@@ -788,9 +795,11 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                     <View style={styles.emptyIconWrap}>
                         <LucideIcon name="bag-handle" size={34} color={C.primary} />
                     </View>
-                    <Text style={styles.title}>{t('Collection secrète')}</Text>
+                    <Text style={styles.title}>{erreurChargement ? t('Connexion impossible') : t('Collection secrète')}</Text>
                     <Text style={[styles.subtitle, { textAlign: 'center', paddingHorizontal: 20 }]}>
-                        {t('Les artisans sculptent les prochaines merveilles. Revenez bientôt.')}
+                        {erreurChargement
+                            ? t('La boutique n’a pas pu être chargée. Tirez vers le bas pour réessayer.')
+                            : t('Les artisans sculptent les prochaines merveilles. Revenez bientôt.')}
                     </Text>
                 </ScrollView>
             ) : (
@@ -943,12 +952,12 @@ export default function BoutiqueScreen({ navigation }: { navigation: Nav }) {
                                 <Text style={styles.totalValueMuted}>{formatPrice(cartTotal)}</Text>
                             </View>
                             <View style={styles.totalRowNote}>
-                                <Text style={styles.totalNote}>{t('Livraison calculée au paiement')}</Text>
+                                <Text style={styles.totalNote}>{TVA_ENABLED ? t('Livraison incluse · {tva} en sus', { tva: TVA_LABEL }) : t('Livraison incluse')}</Text>
                             </View>
                             <View style={styles.totalDivider} />
                             <View style={styles.totalRow}>
                                 <Text style={styles.totalLabelStrong}>{t('Total')}</Text>
-                                <Text style={styles.totalValue}>{formatPrice(cartTotal)}</Text>
+                                <Text style={styles.totalValue}>{formatPrice(ttcFromHt(cartTotal))}</Text>
                             </View>
 
                             <TouchableOpacity

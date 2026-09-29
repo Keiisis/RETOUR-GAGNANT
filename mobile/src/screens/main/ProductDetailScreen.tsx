@@ -44,6 +44,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { useLang } from '../../contexts/LangContext';
+import { useCart } from '../../contexts/CartContext';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { screenColors } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
@@ -129,6 +130,7 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
     const insets = useSafeAreaInsets();
     const { product, onAddToCart } = route.params;
     const { t } = useLang();
+    const { cart } = useCart();
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
     const [favorite, setFavorite] = useState(false);
@@ -185,7 +187,10 @@ export default function ProductDetailScreen({ navigation, route }: Props) {
 
     const handleAddToCart = () => {
         if (outOfStock) return;
-        if (quantity > product.stock) {
+        /* Le panier refuse en silence de depasser le stock (quantite deja
+           presente + ajout) : l'ecran annoncait pourtant « Ajoute au panier ». */
+        const dejaAuPanier = cart.find((c) => c.product.id === product.id)?.quantity ?? 0;
+        if (quantity + dejaAuPanier > product.stock) {
             toast(t('Stock insuffisant'), t('Quantité demandée supérieure au stock disponible.'));
             return;
         }

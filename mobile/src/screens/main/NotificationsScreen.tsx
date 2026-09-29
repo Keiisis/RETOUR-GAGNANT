@@ -32,6 +32,8 @@ import { useLang } from '../../contexts/LangContext'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
+import { ecrire, supprimer } from '../../lib/stockage'
+import { CLE_PUSH_DESACTIVE } from '../../utils/pushToken'
 
 /* ═══════════════════════════════════════════════════════════
    NotificationsScreen : THEME "CORPORATE PREMIUM 2026"
@@ -70,6 +72,19 @@ const DESTINATIONS: Record<string, { ecran: string; onglet?: boolean }> = {
     order: { ecran: 'Orders' },
     facture: { ecran: 'Invoices' },
     rdv: { ecran: 'Appointments' },
+    // Types réellement écrits en base : /api/rdv/reply → 'rendez-vous',
+    // l'écran RDV → 'appointment'. Sans eux, la réponse d'un agent à une
+    // demande de rendez-vous ne menait nulle part.
+    'rendez-vous': { ecran: 'Appointments' },
+    appointment: { ecran: 'Appointments' },
+    message: { ecran: 'Messages', onglet: true },
+    payment: { ecran: 'Payments' },
+}
+
+/* Types serveur sans visuel dédié → visuel existant le plus proche. */
+const TYPE_ALIAS: Record<string, string> = {
+    'rendez-vous': 'appointment', rdv: 'appointment', service: 'dossier',
+    proposition: 'dossier', devis: 'payment', facture: 'payment',
 }
 
 const TYPE_CONFIG: Record<string, {
@@ -150,7 +165,7 @@ function NotifCard({
     t: (k: string) => string
     delay: number
 }) {
-    const cfg = TYPE_CONFIG[notif.type] || TYPE_CONFIG.system
+    const cfg = TYPE_CONFIG[notif.type] || TYPE_CONFIG[TYPE_ALIAS[notif.type] || ''] || TYPE_CONFIG.system
     const pressAnim = useSharedValue(0)
     const entryAnim = useSharedValue(0)
 
@@ -276,13 +291,23 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
         } catch { /* confort seulement */ }
 
         try {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('notifications')
-                .select('id, title, body, type, is_read, created_at')
+                .select('id, title, body, message, type, is_read, created_at')
                 .eq('user_id', profile.id)
                 .order('created_at', { ascending: false })
                 .limit(50)
-            const liste = (data || []) as AppNotification[]
+            /* Erreur (session expirée, réseau) : on GARDE ce qui est affiché.
+               Avant, `data` nul devenait une liste vide qui écrasait aussi la
+               mémoire et la base locale — la cloche se vidait. */
+            if (error) throw error
+            // La table porte `body` ET `message` : certains chemins n'écrivent
+            // que `message`. Le texte affiché prend l'un ou l'autre, jamais null.
+            const liste = ((data || []) as Array<AppNotification & { message?: string | null }>).map(n => ({
+                ...n,
+                title: n.title || '',
+                body: n.body || n.message || '',
+            })) as AppNotification[]
             setNotifications(liste)
             ecrireMemoire(cleAffichage, liste)
             void enregistrerNotifications(profile.id, liste as unknown as Array<Record<string, unknown>>)
@@ -352,7 +377,9 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                 }
                 const tokenData = await Notifications.getExpoPushTokenAsync({ projectId })
                 const token = tokenData.data
-                await updateProfile({ push_token: token })
+                const { error } = await updateProfile({ push_token: token })
+                if (error) throw error
+                supprimer(CLE_PUSH_DESACTIVE)
                 setPushEnabled(true)
                 toast(t('Notifications activées'), t('Vous recevrez désormais des alertes pour vos dossiers et messages.'))
             } catch (e: unknown) {
@@ -369,7 +396,15 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
                 cancelLabel: t('Annuler'),
                 destructive: true,
                 onConfirm: async () => {
-                    await updateProfile({ push_token: undefined })
+                    // updateProfile convertit `undefined` en `null` : le jeton est
+                    // réellement effacé en base (avant : ignoré, les push continuaient).
+                    const { error } = await updateProfile({ push_token: undefined })
+                    if (error) {
+                        toast(t('Erreur'), error.message)
+                        return
+                    }
+                    // Mémorisé : l'ouverture suivante ne réenregistre pas le jeton.
+                    ecrire(CLE_PUSH_DESACTIVE, 'true')
                     setPushEnabled(false)
                 },
             })
@@ -379,16 +414,23 @@ export default function NotificationsScreen({ navigation }: { navigation: Nav })
     /* ── Mark as read ── */
     const markAsRead = async (id: string) => {
         setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-        await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+        const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+        // Échec : on rend l'état réel, sinon le badge revient au prochain chargement.
+        if (error) setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: false } : n))
     }
 
     const markAllRead = async () => {
         if (!profile) return
+        const avant = notifications
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
-        await supabase.from('notifications')
+        const { error } = await supabase.from('notifications')
             .update({ is_read: true })
             .eq('user_id', profile.id)
             .eq('is_read', false)
+        if (error) {
+            setNotifications(avant)
+            toast(t('Erreur'), t('Impossible de marquer les notifications comme lues.'))
+        }
     }
 
     const unreadCount = notifications.filter(n => !n.is_read).length

@@ -27,9 +27,10 @@ import { RouteProp } from '@react-navigation/native'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { useAuth } from '../../contexts/AuthContext'
+import { useCart } from '../../contexts/CartContext'
 import KkiapayModal from '../../components/KkiapayModal'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { ttcFromHt, tvaFromHt, TVA_ENABLED } from '../../lib/tax'
+import { ttcFromHt, tvaFromHt, TVA_ENABLED, TVA_LABEL } from '../../lib/tax'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows } from '../../config/theme'
@@ -195,6 +196,9 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
     const totalTva = tvaFromHt(total)
     const { t } = useLang()
     const { profile } = useAuth()
+    /* Panier vidé une fois la commande prise (ou mise en file) : il restait
+       plein après l'achat, et un second « Payer » réencaissait le même panier. */
+    const { clearCart } = useCart()
 
     const [showPayment, setShowPayment] = useState(false)
     const [submitting, setSubmitting] = useState(false)
@@ -268,6 +272,13 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
 
     /* ── Lancer le paiement ── */
     const handlePay = () => {
+        /* Compte exigé AVANT l'encaissement : la vérification n'avait lieu
+           qu'après le paiement, l'argent était pris et la commande jamais créée. */
+        if (!profile) {
+            toast(t('Compte requis'), t('Veuillez vous connecter pour finaliser votre commande.'))
+            return
+        }
+        if (submitting || showPayment) return
         const err = validateForm()
         if (err) {
             toast(t('Information requise'), err)
@@ -322,13 +333,25 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
             })
             const data = await res.json().catch(() => ({}))
 
+            /* Panne serveur (5xx) : même traitement qu'une coupure réseau —
+               mise en file et renvoi automatique (la route dédoublonne par
+               transaction_id). Avant, la commande payée était simplement perdue. */
+            if (res.status >= 500 || res.status === 408 || res.status === 429) {
+                throw new Error(`HTTP ${res.status}`)
+            }
             if (!res.ok || !data.ok) {
-                toast(t('Erreur enregistrement'), t("Le paiement a été reçu mais la commande n'a pas pu être enregistrée. Référence : ") + txId)
+                const motif = typeof data?.error === 'string' ? `${data.error}
+` : ''
+                toast(t('Erreur enregistrement'), motif + t("Le paiement a été reçu mais la commande n'a pas pu être enregistrée. Référence : ") + txId)
                 return
             }
 
             setShowPayment(false)
-            navigation.navigate('OrderConfirmation', {
+            clearCart()
+            /* `replace` : le retour arrière ramenait sur ce paiement, panier
+               encore rempli dans les paramètres — un second « Payer » était
+               à un geste. */
+            navigation.replace('OrderConfirmation', {
                 orderId: data.order_id,
                 transactionId: txId,
             })
@@ -359,6 +382,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                     },
                 },
             })
+            clearCart()
             toast(
                 t('Commande en cours d’envoi'),
                 t('Votre paiement est enregistré (réf : {tx}). La connexion étant instable, votre commande partira dès le retour du réseau.', { tx: txId }),
@@ -470,7 +494,7 @@ export default function CheckoutScreen({ navigation, route }: { navigation: Nav;
                                     <Text style={styles.taxValue}>{formatPrice(total)}</Text>
                                 </View>
                                 <View style={styles.taxRow}>
-                                    <Text style={styles.taxLabel}>{t('TVA 18%')}</Text>
+                                    <Text style={styles.taxLabel}>{t(TVA_LABEL)}</Text>
                                     <Text style={styles.taxValue}>{formatPrice(totalTva)}</Text>
                                 </View>
                             </>

@@ -706,8 +706,10 @@ export default function ServicesScreen({ navigation }: any) {
                 .order('order_index', { ascending: true })
 
             if (error) {
-                console.warn('[Services] Supabase error, using static data:', error.message)
-                setServices(SERVICES_DATA)
+                // Catalogue réel déjà affiché (base locale) : on le garde plutôt
+                // que de revenir à la copie figée du code.
+                console.warn('[Services] Supabase error, using local/static data:', error.message)
+                setServices(prev => (prev.length > 0 && prev !== SERVICES_DATA ? prev : SERVICES_DATA))
             } else if (data && data.length > 0) {
                 const mapped: ServiceFull[] = data.map((s: Record<string, any>) => {
                     const staticMatch = SERVICES_DATA.find(sd =>
@@ -723,14 +725,17 @@ export default function ServicesScreen({ navigation }: any) {
                         desc: s.subtitle || s.description || staticMatch?.desc || '',
                         fullDescription: s.description || staticMatch?.fullDescription || '',
                         duration: staticMatch?.duration || '4-8 semaines',
-                        price: s.price_display || staticMatch?.price || 'Sur devis',
+                        // Prix = base uniquement (services.price_display). Le repli
+                        // statique ANNONÇAIT un montant codé dans l'app (« À partir
+                        // de 150 000 FCFA ») que l'admin n'avait jamais saisi.
+                        price: s.price_display || 'Sur devis',
                         documents: staticMatch?.documents || ["Pièce d'identité valide", 'Documents selon le service'],
                         features: (Array.isArray(s.features) && s.features.length > 0)
                             ? s.features
                             : (staticMatch?.features || ['Consultation personnalisée', 'Accompagnement complet']),
                         pricing_options: (Array.isArray(s.pricing_options) && s.pricing_options.length > 0)
                             ? s.pricing_options
-                            : (staticMatch?.pricing_options || [{ label: 'Standard', price: 'Nous consulter' }]),
+                            : [{ label: 'Standard', price: 'Nous consulter' }],
                         color: s.color || staticMatch?.color || C.primary,
                     }
                 })
@@ -743,8 +748,8 @@ export default function ServicesScreen({ navigation }: any) {
                 setServices(SERVICES_DATA)
             }
         } catch (e: any) {
-            console.warn('[Services] Fetch failed, using static data:', e?.message)
-            setServices(SERVICES_DATA)
+            console.warn('[Services] Fetch failed, using local/static data:', e?.message)
+            setServices(prev => (prev.length > 0 && prev !== SERVICES_DATA ? prev : SERVICES_DATA))
         } finally {
             setLoading(false)
         }
