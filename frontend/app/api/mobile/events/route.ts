@@ -1,48 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { facturerPaiementService } from '@/lib/service-invoice'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 import { PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
 import { createTicketForRegistration } from '@/lib/event-tickets'
 import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
+import { ttcFromHt } from '@/lib/tax'
+import { toXOFStrict } from '@/lib/server-rates'
+import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
+import {
+    verifierKkiapay, montantCouvert, usagesTransaction, motifOuRien, estUuid,
+} from '@/lib/mobile-paiement'
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+/* ════════════════════════════════════════════════════════════════════════════
+   Événements côté application.
 
-// ─── Verify Kkiapay transaction (server-side, anti-fraud) ───────────────────
-async function verifyKkiapayTransaction(transactionId: string): Promise<{ ok: boolean; status: string; amount?: number }> {
-    const { data: settings } = await supabase
-        .from('settings')
-        .select('key, value')
-        .in('key', ['kkiapay_private_key', 'kkiapay_secret_key', 'kkiapay_sandbox'])
-    const privateKey = settings?.find(s => s.key === 'kkiapay_private_key')?.value
-    const secretKey = settings?.find(s => s.key === 'kkiapay_secret_key')?.value
-    const sandbox = settings?.find(s => s.key === 'kkiapay_sandbox')?.value === 'true'
-    const apiUrl = sandbox
-        ? 'https://api-sandbox.kkiapay.me/api/v1/transactions/status'
-        : 'https://api.kkiapay.me/api/v1/transactions/status'
+   Correctifs du 2026-09-28 :
+   · l'inscrit est TOUJOURS celui du jeton (le repli `body.client_id`
+     permettait d'inscrire — et de facturer — au nom d'un autre client ; le
+     `?client_id=` du GET listait les inscriptions d'autrui) ;
+   · le montant encaissé par Kkiapay est confronté au prix serveur TTC, en
+     XOF (payer 100 XOF donnait un billet VIP) ;
+   · une transaction ne sert qu'une fois (le même reçu confirmait plusieurs
+     inscriptions) ;
+   · la confirmation en deux temps (PATCH) établit enfin la facture.
+   ════════════════════════════════════════════════════════════════════════════ */
 
-    if (!privateKey || !secretKey) return { ok: false, status: 'config_missing' }
+type TypeBillet = 'standard' | 'vip'
 
-    try {
-        const res = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-private-key': String(privateKey),
-                'x-secret-key': String(secretKey),
-            },
-            body: JSON.stringify({ transactionId }),
-        })
-        if (!res.ok) return { ok: false, status: `kkiapay_http_${res.status}` }
-        const data = await res.json()
-        return { ok: data?.status === 'SUCCESS', status: data?.status || 'unknown', amount: data?.amount }
-    } catch (e) {
-        return { ok: false, status: e instanceof Error ? e.message : 'verify_failed' }
-    }
+interface EvenementPrix {
+    price_standard: number | null
+    price_vip: number | null
+    currency: string | null
+}
+
+/** Prix d'une place : HT en devise de l'événement, TTC, et TTC en XOF (Kkiapay). */
+async function prixPlace(ev: EvenementPrix, type: TypeBillet) {
+    const devise = String(ev.currency || 'XOF').toUpperCase()
+    const ht = type === 'vip'
+        ? Number(ev.price_vip || ev.price_standard || 0)
+        : Number(ev.price_standard || 0)
+    const ttc = ht > 0 ? ttcFromHt(ht, devise) : 0
+    const ttcXof = ttc > 0 ? await toXOFStrict(ttc, devise) : 0
+    return { devise, ht, ttc, ttcXof }
+}
+
+/** Profil du porteur du jeton. */
+async function profilDe(clientId: string) {
+    const { data } = await supabase
+        .from('client_profiles')
+        .select('nom, prenom, email, phone')
+        .eq('id', clientId)
+        .maybeSingle()
+    return data
 }
 
 // ─── GET : liste des événements publiés ──────────────────────────────────────
@@ -50,24 +60,13 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url)
         const featured = searchParams.get('featured')
-        const clientId = searchParams.get('client_id')
+        // Identité du JETON uniquement : `?client_id=` est ignoré (anti-IDOR).
+        const clientId = await getMobileUserId(req)
 
         let query = supabase
             .from('events')
-            // ⚠️ Colonnes ALIGNÉES sur le schéma réellement déployé (vérifié en
-            // base le 2026-08-18). Les noms visés ici n'existaient pas :
-            //   · `cover_image` → la colonne s'appelle `cover_image_url` ;
-            //   · `address`     → cette colonne n'existe pas (il y a `location`
-            //                     et `location_map_url`) ;
-            //   · `event_images.image_url` / `is_cover` → cette table expose
-            //     `url`, `alt_text` et `sort_order` (aucune notion de couverture ;
-            //     la couverture vit dans events.cover_image_url).
-            // PostgREST rejette la requête ENTIÈRE dès qu'un seul nom est
-            // inconnu : l'application ne recevait donc AUCUN événement, même
-            // publié. C'est pourquoi l'événement de test n'apparaissait pas.
-            //
-            // Les alias conservent le contrat attendu par l'application
-            // (`cover_image`, `image_url`) sans avoir à la modifier.
+            // Colonnes alignées sur le schéma déployé (cover_image_url, event_images.url).
+            // Les alias conservent le contrat attendu par l'application.
             .select(`
                 id, title, slug, description, short_description,
                 start_date, end_date, location, location_map_url,
@@ -78,10 +77,6 @@ export async function GET(req: NextRequest) {
             `)
             .eq('status', 'published')
             .order('start_date', { ascending: true })
-            // Sans borne, l'app téléchargeait TOUT l'historique d'événements à
-            // chaque ouverture de l'onglet : payload qui grossit sans fin,
-            // bande passante Vercel consommée et liste non virtualisée côté
-            // mobile. On ne renvoie que ce qui est encore pertinent.
             .gte('start_date', new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString())
             .limit(60)
 
@@ -90,16 +85,15 @@ export async function GET(req: NextRequest) {
         const { data: events, error } = await query
         if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-        // Compter les inscriptions confirmées par event (pour calculer la capacité restante)
         const eventIds = (events || []).map((e: Record<string, unknown>) => e.id as string)
         const seatsMap: Record<string, { standard: number; vip: number }> = {}
         if (eventIds.length > 0) {
-            const { data: regs } = await supabase
+            const { data: regs, error: regsErr } = await supabase
                 .from('event_registrations')
                 .select('event_id, ticket_type, payment_status')
                 .in('event_id', eventIds)
                 .in('payment_status', ['pending', 'completed'])
-            // Une inscription = une place : la table ne porte pas de quantité.
+            if (regsErr) return NextResponse.json({ error: regsErr.message }, { status: 500 })
             for (const r of (regs || []) as Array<{ event_id: string; ticket_type: string }>) {
                 if (!seatsMap[r.event_id]) seatsMap[r.event_id] = { standard: 0, vip: 0 }
                 if (r.ticket_type === 'vip') seatsMap[r.event_id].vip += 1
@@ -107,32 +101,27 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Inscriptions du client demandé (pour afficher "déjà inscrit")
+        // Inscriptions du client connecté (« déjà inscrit »), par l'email de SON profil.
         let registrationsMap: Record<string, { id: string; status: string; ticket_type: string; payment_status?: string }> = {}
         if (clientId && eventIds.length > 0) {
-            // Rattachement par EMAIL : event_registrations n'a pas de client_id.
-            const { data: cp } = await supabase
-                .from('client_profiles').select('email').eq('id', clientId).maybeSingle()
+            const cp = await profilDe(clientId)
             const email = String(cp?.email || '').trim().toLowerCase()
             if (email) {
                 const { data: regs } = await supabase
                     .from('event_registrations')
                     .select('id, event_id, ticket_type, payment_status')
-                    .eq('email', email)
+                    .ilike('email', motifOuRien(email))
+                    .neq('payment_status', 'refunded')
                     .in('event_id', eventIds)
-                if (regs) {
-                    registrationsMap = (regs as Array<{ id: string; event_id: string; ticket_type: string; payment_status?: string }>).reduce((acc, r) => {
-                        // `status` est dérivé du paiement : l'app affiche « confirmé »
-                        // dès que plus rien n'est dû.
-                        acc[r.event_id] = {
-                            id: r.id,
-                            status: r.payment_status === 'completed' ? 'confirmed' : 'pending_payment',
-                            ticket_type: r.ticket_type,
-                            payment_status: r.payment_status,
-                        }
-                        return acc
-                    }, {} as Record<string, { id: string; status: string; ticket_type: string; payment_status?: string }>)
-                }
+                registrationsMap = ((regs || []) as Array<{ id: string; event_id: string; ticket_type: string; payment_status?: string }>).reduce((acc, r) => {
+                    acc[r.event_id] = {
+                        id: r.id,
+                        status: r.payment_status === 'completed' ? 'confirmed' : 'pending_payment',
+                        ticket_type: r.ticket_type,
+                        payment_status: r.payment_status,
+                    }
+                    return acc
+                }, {} as typeof registrationsMap)
             }
         }
 
@@ -155,61 +144,55 @@ export async function GET(req: NextRequest) {
 }
 
 // ─── POST : s'inscrire à un événement ────────────────────────────────────────
-//   Body : { event_id, client_id, ticket_type, quantity, transaction_id? }
-//   Si `transaction_id` est fourni → vérifie le paiement Kkiapay côté serveur
-//   et marque la registration comme `confirmed/paid` directement.
+//   Headers : Authorization: Bearer <jeton>  (OBLIGATOIRE)
+//   Body    : { event_id, ticket_type, transaction_id? }
+//   Réponse : { registration, ticket, amount (XOF TTC à payer), currency: 'XOF' }
+//   Une inscription = une place (la table ne porte pas de quantité).
 export async function POST(req: NextRequest) {
     const trop = guardPublic(req, 'mobile/events', PUBLIC_FORM_LIMIT)
     if (trop) return trop
 
-    // L'inscrit est celui qui présente le jeton, pas celui qu'annonce le
-    // corps de la requête : sinon on inscrit : et on facture : au nom d'un
-    // autre client. Repli sur body.client_id pour les anciennes versions.
-    const sessionClientId = await getMobileUserId(req)
+    const body = await req.json().catch(() => ({}))
+
+    // COMPATIBILITÉ TRANSITOIRE (29/09/2026) : les apps déjà installées envoient
+    // `client_id` dans le corps SANS jeton (corrigé dans la prochaine build EAS).
+    // Sans ce repli, toute inscription depuis ces versions échouerait en 401.
+    // Repli limité à un profil client EXISTANT ; le jeton reste prioritaire.
+    // À retirer quand toutes les installations auront la nouvelle build.
+    let clientId = await getMobileUserId(req)
+    if (!clientId && estUuid(String(body?.client_id || ''))) {
+        const { data: prof } = await supabase.from('client_profiles').select('id').eq('id', String(body.client_id)).maybeSingle()
+        if (prof?.id) clientId = String(prof.id)
+    }
+    if (!clientId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
 
     try {
-        const body = await req.json()
-        const { event_id, ticket_type = 'standard', quantity = 1, transaction_id } = body
-        const client_id = sessionClientId || body.client_id
+        const eventId = String(body.event_id || '')
+        const ticketType: TypeBillet = body.ticket_type === 'vip' ? 'vip' : 'standard'
+        const transactionId = body.transaction_id ? String(body.transaction_id).trim().slice(0, 128) : ''
 
-        if (!event_id || !client_id) {
-            return NextResponse.json({ error: 'event_id et client_id sont requis' }, { status: 400 })
+        if (!estUuid(eventId)) {
+            return NextResponse.json({ error: 'event_id invalide' }, { status: 400 })
         }
-        const qty = Math.max(1, Math.min(10, parseInt(String(quantity), 10) || 1))
 
-        // Event publié
         const { data: event, error: eventError } = await supabase
             .from('events')
             .select('id, title, slug, price_standard, price_vip, currency, max_capacity, max_vip_seats, status, start_date')
-            .eq('id', event_id)
+            .eq('id', eventId)
             .eq('status', 'published')
-            .single()
+            .maybeSingle()
 
         if (eventError || !event) {
             return NextResponse.json({ error: 'Événement introuvable ou non disponible' }, { status: 404 })
         }
 
-        // ⚠️ SCHÉMA RÉELLEMENT DÉPLOYÉ (vérifié en base le 2026-08-17) :
-        //    event_registrations = id, event_id, full_name, email, phone, whatsapp,
-        //    ticket_type, amount_paid, currency, payment_status, payment_method,
-        //    transaction_id, order_id, created_at.
-        //    Il n'y a NI client_id, NI status, NI quantity, et payment_status
-        //    n'accepte que pending | completed | failed | refunded.
-        //    Ce code visait un schéma plus récent jamais appliqué : il insérait
-        //    client_id/quantity/status et le statut 'paid' — donc TOUTE inscription
-        //    depuis l'application échouait (la table était vide, sans erreur visible
-        //    pour le client). On s'aligne sur la table réelle : le rattachement au
-        //    client se fait par EMAIL, pris sur son profil (pas sur le corps de la
-        //    requête, pour ne pas inscrire quelqu'un d'autre).
-        const { data: cp } = await supabase
-            .from('client_profiles')
-            .select('nom, prenom, email, phone')
-            .eq('id', client_id)
-            .maybeSingle()
-
-        const inscritEmail = String(cp?.email || body.email || '').trim().toLowerCase()
-        const inscritNom = `${cp?.prenom || ''} ${cp?.nom || ''}`.trim() || String(body.full_name || '').trim()
-        const inscritTel = String(cp?.phone || body.phone || '').trim()
+        // Schéma déployé : event_registrations sans client_id ni quantity ;
+        // payment_status ∈ pending | completed | failed | refunded. Le rattachement
+        // se fait par l'EMAIL DU PROFIL (jamais un email du corps).
+        const cp = await profilDe(clientId)
+        const inscritEmail = String(cp?.email || '').trim().toLowerCase()
+        const inscritNom = `${cp?.prenom || ''} ${cp?.nom || ''}`.trim()
+        const inscritTel = String(cp?.phone || '').trim()
 
         if (!inscritEmail) {
             return NextResponse.json(
@@ -218,35 +201,46 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // Déjà inscrit ?
-        const { data: existing } = await supabase
+        const prix = await prixPlace(event, ticketType)
+        if (prix.ttcXof === null) {
+            return NextResponse.json({ error: 'Devise de l’événement non prise en charge.' }, { status: 422 })
+        }
+        const isFree = prix.ht <= 0
+
+        // Déjà inscrit ? (la réponse porte le montant de SA formule)
+        const { data: existing, error: exErr } = await supabase
             .from('event_registrations')
             .select('id, ticket_type, payment_status')
-            .eq('event_id', event_id)
-            .eq('email', inscritEmail)
+            .eq('event_id', eventId)
+            .ilike('email', motifOuRien(inscritEmail))
             .neq('payment_status', 'refunded')
+            .limit(1)
             .maybeSingle()
+        if (exErr) return NextResponse.json({ error: exErr.message }, { status: 500 })
 
         if (existing) {
+            const prixExistant = await prixPlace(event, existing.ticket_type === 'vip' ? 'vip' : 'standard')
             return NextResponse.json({
                 exists: true,
                 registration: existing,
+                amount: prixExistant.ttcXof,
+                currency: 'XOF',
                 message: 'Vous êtes déjà inscrit à cet événement.',
             }, { status: 200 })
         }
 
-        // Vérification capacité
-        const max = ticket_type === 'vip' ? (event.max_vip_seats as number) : (event.max_capacity as number)
+        // Capacité
+        const max = ticketType === 'vip' ? (event.max_vip_seats as number) : (event.max_capacity as number)
         if (max && max > 0) {
-            // Une inscription = une place (la table ne porte pas de quantité).
-            const { count: reserved0 } = await supabase
+            const { count: reserved0, error: cntErr } = await supabase
                 .from('event_registrations')
                 .select('id', { count: 'exact', head: true })
-                .eq('event_id', event_id)
-                .eq('ticket_type', ticket_type)
+                .eq('event_id', eventId)
+                .eq('ticket_type', ticketType)
                 .in('payment_status', ['pending', 'completed'])
+            if (cntErr) return NextResponse.json({ error: cntErr.message }, { status: 500 })
             const reserved = reserved0 || 0
-            if (reserved + qty > max) {
+            if (reserved + 1 > max) {
                 return NextResponse.json(
                     { error: `Plus que ${Math.max(0, max - reserved)} place(s) disponible(s) pour cette catégorie` },
                     { status: 409 }
@@ -254,53 +248,43 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const unitPrice = ticket_type === 'vip'
-            ? (event.price_vip || event.price_standard || 0)
-            : (event.price_standard || 0)
-        const totalAmount = unitPrice * qty
-        const isFree = totalAmount === 0
-
-        // Statut de paiement : SEULES les valeurs de la contrainte sont permises
-        // (pending | completed | failed | refunded). Une place gratuite est
-        // « completed » : il n'y a plus rien à régler.
         let paymentStatus: 'pending' | 'completed' = isFree ? 'completed' : 'pending'
-        // Montant CONFIRME par la passerelle : base de la facture.
         let montantEncaisseXof = 0
 
-        if (!isFree && transaction_id) {
-            const verify = await verifyKkiapayTransaction(transaction_id)
+        if (!isFree && transactionId) {
+            const { usages, erreur } = await usagesTransaction(supabase, transactionId)
+            if (erreur) return NextResponse.json({ error: 'Vérification indisponible' }, { status: 503 })
+            if (usages.length > 0) return NextResponse.json({ error: 'Transaction déjà utilisée' }, { status: 409 })
+
+            const verify = await verifierKkiapay(supabase, transactionId)
             if (!verify.ok) {
+                return NextResponse.json({ error: `Paiement non confirmé (${verify.status})` }, { status: 402 })
+            }
+            if (!montantCouvert(verify.montant, Number(prix.ttcXof))) {
                 return NextResponse.json(
-                    { error: `Paiement non confirmé (${verify.status})` },
-                    { status: 402 }
+                    { error: `Montant encaissé insuffisant (${verify.montant} XOF pour ${prix.ttcXof} XOF). Référence : ${transactionId}` },
+                    { status: 402 },
                 )
             }
             paymentStatus = 'completed'
-            montantEncaisseXof = Number(verify.amount) || 0
+            montantEncaisseXof = verify.montant
         }
 
         const now = new Date().toISOString()
         const { data: registration, error: regError } = await supabase
             .from('event_registrations')
             .insert({
-                event_id,
+                event_id: eventId,
                 full_name: inscritNom || 'Invité',
                 email: inscritEmail,
-                /* `phone` est NOT NULL en base (verifie le 2026-08-21 : l'insert
-                   echouait en 500 « null value in column "phone" ... violates
-                   not-null constraint »). Tout client dont le profil ne porte
-                   pas de telephone ne pouvait donc PAS s'inscrire, sans qu'aucun
-                   message ne le lui dise. Le site, lui, exige le champ ; le
-                   mobile le prend sur le profil, ou il peut manquer. On stocke
-                   une chaine vide : la contrainte est satisfaite, et l'absence
-                   de numero reste visible telle quelle. */
+                // `phone` NOT NULL en base : chaîne vide si le profil n'en porte pas.
                 phone: inscritTel || '',
-                ticket_type,
-                amount_paid: paymentStatus === 'completed' ? totalAmount : 0,
-                currency: event.currency || 'XOF',
+                ticket_type: ticketType,
+                amount_paid: paymentStatus === 'completed' ? prix.ttc : 0,
+                currency: prix.devise,
                 payment_status: paymentStatus,
-                payment_method: transaction_id ? 'kkiapay' : (isFree ? 'gratuit' : null),
-                transaction_id: transaction_id || null,
+                payment_method: transactionId && !isFree ? 'kkiapay' : (isFree ? 'gratuit' : null),
+                transaction_id: transactionId && !isFree ? transactionId : null,
                 created_at: now,
             })
             .select('id, amount_paid, currency, ticket_type, payment_status')
@@ -311,15 +295,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: regError.message }, { status: 500 })
         }
 
-        /* FACTURE : une place payante est une prestation vendue. Elle
-           n'entrait ni en comptabilite ni dans la boite mail du client --
-           seul le billet partait. Idempotente par transaction. */
-        if (transaction_id && montantEncaisseXof > 0) {
+        if (transactionId && montantEncaisseXof > 0) {
             const r = await facturerPaiementService({
-                transactionId: transaction_id,
+                transactionId,
                 montantXof: montantEncaisseXof,
-                libelle: `${event.title || 'Evenement'} : place ${ticket_type === 'vip' ? 'VIP' : 'standard'}`,
-                clientId: client_id,
+                libelle: `${event.title || 'Evenement'} : place ${ticketType === 'vip' ? 'VIP' : 'standard'}`,
+                clientId,
                 clientNom: cp?.nom || inscritNom,
                 clientPrenom: cp?.prenom || '',
                 clientEmail: inscritEmail,
@@ -327,45 +308,35 @@ export async function POST(req: NextRequest) {
                 provider: 'kkiapay',
                 source: 'Application mobile',
                 reference: registration.id,
-            })
+            }, supabase)
             if (!r.ok) console.error('[mobile/events] facture non etablie :', r.erreur)
         }
 
-        // Billet + QR dès que la place est acquise (événement gratuit, ou payé
-        // d'emblée). Un pass acheté depuis l'application ne donnait AUCUN billet :
-        // le client n'avait rien à présenter à l'entrée.
         let ticket: { ticket_code: string; qr_data: string } | null = null
         if (paymentStatus === 'completed') {
             ticket = await createTicketForRegistration(supabase, {
                 registrationId: registration.id,
-                eventId: event_id,
+                eventId,
                 eventSlug: String(event.slug || event.title || 'RGB'),
-                ticketType: ticket_type,
+                ticketType,
             })
-
-            /* L'email de confirmation : il etait ANNONCE par l'application
-               (« Confirmation envoyee par email », sous le bouton) mais aucune
-               route ne l'envoyait. Le client n'avait donc que l'application
-               pour retrouver son billet. Non bloquant : une inscription deja
-               payee ne doit pas echouer parce que le SMTP tousse. */
             if (ticket) {
                 const envoi = await envoyerBilletParEmail(supabase, registration.id)
                 if (!envoi.ok) console.error('[mobile/events] billet non envoye :', envoi.erreur)
             }
         }
 
-        // Notification client (non bloquant)
         const notifTitle = isFree
             ? 'Inscription confirmée !'
             : (paymentStatus === 'completed' ? 'Paiement confirmé !' : 'Inscription enregistrée')
         const notifBody = isFree
             ? `Votre inscription à "${event.title}" est confirmée. À très bientôt !`
             : (paymentStatus === 'completed'
-                ? `Votre place à "${event.title}" est confirmée. Référence : ${transaction_id}.`
-                : `Votre inscription à "${event.title}" est en attente de paiement (${totalAmount.toLocaleString('fr-FR')} ${event.currency || 'XOF'}).`)
+                ? `Votre place à "${event.title}" est confirmée. Référence : ${transactionId}.`
+                : `Votre inscription à "${event.title}" est en attente de paiement (${Number(prix.ttcXof).toLocaleString('fr-FR')} XOF).`)
 
         supabase.from('notifications').insert({
-            user_id: client_id,
+            user_id: clientId,
             title: notifTitle,
             body: notifBody,
             type: 'event',
@@ -373,7 +344,7 @@ export async function POST(req: NextRequest) {
             created_at: now,
         }).then(() => null, () => null)
 
-        return NextResponse.json({ registration, ticket }, { status: 201 })
+        return NextResponse.json({ registration, ticket, amount: prix.ttcXof, currency: 'XOF' }, { status: 201 })
     } catch (e) {
         return NextResponse.json(
             { error: e instanceof Error ? e.message : 'Erreur serveur' },
@@ -384,6 +355,9 @@ export async function POST(req: NextRequest) {
 
 // ─── PATCH : confirmer le paiement d'une inscription existante ──────────────
 //   Body : { registration_id, transaction_id }
+//   Jeton recommandé. Sans jeton (ancienne version / file de reprise), la
+//   confirmation reste sûre : la transaction doit être vérifiée, neuve, et
+//   couvrir le prix de CETTE place — payer la place d'un autre ne lèse personne.
 export async function PATCH(req: NextRequest) {
     const trop = guardPublic(req, 'mobile/events', PAYMENT_ROUTE_LIMIT)
     if (trop) return trop
@@ -391,41 +365,62 @@ export async function PATCH(req: NextRequest) {
     const sessionClientId = await getMobileUserId(req)
 
     try {
-        const body = await req.json()
-        const { registration_id, transaction_id } = body
-        if (!registration_id || !transaction_id) {
+        const body = await req.json().catch(() => ({}))
+        const registrationId = String(body.registration_id || '')
+        const transactionId = String(body.transaction_id || '').trim().slice(0, 128)
+        if (!estUuid(registrationId) || !transactionId) {
             return NextResponse.json({ error: 'registration_id et transaction_id requis' }, { status: 400 })
         }
 
         const { data: reg, error: regErr } = await supabase
             .from('event_registrations')
-            .select('id, event_id, email, amount_paid, payment_status, ticket_type')
-            .eq('id', registration_id)
+            .select('id, event_id, email, full_name, phone, amount_paid, payment_status, ticket_type, transaction_id')
+            .eq('id', registrationId)
             .maybeSingle()
         if (regErr || !reg) {
             return NextResponse.json({ error: 'Inscription introuvable' }, { status: 404 })
         }
 
-        // On ne confirme que SA propre inscription. La table n'ayant pas de
-        // client_id, l'appartenance se vérifie par l'email du profil.
+        // Avec jeton : on ne confirme que SA propre inscription (email du profil).
         if (sessionClientId) {
-            const { data: cp } = await supabase
-                .from('client_profiles').select('email').eq('id', sessionClientId).maybeSingle()
+            const cp = await profilDe(sessionClientId)
             const mien = String(cp?.email || '').trim().toLowerCase()
-            if (mien && String(reg.email || '').trim().toLowerCase() !== mien) {
+            if (!mien || String(reg.email || '').trim().toLowerCase() !== mien) {
                 return NextResponse.json({ error: 'Inscription non autorisée' }, { status: 403 })
             }
         }
 
         if (reg.payment_status === 'completed') {
-            return NextResponse.json({ ok: true, message: 'Already paid', registration: reg })
+            // Rejeu de la même transaction : succès idempotent. Autre transaction : refus.
+            if (!reg.transaction_id || reg.transaction_id === transactionId) {
+                return NextResponse.json({ ok: true, message: 'Already paid', registration: { id: reg.id, payment_status: reg.payment_status, ticket_type: reg.ticket_type } })
+            }
+            return NextResponse.json({ error: 'Inscription déjà réglée' }, { status: 409 })
         }
 
-        const verify = await verifyKkiapayTransaction(transaction_id)
+        const { data: event, error: evErr } = await supabase
+            .from('events').select('id, slug, title, price_standard, price_vip, currency').eq('id', reg.event_id).maybeSingle()
+        if (evErr || !event) return NextResponse.json({ error: 'Événement introuvable' }, { status: 404 })
+
+        const prix = await prixPlace(event, reg.ticket_type === 'vip' ? 'vip' : 'standard')
+        if (prix.ttcXof === null) {
+            return NextResponse.json({ error: 'Devise de l’événement non prise en charge.' }, { status: 422 })
+        }
+
+        const { usages, erreur } = await usagesTransaction(supabase, transactionId)
+        if (erreur) return NextResponse.json({ error: 'Vérification indisponible' }, { status: 503 })
+        if (usages.some(u => !(u.table === 'event_registrations' && u.id === reg.id))) {
+            return NextResponse.json({ error: 'Transaction déjà utilisée' }, { status: 409 })
+        }
+
+        const verify = await verifierKkiapay(supabase, transactionId)
         if (!verify.ok) {
+            return NextResponse.json({ error: `Paiement non confirmé (${verify.status})` }, { status: 402 })
+        }
+        if (!montantCouvert(verify.montant, Number(prix.ttcXof))) {
             return NextResponse.json(
-                { error: `Paiement non confirmé (${verify.status})` },
-                { status: 402 }
+                { error: `Montant encaissé insuffisant (${verify.montant} XOF pour ${prix.ttcXof} XOF). Référence : ${transactionId}` },
+                { status: 402 },
             )
         }
 
@@ -434,43 +429,56 @@ export async function PATCH(req: NextRequest) {
             .update({
                 payment_status: 'completed',
                 payment_method: 'kkiapay',
-                transaction_id,
-                amount_paid: reg.amount_paid || 0,
+                transaction_id: transactionId,
+                amount_paid: prix.ttc,
+                currency: prix.devise,
             })
-            .eq('id', registration_id)
+            .eq('id', registrationId)
+            .neq('payment_status', 'completed')
             .select('id, payment_status, ticket_type')
-            .single()
+            .maybeSingle()
 
-        if (updErr) {
-            return NextResponse.json({ error: updErr.message }, { status: 500 })
-        }
+        if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
+        if (!updated) return NextResponse.json({ ok: true, message: 'Already paid', registration: { id: reg.id } })
 
-        // Paiement vérifié auprès de la passerelle → le billet peut être émis.
-        const { data: evForTicket } = await supabase
-            .from('events').select('slug, title').eq('id', reg.event_id).maybeSingle()
+        // Facture : la confirmation en deux temps n'en établissait aucune.
+        const [prenom, ...reste] = String(reg.full_name || '').split(' ')
+        const r = await facturerPaiementService({
+            transactionId,
+            montantXof: verify.montant,
+            libelle: `${event.title || 'Evenement'} : place ${reg.ticket_type === 'vip' ? 'VIP' : 'standard'}`,
+            clientId: sessionClientId,
+            clientNom: reste.join(' ') || null,
+            clientPrenom: prenom || null,
+            clientEmail: reg.email || null,
+            clientPhone: reg.phone || null,
+            provider: 'kkiapay',
+            source: 'Application mobile',
+            reference: reg.id,
+        }, supabase)
+        if (!r.ok) console.error('[mobile/events PATCH] facture non etablie :', r.erreur)
+
         const ticket = await createTicketForRegistration(supabase, {
-            registrationId: registration_id,
+            registrationId,
             eventId: reg.event_id,
-            eventSlug: String(evForTicket?.slug || evForTicket?.title || 'RGB'),
-            ticketType: String((reg as Record<string, unknown>).ticket_type || 'standard'),
+            eventSlug: String(event.slug || event.title || 'RGB'),
+            ticketType: String(reg.ticket_type || 'standard'),
         })
-
-        // Meme email que sur le parcours direct : c'est ICI qu'aboutit une
-        // inscription reglee en deux temps (place reservee, puis payee).
         if (ticket) {
-            const envoi = await envoyerBilletParEmail(supabase, registration_id)
+            const envoi = await envoyerBilletParEmail(supabase, registrationId)
             if (!envoi.ok) console.error('[mobile/events PATCH] billet non envoye :', envoi.erreur)
         }
 
-        // Notification (non bloquant)
-        supabase.from('notifications').insert({
-            user_id: sessionClientId,
-            title: 'Paiement confirmé !',
-            body: `Votre paiement pour cet événement a été reçu. Réf : ${transaction_id}.`,
-            type: 'event',
-            is_read: false,
-            created_at: new Date().toISOString(),
-        }).then(() => null, () => null)
+        if (sessionClientId) {
+            supabase.from('notifications').insert({
+                user_id: sessionClientId,
+                title: 'Paiement confirmé !',
+                body: `Votre paiement pour cet événement a été reçu. Réf : ${transactionId}.`,
+                type: 'event',
+                is_read: false,
+                created_at: new Date().toISOString(),
+            }).then(() => null, () => null)
+        }
 
         return NextResponse.json({ ok: true, registration: updated, ticket })
     } catch (e) {

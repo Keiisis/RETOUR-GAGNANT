@@ -14,6 +14,7 @@ import { toXOFStrict } from '@/lib/server-rates'
 import { TVA_RATE } from '@/lib/tax'
 import { createTicketForRegistration } from '@/lib/event-tickets'
 import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
+import { usagesTransaction } from '@/lib/mobile-paiement'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -118,6 +119,32 @@ export async function POST(request: Request) {
                 { success: false, error: 'Transaction déjà utilisée pour une autre commande' },
                 { status: 400 }
             )
+        }
+
+        /* Même transaction déjà consommée par un AUTRE parcours (billet
+           d'événement, dossier nationalité, récap MyAfroOrigins) : le contrôle
+           ci-dessus ne regardait que les commandes. Les dossiers ne comptent
+           pas : Fa et Permis ouvrent leur dossier APRÈS cette vérification,
+           avec la même référence. */
+        {
+            const { usages, erreur } = await usagesTransaction(supabase, String(transaction_id))
+            if (erreur) {
+                return NextResponse.json({ success: false, error: 'Vérification indisponible' }, { status: 503 })
+            }
+            // L'inscription web portée par CETTE commande (order_id) n'est pas « ailleurs ».
+            const { data: regsDeLaCommande } = await supabase
+                .from('event_registrations').select('id').eq('order_id', order_id)
+            const siennes = new Set((regsDeLaCommande || []).map(r => String(r.id)))
+            const ailleurs = usages.find(u =>
+                (u.table === 'event_registrations' && !siennes.has(u.id))
+                || u.table === 'nationality_applications' || u.table === 'myafro_recap_requests')
+            if (ailleurs) {
+                console.error(`[Verify] Transaction ${transaction_id} déjà utilisée (${ailleurs.table} ${ailleurs.id})`)
+                return NextResponse.json(
+                    { success: false, error: 'Transaction déjà utilisée pour un autre paiement' },
+                    { status: 400 },
+                )
+            }
         }
 
         // ─── Charger les settings paiement ──────────────────────────────────

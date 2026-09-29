@@ -2,6 +2,10 @@ import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
 import { supabase } from '../config/supabase'
+import { lire } from '../lib/stockage'
+
+/** Posé par l'écran Notifications quand le client coupe les alertes push. */
+export const CLE_PUSH_DESACTIVE = 'push_desactive'
 
 /* ═══════════════════════════════════════════════════════════
    Push Token Registration
@@ -22,6 +26,10 @@ export async function registerPushToken(userId: string): Promise<string | null> 
         console.log('[Push] Skipping token registration : not a physical device')
         return null
     }
+    /* Le client a coupé les notifications dans l'app : on ne réenregistre
+       pas son jeton à chaque ouverture (sinon « Désactiver » ne tenait que
+       jusqu'au prochain lancement). */
+    if (lire(CLE_PUSH_DESACTIVE) === 'true') return null
 
     try {
         // 1. Check / request permissions

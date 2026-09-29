@@ -29,6 +29,7 @@ import type { AppEvent } from './EventsScreen'
 import { screenColors, typography } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
 import { envoyerOuMettreEnFile } from '../../lib/file-envois'
+import { authHeaders } from '../../config/api'
 
 /* ═══════════════════════════════════════════════════════════
    EventDetailScreen : THEME "CORPORATE PREMIUM 2026"
@@ -424,9 +425,12 @@ export default function EventDetailScreen({ route, navigation }: any) {
         }
         setLoading(true)
         try {
+            /* Jeton OBLIGATOIRE : la route POST répond 401 sans lui
+               (getMobileUserId). Sans cet en-tête, aucune inscription ne
+               pouvait aboutir depuis l'application. */
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/events`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 15000,
                 body: JSON.stringify({
                     event_id: event.id,
@@ -483,7 +487,14 @@ export default function EventDetailScreen({ route, navigation }: any) {
                     const prixHt = reg.ticket_type === 'vip'
                         ? (event.price_vip || event.price_standard || 0)
                         : event.price_standard
-                    setPendingRegistration({ id: reg.id, amount: ttcFromHt(prixHt) })
+                    /* Montant SERVEUR (XOF TTC, converti depuis la devise de
+                       l'événement). Le calcul local donnait le prix dans la
+                       devise de l'événement : 50 (EUR) devenait 50 FCFA. */
+                    const montantServeur = Number(json.amount)
+                    setPendingRegistration({
+                        id: reg.id,
+                        amount: Number.isFinite(montantServeur) && montantServeur > 0 ? montantServeur : ttcFromHt(prixHt),
+                    })
                     setShowKkiapay(true)
                     return
                 }
@@ -518,7 +529,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/mobile/events`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 15000,
                 body: JSON.stringify({
                     registration_id: pendingRegistration.id,
@@ -527,6 +538,10 @@ export default function EventDetailScreen({ route, navigation }: any) {
             })
             const data = await res.json().catch(() => ({}))
 
+            // Panne serveur : même chemin qu'une coupure réseau (file de reprise).
+            if (res.status >= 500 || res.status === 408 || res.status === 429) {
+                throw new Error(`HTTP ${res.status}`)
+            }
             if (!res.ok || !data.ok) {
                 toast(t('Paiement reçu : confirmation manuelle requise'), t('Votre paiement a été reçu (réf : {tx}) mais la confirmation automatique a échoué. Notre équipe vérifiera votre billet sous 24h.').replace('{tx}', txId))
                 return

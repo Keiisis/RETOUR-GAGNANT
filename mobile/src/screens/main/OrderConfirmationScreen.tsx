@@ -159,7 +159,9 @@ export default function OrderConfirmationScreen({ navigation, route }: { navigat
     }))
 
     const goToOrder = () => navigation.replace('OrderDetail', { orderId })
-    const backToBoutique = () => navigation.popToTop()
+    /* `popToTop` ramenait à l'accueil (racine de la pile), pas à la boutique
+       annoncée par le bouton. `navigate` revient sur l'écran Boutique existant. */
+    const backToBoutique = () => navigation.navigate('Boutique')
 
     const handleShare = async () => {
         try {

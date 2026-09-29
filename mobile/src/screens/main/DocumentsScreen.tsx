@@ -93,6 +93,21 @@ const FILTRES: Array<{ cle: 'tout' | Categorie; libelle: string }> = [
     { cle: 'piece', libelle: 'Pièces' },
 ]
 
+/* La route renvoie le statut BRUT dans `detail` (« envoye · 150000 XOF »,
+   « accepted · signée ») : le client lisait des codes de base. Libellés alignés
+   sur DOC_FIN_LIBELLE_CLIENT (frontend/lib/constants/statuts.ts). */
+const LIBELLE_STATUT: Record<string, string> = {
+    brouillon: 'Brouillon', envoye: 'En attente', accepte: 'Signé', refuse: 'Refusé',
+    paye: 'Payé', en_retard: 'En retard', annule: 'Annulé',
+    draft: 'Brouillon', sent: 'Envoyée', viewed: 'Consultée', accepted: 'Acceptée', paid: 'Réglée',
+}
+function detailLisible(detail: string, t: (s: string) => string): string {
+    return String(detail || '')
+        .split(' · ')
+        .map(x => (LIBELLE_STATUT[x] ? t(LIBELLE_STATUT[x]) : x.replace(/ XOF$/, ' FCFA')))
+        .join(' · ')
+}
+
 function formaterDate(iso: string, t: (s: string) => string): string {
     if (!iso) return ''
     const d = new Date(iso)
@@ -128,7 +143,8 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
             headers: { ...(await authHeaders()) },
             timeoutMs: 20000,
         })
-        if (!res.ok) return []
+        // Réponse en erreur : lever, sinon une liste VIDE écrasait la mémoire.
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const json = await res.json().catch(() => ({}))
         return Array.isArray(json.documents) ? json.documents as Doc[] : []
     }, [])
@@ -282,7 +298,7 @@ export default function DocumentsScreen({ navigation }: { navigation: Nav }) {
                                         <Text style={styles.categorie}>{t(LIBELLES[item.categorie])}</Text>
                                         <Text style={styles.titre} numberOfLines={1}>{item.titre}</Text>
                                         {!!item.detail && (
-                                            <Text style={styles.detail} numberOfLines={1}>{item.detail}</Text>
+                                            <Text style={styles.detail} numberOfLines={1}>{detailLisible(item.detail, t)}</Text>
                                         )}
                                     </View>
                                     <View style={styles.fin}>

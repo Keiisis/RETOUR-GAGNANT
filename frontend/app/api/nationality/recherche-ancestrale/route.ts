@@ -8,6 +8,7 @@ import { markClientConverted } from '@/lib/classement/track'
 import { guardPublic, PUBLIC_FORM_LIMIT, flowKey } from '@/lib/api-guard'
 import { toXOFStrict } from '@/lib/server-rates'
 import { ttcFromHt } from '@/lib/tax'
+import { usagesTransaction, appartientAuClient } from '@/lib/mobile-paiement'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -110,6 +111,21 @@ async function refusPaiementAncestral(
     return 'Ce moyen de paiement doit être confirmé par nos équipes.'
 }
 
+/** Tarif officiel HT (page_sections nationalite/form_settings). Le montant du
+ *  corps de la requête n'a AUCUNE valeur : il servait à la facture et aux
+ *  notifications (« Number(amount) || 250 »). */
+async function tarifAncestral(): Promise<{ montant: number; devise: string }> {
+    const { data: fs } = await supabase
+        .from('page_sections').select('content')
+        .eq('page', 'nationalite').eq('section_key', 'form_settings').maybeSingle()
+    const c = (fs?.content || {}) as Record<string, unknown>
+    const montant = Number(c.recherche_ancestrale_amount)
+    return {
+        montant: isFinite(montant) && montant > 0 ? montant : 250,
+        devise: String(c.recherche_ancestrale_currency || 'EUR').toUpperCase(),
+    }
+}
+
 // POST /api/nationality/recherche-ancestrale
 // Enregistre le paiement Recherche Ancestrale lié à un dossier nationalité
 export async function POST(request: NextRequest) {
@@ -118,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json()
-        const { ref, payment_provider, payment_tx_id, amount, amount_xof } = body
+        const { ref, payment_provider, payment_tx_id } = body
 
         if (!ref) return NextResponse.json({ error: 'Référence manquante' }, { status: 400 })
 
@@ -174,6 +190,24 @@ export async function POST(request: NextRequest) {
             })
         }
 
+        /* Une transaction ne paie qu'une recherche : sans ce contrôle, le même
+           reçu marquait « payée » la recherche de n'importe quel autre dossier. */
+        if (!parInvitation && payment_tx_id) {
+            const { usages, erreur } = await usagesTransaction(supabase, String(payment_tx_id))
+            if (erreur) return NextResponse.json({ error: 'Vérification indisponible' }, { status: 503 })
+            const emailApp = String(app.email || '').trim().toLowerCase()
+            const autrui = usages.some(u =>
+                u.table === 'orders' || u.table === 'event_registrations'
+                || !appartientAuClient(u, null, emailApp))
+            if (autrui) {
+                console.warn(`[recherche-ancestrale] transaction déjà utilisée (${ref})`)
+                return NextResponse.json({ error: 'Transaction déjà utilisée' }, { status: 409 })
+            }
+        }
+
+        const tarif = await tarifAncestral()
+        const tarifXof = await toXOFStrict(ttcFromHt(tarif.montant, tarif.devise), tarif.devise)
+
         // Mettre à jour le dossier nationalité
         await supabase
             .from('nationality_applications')
@@ -202,7 +236,12 @@ export async function POST(request: NextRequest) {
                 { id: 6, label: 'Transmission au dossier nationalité', status: 'pending', date: null, note: '' },
             ],
             progression: Math.round((1 / 6) * 100),
-            notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant: ${amount} EUR (${amount_xof} XOF)\nPaiement: ${parInvitation ? `offert par code d invitation ${body.invitation_code}` : `${payment_provider} : TX: ${payment_tx_id}`}`,
+            // La transaction sur le dossier : /api/mobile/dossiers, appelé juste
+            // après par l'application avec la même référence, reconnaît ce
+            // dossier au lieu d'en ouvrir un second.
+            transaction_id: !parInvitation && payment_tx_id ? String(payment_tx_id) : null,
+            payment_method: !parInvitation && payment_provider ? String(payment_provider) : null,
+            notes_internes: `Recherche Ancestrale déclenchée depuis le dossier nationalité ${ref}.\nMontant (tarif) : ${tarif.montant} ${tarif.devise}${tarifXof !== null ? ` (${tarifXof} XOF)` : ''}\nPaiement: ${parInvitation ? `offert par code d invitation ${body.invitation_code}` : `${payment_provider} : TX: ${payment_tx_id}`}`,
         })
 
         // Alerte email équipe + statut « Payé » au Classement (fire-and-forget)
@@ -212,8 +251,8 @@ export async function POST(request: NextRequest) {
             email: app.email,
             telephone: app.telephone || null,
             refDossier: searchRef,
-            amount: Number(amount) || 250,
-            currency: 'EUR',
+            amount: tarif.montant,
+            currency: tarif.devise,
             paymentMethod: String(payment_provider || 'en ligne'),
             paymentRef: payment_tx_id ? String(payment_tx_id) : null,
             service: 'Recherche Ancestrale',
@@ -226,8 +265,8 @@ export async function POST(request: NextRequest) {
                 ref: searchRef,
                 nom: app.nom, prenom: app.prenom, email: app.email,
                 phone: app.telephone || null,
-                amount: Number(amount) || 250,
-                currency: 'EUR',
+                amount: tarif.montant,
+                currency: tarif.devise,
                 paymentMethod: String(payment_provider || 'en ligne'),
                 txId: payment_tx_id ? String(payment_tx_id) : null,
                 label: 'Recherche Ancestrale & Généalogique',
@@ -246,7 +285,7 @@ export async function POST(request: NextRequest) {
             nom: `${app.prenom} ${app.nom}`,
             email: app.email,
             sujet: `Recherche Ancestrale commandée : Dossier ${ref}`,
-            message: `${app.prenom} ${app.nom} a commandé le service Recherche Ancestrale.\n\nDossier nationalité : ${ref}\nRéférence recherche : ${searchRef}\nMontant payé : ${amount} EUR (${amount_xof} XOF)\nProvider : ${payment_provider} : TX: ${payment_tx_id}\n\nDocuments ancestraux à retrouver :\n${(app.missing_docs || []).filter((d: { ancestral: boolean; label: string }) => d.ancestral).map((d: { label: string }) => `• ${d.label}`).join('\n')}`,
+            message: `${app.prenom} ${app.nom} a commandé le service Recherche Ancestrale.\n\nDossier nationalité : ${ref}\nRéférence recherche : ${searchRef}\nMontant (tarif) : ${tarif.montant} ${tarif.devise}${tarifXof !== null ? ` (${tarifXof} XOF)` : ''}\nProvider : ${payment_provider} : TX: ${payment_tx_id}\n\nDocuments ancestraux à retrouver :\n${(app.missing_docs || []).filter((d: { ancestral: boolean; label: string }) => d.ancestral).map((d: { label: string }) => `• ${d.label}`).join('\n')}`,
             type: 'recherche-ancestrale',
             lu: false,
         }])

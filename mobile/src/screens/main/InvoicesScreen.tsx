@@ -98,6 +98,14 @@ const STATUS_CONFIG: Record<string, {
         bg: C.dangerSoft,
         icon: 'close-circle-outline',
     },
+    /* `en_retard` (documents_financiers.status) : servi `pending` par la route,
+       affiché « En attente » alors que l'échéance est dépassée. */
+    en_retard: {
+        label: 'En retard',
+        color: C.error,
+        bg: C.dangerSoft,
+        icon: 'alert-circle-outline',
+    },
     refunded: {
         label: 'Remboursée',
         color: C.info,
@@ -108,14 +116,18 @@ const STATUS_CONFIG: Record<string, {
 
 /* Un devis ne se dit pas « payé » : il est envoyé, signé, accepté ou refusé.
    Afficher « En attente » sur un devis signé serait faux. */
+/* Libellés alignés sur DOC_FIN_LIBELLE_CLIENT (frontend/lib/constants/statuts.ts).
+   `en_retard` et `annule` manquaient : un devis annulé retombait sur « Reçu ». */
 const STATUT_DEVIS: Record<string, { label: string; color: string; bg: string; icon: string }> = {
     brouillon: { label: 'Brouillon', color: C.textMuted, bg: C.surfaceAlt, icon: 'document-outline' },
-    envoye: { label: 'Reçu', color: C.info, bg: C.surfaceSoft, icon: 'mail-outline' },
-    accepte: { label: 'Accepté', color: C.success, bg: C.primarySoft, icon: 'checkmark-circle' },
+    envoye: { label: 'En attente', color: C.info, bg: C.surfaceSoft, icon: 'mail-outline' },
+    accepte: { label: 'Signé', color: C.success, bg: C.primarySoft, icon: 'checkmark-circle' },
     signe: { label: 'Signé', color: C.success, bg: C.primarySoft, icon: 'create-outline' },
     refuse: { label: 'Refusé', color: C.error, bg: C.dangerSoft, icon: 'close-circle-outline' },
     expire: { label: 'Expiré', color: C.textMuted, bg: C.surfaceAlt, icon: 'time-outline' },
-    paye: { label: 'Réglé', color: C.success, bg: C.primarySoft, icon: 'checkmark-circle' },
+    paye: { label: 'Payé', color: C.success, bg: C.primarySoft, icon: 'checkmark-circle' },
+    en_retard: { label: 'En retard', color: C.error, bg: C.dangerSoft, icon: 'alert-circle-outline' },
+    annule: { label: 'Annulé', color: C.textMuted, bg: C.surfaceAlt, icon: 'close-circle-outline' },
 }
 
 function configStatut(doc: Invoice) {
@@ -123,6 +135,9 @@ function configStatut(doc: Invoice) {
         const brut = String(doc.raw_status || '').toLowerCase()
         return STATUT_DEVIS[brut]
             || (doc.signed_at ? STATUT_DEVIS.signe : STATUT_DEVIS.envoye)
+    }
+    if (doc.status === 'pending' && String(doc.raw_status || '').toLowerCase() === 'en_retard') {
+        return STATUS_CONFIG.en_retard
     }
     return STATUS_CONFIG[doc.status] || STATUS_CONFIG.pending
 }
@@ -273,7 +288,8 @@ function InvoiceCard({
                             <Text style={styles.invRef}>{invoice.invoice_ref}</Text>
                         </View>
 
-                        <Text style={styles.invDesc} numberOfLines={1}>
+                        {/* Descriptions multi-lignes (« - élément » par ligne) : pas de troncature. */}
+                        <Text style={styles.invDesc}>
                             {t(invoice.description || (estDevis ? 'Devis' : 'Facture'))}
                         </Text>
 
@@ -386,6 +402,10 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                     `${API_BASE}/api/mobile/invoices`,
                     { timeoutMs: 10000, headers: { ...(await authHeaders()) } },
                 )
+                /* Réponse en erreur (401, 500) : avant, `data.invoices` absent
+                   devenait une liste VIDE, peinte puis écrite en cache et en
+                   base locale — les documents disparaissaient. */
+                if (!res.ok) throw new Error(`HTTP ${res.status}`)
                 const data = await res.json().catch(() => ({}))
                 /* La route sert les deux natures. Le `type` est pose ici pour
                    les documents anciens qui ne le portent pas : sans lui, un
@@ -455,7 +475,8 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
 
     /* ── Stats financières calculées ── */
     const stats = useMemo(() => {
-        const total = invoices.reduce((acc, inv) => acc + inv.amount, 0)
+        // Annulés / refusés hors total : ils ne sont ni dus ni proposés.
+        const total = invoices.filter(i => i.status !== 'cancelled').reduce((acc, inv) => acc + inv.amount, 0)
         const paid = invoices.filter(i => i.status === 'paid').reduce((a, i) => a + i.amount, 0)
         const pending = invoices.filter(i => i.status === 'pending').reduce((a, i) => a + i.amount, 0)
         const currency = invoices[0]?.currency || 'XOF'
@@ -790,7 +811,11 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                         <Text style={[ficheStyles.statutText, acquis && ficheStyles.statutTextPaye]}>
                                             {ouverte.type === 'devis'
                                                 ? t(cfg.label)
-                                                : (acquis ? t('Payée') : t('En attente de règlement'))}
+                                                : (acquis
+                                                    ? t('Payée')
+                                                    : (ouverte.status === 'cancelled' || cfg === STATUS_CONFIG.en_retard)
+                                                        ? t(cfg.label)
+                                                        : t('En attente de règlement'))}
                                         </Text>
                                     </View>
                                 )
@@ -814,7 +839,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
                                 ).map(([k, v]) => (
                                     <View key={k} style={ficheStyles.ligne}>
                                         <Text style={ficheStyles.ligneLabel}>{k}</Text>
-                                        <Text style={ficheStyles.ligneValeur} numberOfLines={2}>{v}</Text>
+                                        <Text style={ficheStyles.ligneValeur}>{v}</Text>
                                     </View>
                                 ))}
                             </View>

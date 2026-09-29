@@ -32,6 +32,7 @@ import { fetchWithTimeout } from '../../lib/fetch'
 import { avecMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { supabase } from '../../config/supabase'
+import { montantAEncaisserXof } from '../../lib/tarif'
 import { FlagBar } from '../../components/ui'
 import { screenColors as C, spacing, radius, typography, shadows, fonts } from '../../config/theme'
 import KkiapayModal from '../../components/KkiapayModal'
@@ -44,11 +45,9 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
     UIManager.setLayoutAnimationEnabledExperimental(true)
 }
 
-const EUR_TO_XOF = 655.957
 const CURRENCY_SYMBOL: Record<string, string> = { EUR: '€', USD: '$', GBP: '£', XOF: 'FCFA', XAF: 'FCFA' }
-function toXof(amount: number, currency: string): number {
-    return (currency || 'EUR').toUpperCase() === 'EUR' ? Math.round(amount * EUR_TO_XOF) : Math.round(amount)
-}
+/* Conversion XOF + TVA en sus : lib/tarif. L'ancienne `toXof` traitait toute
+   devise non-EUR comme du XOF (250 $ → 250 XOF). */
 
 const PILIERS = [
     { icon: Search, title: 'Archives béninoises', desc: "Registres d'état civil et archives coloniales explorés sur place." },
@@ -99,14 +98,19 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
     const [tarifConfirme, setTarifConfirme] = useState(false)
     const [currency, setCurrency] = useState('EUR')
     const symbol = CURRENCY_SYMBOL[currency.toUpperCase()] || currency
-    const amountXof = toXof(amountEur, currency)
+    // TTC en XOF présenté à Kkiapay ; `null` = devise sans parité fixe (paiement bloqué).
+    const montantEncaisse = montantAEncaisserXof(amountEur, currency)
+    const amountXof = montantEncaisse ?? 0
 
     useEffect(() => {
         void avecMemoire<{ amount?: number; currency?: string }>(
             'recherche-ancestrale-tarif',
             async () => {
-                const { data } = await supabase.from('page_sections').select('content')
+                const { data, error } = await supabase.from('page_sections').select('content')
                     .eq('page', 'nationalite').eq('section_key', 'form_settings').single()
+                // Lecture en échec : on lève — sinon le tarif par défaut (250 €)
+                // passait pour « confirmé par le serveur » et devenait encaissable.
+                if (error) throw new Error(error.message)
                 const c = (data?.content || {}) as Record<string, unknown>
                 return {
                     amount: c.recherche_ancestrale_amount ? Number(c.recherche_ancestrale_amount) : undefined,
@@ -152,7 +156,10 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
                 actionRoute: 'Main',
                 actionParams: { screen: 'Dossier' },
             })
-            navigation.navigate('Main', { screen: 'Dossier' })
+            /* Plus de `navigate('Main')` juste après : Main étant plus bas dans
+               la pile, y aller DÉPILAIT l'écran de résultat à peine ouvert — le
+               client ne voyait jamais la confirmation ni la référence. Le bouton
+               « Voir mes dossiers » de ResultatPaiement y mène. */
         } catch {
             navigation.navigate('ResultatPaiement', {
                 etat: 'echec',
@@ -163,7 +170,6 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
                 devise: 'XOF',
                 motif: t('Ouverture du dossier interrompue'),
             })
-            navigation.navigate('Main', { screen: 'Home' })
         } finally {
             setLoading(false)
         }
@@ -351,8 +357,8 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
                 </View>
                 <Pressable
                     onPress={() => setShowKkiapay(true)}
-                    disabled={loading || !tarifConfirme}
-                    style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }, (loading || !tarifConfirme) && { opacity: 0.6 }]}
+                    disabled={loading || !tarifConfirme || montantEncaisse === null}
+                    style={({ pressed }) => [styles.stickyBtn, pressed && { transform: [{ scale: 0.96 }] }, (loading || !tarifConfirme || montantEncaisse === null) && { opacity: 0.6 }]}
                     accessibilityRole="button"
                 >
                     {loading
@@ -367,7 +373,7 @@ export default function RechercheAncestraleScreen({ navigation }: { navigation: 
             </View>
 
             <KkiapayModal
-                visible={showKkiapay}
+                visible={showKkiapay && montantEncaisse !== null}
                 amount={String(amountXof)}
                 serviceName="Recherche Ancestrale"
                 onClose={() => setShowKkiapay(false)}

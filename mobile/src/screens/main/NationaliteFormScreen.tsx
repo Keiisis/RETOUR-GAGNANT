@@ -1,6 +1,8 @@
 'use strict'
 import React, { useState, useEffect, useRef } from 'react'
 import { toast } from '../../lib/feedback'
+import { montantAEncaisserXof } from '../../lib/tarif'
+import { TVA_ENABLED, TVA_LABEL } from '../../lib/tax'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
     TextInput, ActivityIndicator, Platform, KeyboardAvoidingView,
@@ -85,17 +87,13 @@ const STEPS_META = [
    1 EUR = 655,957 XOF (parité fixe garantie). On convertit donc tout montant
    configuré en EUR vers XOF avant de charger Kkiapay, sinon 260 EUR devenait
    260 XOF (~0,40 EUR) : perte sèche. L'affichage garde la devise d'origine. */
-const EUR_TO_XOF = 655.957
 const CURRENCY_SYMBOL: Record<string, string> = { EUR: '€', USD: '$', GBP: '£', XOF: 'FCFA', XAF: 'FCFA' }
 function fmtMoney(amount: number, currency: string): string {
     const c = (currency || 'XOF').toUpperCase()
     return `${amount.toLocaleString(localeActuelle())} ${CURRENCY_SYMBOL[c] || c}`
 }
-function toXof(amount: number, currency: string): number {
-    const c = (currency || 'XOF').toUpperCase()
-    if (c === 'EUR') return Math.round(amount * EUR_TO_XOF)
-    return Math.round(amount) // XOF/XAF : déjà en francs CFA
-}
+/* Conversion XOF + TVA en sus : lib/tarif (règle commune). L'ancienne
+   `toXof` traitait USD/GBP comme du XOF : 250 $ devenaient 250 XOF. */
 
 /* Masque de saisie de date : l'utilisateur tape seulement des chiffres, le « / »
    s'insère tout seul -> JJ/MM/AAAA. Gère aussi l'effacement (backspace). */
@@ -413,6 +411,8 @@ export default function NationaliteFormScreen({ navigation }: any) {
        la valeur d'initialisation au lieu du tarif reel (incident du 2026-08-19,
        0,39 EUR au lieu de 260 EUR cote web). */
     const [tarifCharge, setTarifCharge] = useState(false)
+    // Montant TTC en XOF présenté à Kkiapay ; `null` = devise non convertible.
+    const montantKkiapay = montantAEncaisserXof(formAmount, formCurrency)
     // Forfait recherche ancestrale (configurable admin, même bloc form_settings).
     const [ancestralAmount, setAncestralAmount] = useState(250)
     const [ancestralCurrency, setAncestralCurrency] = useState('EUR')
@@ -438,12 +438,16 @@ export default function NationaliteFormScreen({ navigation }: any) {
         void avecMemoire<Record<string, unknown>>(
             'nationalite-tarifs',
             async () => {
-                const { data } = await supabase
+                const { data, error } = await supabase
                     .from('page_sections')
                     .select('content')
                     .eq('page', 'nationalite')
                     .eq('section_key', 'form_settings')
                     .single()
+                /* Lecture en échec : on LÈVE. Avant, `{}` était rendu comme une
+                   réponse fraîche : `tarifCharge` passait à vrai et le bouton
+                   « Payer » encaissait la valeur d'initialisation (150 000). */
+                if (error) throw new Error(error.message)
                 return (data?.content || {}) as Record<string, unknown>
             },
             (c, depuisCache) => {
@@ -567,6 +571,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
             // valeur d'initialisation.
             if (!tarifCharge) {
                 toast(t('Tarif en cours de chargement'), t('Patientez une seconde puis reessayez.'))
+                return
+            }
+            // Devise sans parité fixe (USD, GBP…) : aucun montant fiable à
+            // présenter à Kkiapay (XOF seulement) — refus plutôt que sous-paiement.
+            if (montantKkiapay === null) {
+                toast(t('Paiement indisponible'), t('Le tarif est configuré dans une devise non prise en charge par le paiement mobile. Contactez-nous.'))
                 return
             }
             setShowKkiapay(true)
@@ -1162,9 +1172,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
                                 {formAmount.toLocaleString(localeActuelle())}{' '}
                                 <Text style={styles.paymentCurrency}>{CURRENCY_SYMBOL[(formCurrency || 'XOF').toUpperCase()] || formCurrency}</Text>
                             </Text>
-                            {(formCurrency || '').toUpperCase() === 'EUR' && (
+                            {/* Montant réellement débité (XOF, TVA en sus comprise) dès
+                                qu'il diffère du tarif affiché. */}
+                            {montantKkiapay !== null && ((formCurrency || '').toUpperCase() !== 'XOF' || montantKkiapay !== formAmount) && (
                                 <Text style={styles.paymentXof}>
-                                    {t('Soit environ {x} FCFA', { x: toXof(formAmount, formCurrency).toLocaleString(localeActuelle()) })}
+                                    {t('Soit environ {x} FCFA', { x: montantKkiapay.toLocaleString(localeActuelle()) })}
+                                    {TVA_ENABLED ? ` (${t('dont')} ${TVA_LABEL})` : ''}
                                 </Text>
                             )}
                             <View style={styles.paymentDivider} />
@@ -1343,8 +1356,8 @@ export default function NationaliteFormScreen({ navigation }: any) {
             )}
 
             <KkiapayModal
-                visible={showKkiapay}
-                amount={String(toXof(formAmount, formCurrency))}
+                visible={showKkiapay && montantKkiapay !== null}
+                amount={String(montantKkiapay ?? 0)}
                 serviceName="Nationalité VIP"
                 onClose={() => setShowKkiapay(false)}
                 onSuccess={handlePaymentSuccess}

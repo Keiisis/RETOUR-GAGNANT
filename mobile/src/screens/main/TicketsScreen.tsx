@@ -88,6 +88,9 @@ export default function TicketsScreen({ navigation, route }: { navigation: any; 
                         headers: { ...(await authHeaders()) },
                         timeoutMs: 15000,
                     })
+                    // 401 / 500 : lever — une liste vide effaçait les billets
+                    // gardés en mémoire, ceux-là mêmes qu'on présente hors ligne.
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
                     const json = await res.json().catch(() => ({}))
                     return Array.isArray(json.tickets) ? json.tickets : []
                 },
@@ -99,7 +102,9 @@ export default function TicketsScreen({ navigation, route }: { navigation: any; 
             setLoading(false)
             setRefreshing(false)
         }
-    }, [])
+        /* Dépendance à la clé : figée à `[]`, `charger` gardait la clé du
+           premier rendu (profil pas encore chargé → clé sans identifiant). */
+    }, [cleAffichage])
 
     useEffect(() => { if (profile) charger(); else setLoading(false) }, [profile, charger])
 
@@ -193,10 +198,11 @@ export default function TicketsScreen({ navigation, route }: { navigation: any; 
            valeur 'paid' testee ici n'a JAMAIS existe en base, la comparaison
            etait donc toujours vraie. Sans consequence visible (l'emission du
            billet tranchait), mais trompeuse a la lecture. */
-        const attente = item.payment_status !== 'completed' && !emis
+        const rembourse = item.payment_status === 'refunded' && !emis
+        const attente = item.payment_status !== 'completed' && !emis && !rembourse
         return (
             <Pressable
-                onPress={() => emis ? setOpen(item) : reprendrePaiement(item)}
+                onPress={() => emis ? setOpen(item) : rembourse ? undefined : reprendrePaiement(item)}
                 style={[styles.card, item.is_used && styles.cardUsed]}
                 accessibilityRole="button"
             >
@@ -237,8 +243,15 @@ export default function TicketsScreen({ navigation, route }: { navigation: any; 
                         <Text style={styles.usedText}>
                             {t('Déjà scanné')}{item.used_at ? ` · ${dateFr(item.used_at)}` : ''}
                         </Text>
+                    ) : rembourse ? (
+                        <Text style={styles.pendingText}>{t('Inscription remboursée')}</Text>
                     ) : attente ? (
-                        <Text style={styles.pendingText}>{t('Paiement à finaliser')}</Text>
+                        <Text style={styles.pendingText}>
+                            {item.payment_status === 'failed' ? t('Paiement échoué') : t('Paiement à finaliser')}
+                        </Text>
+                    ) : !emis ? (
+                        // Payé mais billet pas encore émis : la ligne restait vide.
+                        <Text style={styles.pendingText}>{t('Billet en cours d’émission')}</Text>
                     ) : (
                         <Text style={styles.codeText}>{item.ticket_code}</Text>
                     )}

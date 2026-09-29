@@ -819,11 +819,20 @@ export default function EventsScreen({ navigation }: any) {
         } catch { /* confort seulement */ }
 
         try {
-            const clientParam = profile?.id ? `&client_id=${profile.id}` : ''
-            const text = await fetchWithTimeout(`${API_BASE}/api/mobile/events?${clientParam}`, { timeoutMs: 10000 }).then(r => r.text())
+            /* Le serveur ignore `?client_id=` (anti-IDOR) et lit l'identité du
+               JETON : sans en-tête, `my_registration` revenait toujours nul et
+               l'agenda n'affichait jamais « déjà inscrit ». */
+            const r = await fetchWithTimeout(`${API_BASE}/api/mobile/events`, {
+                timeoutMs: 10000,
+                headers: profile?.id ? { ...(await authHeaders()) } : undefined,
+            })
+            // Réponse en erreur : on garde l'agenda local au lieu de le vider.
+            if (!r.ok) throw new Error(`HTTP ${r.status}`)
+            const text = await r.text()
             let json: { events?: AppEvent[] } = {}
-            try { json = JSON.parse(text) } catch { /* ignore */ }
-            const liste = json.events || []
+            try { json = JSON.parse(text) } catch { throw new Error('Réponse illisible') }
+            if (!Array.isArray(json.events)) throw new Error('Réponse sans événements')
+            const liste = json.events
             setEvents(liste)
             ecrireMemoire('evenements-affichage', liste)
             void enregistrerEvenements(liste as unknown as Array<Record<string, unknown>>)

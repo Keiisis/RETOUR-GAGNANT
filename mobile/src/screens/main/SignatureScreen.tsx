@@ -25,7 +25,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { FlagBar } from '../../components/ui'
 import { useLang } from '../../contexts/LangContext'
 import { fetchWithTimeout } from '../../lib/fetch'
-import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/memoire'
+import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire, ecrireMemoire, oublierMemoire } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
@@ -132,8 +132,17 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                         `${API_BASE}/api/mobile/signature`,
                         { timeoutMs: 8000, headers: { ...(await authHeaders()) } },
                     )
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`)
                     const data = await res.json().catch(() => ({}))
-                    return data.signature ?? null
+                    /* Aucune signature côté serveur : `avecMemoire` ignore un
+                       `null`, le paraphe SUPPRIMÉ restait donc affiché depuis la
+                       mémoire. On l'efface explicitement. */
+                    if (!data.signature) {
+                        oublierMemoire(cleSignature)
+                        setSavedSig(null)
+                        return null
+                    }
+                    return data.signature
                 },
                 (sig) => {
                     if (sig) { setSavedSig(sig); setAutoSign(sig.auto_sign || 'ask') }
@@ -169,6 +178,7 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                 return
             }
             setSavedSig(data.signature)
+            ecrireMemoire(cleSignature, data.signature)
             setEditing(false)
             toast(t('Signature enregistrée'), t('Votre signature est désormais associée à votre compte.'))
         } catch {
@@ -196,9 +206,15 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
             const data = await res.json().catch(() => ({}))
             if (res.ok && data.signature) {
                 setSavedSig(data.signature)
+                ecrireMemoire(cleSignature, data.signature)
                 setAutoSign(next)
+                return
             }
-        } catch { /* ignore */ }
+            // Échec : le réglage n'a pas changé — le dire au lieu de se taire.
+            toast(t('Réglage non enregistré'), data.error || t('Réessayez dans un instant.'))
+        } catch {
+            toast(t('Réglage non enregistré'), t('Vérifiez votre connexion et réessayez.'))
+        }
     }
 
     /* ── Supprimer ── */
@@ -218,10 +234,16 @@ export default function SignatureScreen({ navigation }: { navigation: Nav }) {
                     )
                     if (res.ok) {
                         setSavedSig(null)
+                        // Sinon le paraphe supprimé réapparaît à la réouverture.
+                        oublierMemoire(cleSignature)
                         setEditing(true)
                         toast(t('Signature supprimée'), undefined, 'success')
+                    } else {
+                        toast(t('Suppression impossible'), t('Réessayez dans un instant.'))
                     }
-                } catch { /* ignore */ }
+                } catch {
+                    toast(t('Suppression impossible'), t('Vérifiez votre connexion et réessayez.'))
+                }
             },
         })
     }

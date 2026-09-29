@@ -152,7 +152,7 @@ export async function POST(request: Request) {
             const proposalUuid = product_id
             const { data: proposal, error: propErr } = await supabase
                 .from('ai_client_proposals')
-                .select('id, total_amount, currency')
+                .select('id, total_amount, currency, status')
                 .eq('id', proposalUuid)
                 .maybeSingle()
 
@@ -161,6 +161,10 @@ export async function POST(request: Request) {
                     { error: 'Proposition introuvable ou expirée' },
                     { status: 400 }
                 )
+            }
+            // Proposition déjà réglée : un second encaissement serait un double paiement.
+            if (proposal.status === 'paid') {
+                return NextResponse.json({ error: 'Cette proposition est déjà réglée.' }, { status: 409 })
             }
 
             // ── SÉLECTION À LA CARTE : le client a choisi certaines prestations.

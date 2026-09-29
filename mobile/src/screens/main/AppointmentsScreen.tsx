@@ -33,6 +33,7 @@ import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
 import { localeActuelle } from '../../lib/dates'
 import { envoyerOuMettreEnFile } from '../../lib/file-envois'
+import { DOSSIER_STATUTS_ACTIFS, type RdvStatut } from '../../lib/statuts'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -302,28 +303,42 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
         opacity: sheetAnim.value,
     }))
 
-    const fetchAppointments = useCallback(async () => {
-        if (!profile) return
+    const fetchAppointments = useCallback(async (options?: { ignorerCache?: boolean }) => {
+        // Sans profil, jamais de rond qui tourne indéfiniment.
+        if (!profile) { setLoading(false); return }
         // Rendez-vous affiches depuis la derniere version connue, puis corriges.
         await avecMemoire<Appointment[]>(
             cleAffichage,
             async () => {
             // Source unifiée avec le site web : rdv_requests (vus par les agents)
-            const { data } = await supabase
+            // Email en minuscules (la règle RLS compare lower(client_email)) et
+            // jamais « client_email.eq.undefined » quand le profil n'en a pas.
+            const email = String(profile.email || '').trim().toLowerCase()
+            const criteres = [`client_id.eq.${profile.id}`]
+            if (email) criteres.push(`client_email.ilike.${email}`)
+            const { data, error } = await supabase
                 .from('rdv_requests')
                 .select('id, date, heure, type, motif, notes, statut, created_at')
-                .or(`client_id.eq.${profile.id},client_email.eq.${profile.email}`)
+                .or(criteres.join(','))
                 .order('created_at', { ascending: false })
                 .limit(30)
+            // Erreur : on lève pour garder la liste affichée (et la mémoire)
+            // au lieu de l'écraser par une liste vide.
+            if (error) throw new Error(error.message)
 
             const mapped: Appointment[] = (data || []).map((r: Record<string, unknown>) => {
                 const date = r.date as string | null
-                const heure = (r.heure as string | null) || '09:00'
+                /* `heure` est une colonne `time` : PostgREST la rend en
+                   « HH:MM:SS » (8 caractères). L'ancien test `length === 5`
+                   rejetait donc TOUTES les heures réelles : chaque rendez-vous
+                   s'affichait à 09:00. */
+                const heureBrute = String(r.heure || '')
+                const heure = /^\d{2}:\d{2}/.test(heureBrute) ? heureBrute.slice(0, 5) : '09:00'
                 const rawNotes = String(r.notes || '')
                 const msg = rawNotes.includes('Message:') ? rawNotes.split('Message:')[1].trim() : rawNotes
                 return {
                     id: String(r.id),
-                    scheduled_at: date ? `${date}T${heure.length === 5 ? heure : '09:00'}:00` : null,
+                    scheduled_at: date ? `${date}T${heure}:00` : null,
                     type: RDV_TYPE_TO_APPT[String(r.type)] || 'phone',
                     status: RDV_STATUT_TO_APPT[String(r.statut)] || 'pending',
                     notes: msg || String(r.motif || ''),
@@ -332,15 +347,19 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             return mapped
             },
             (liste) => { setAppointments(liste); setLoading(false) },
+            { ignorerCache: options?.ignorerCache },
         )
         setLoading(false)
     }, [profile, cleAffichage])
 
     useEffect(() => { fetchAppointments() }, [fetchAppointments])
 
+    /* Tirer pour rafraîchir et relire après une action : on va au RÉSEAU.
+       Avec le cache « frais » de 5 min, une demande qu'on venait de créer
+       n'apparaissait pas — la liste en mémoire répondait à la place. */
     const onRefresh = async () => {
         setRefreshing(true)
-        await fetchAppointments()
+        await fetchAppointments({ ignorerCache: true })
         setRefreshing(false)
     }
 
@@ -372,13 +391,18 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             // Si un dossier ACTIF existe déjà pour ce service, on n'ouvre ni RDV
             // ni nouveau dossier : le client interagit via la messagerie.
             if (serviceLabel) {
-                const { data: existingDossier } = await supabase.from('dossier_tracking')
+                // Par identifiant OU email (dossiers ouverts depuis le site),
+                // statuts actifs = référence partagée (lib/statuts).
+                const emailClient = String(profile!.email || '').trim().toLowerCase()
+                const parDossier = [`client_id.eq.${profile!.id}`]
+                if (emailClient) parDossier.push(`client_email.ilike.${emailClient}`)
+                const { data: dossiersActifs } = await supabase.from('dossier_tracking')
                     .select('id')
-                    .eq('client_id', profile!.id)
+                    .or(parDossier.join(','))
                     .eq('service_type', serviceLabel)
-                    .in('statut', ['reception', 'verification', 'traitement', 'validation', 'finalisation'])
+                    .in('statut', DOSSIER_STATUTS_ACTIFS)
                     .limit(1)
-                    .maybeSingle()
+                const existingDossier = dossiersActifs?.[0]
                 if (existingDossier) {
                     setSubmitting(false)
                     confirm({
@@ -398,7 +422,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             // 1. Écriture dans rdv_requests (table partagée, vue par les agents dans l'agenda)
             const { data: inserted, error } = await supabase.from('rdv_requests').insert({
                 client_id: profile!.id,
-                client_email: profile!.email,
+                client_email: String(profile!.email || '').trim().toLowerCase() || null,
                 date: formDate,
                 heure: formHeure,
                 type: rdvType,
@@ -467,7 +491,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                     ? t('Votre dossier est ouvert (statut : soumis) et visible dans « Mon Dossier ». Notre équipe vous contactera sous 24h pour votre rendez-vous.')
                     : t("Notre équipe vous contactera sous 24h pour confirmer la date et l'heure de votre rendez-vous."),
             )
-            await fetchAppointments()
+            await fetchAppointments({ ignorerCache: true })
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : t('Erreur')
             toast(t('Erreur'), msg)
@@ -485,8 +509,16 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             cancelLabel: t('Non'),
             destructive: true,
             onConfirm: async () => {
-                const { error } = await supabase.from('rdv_requests').update({ statut: 'annule' }).eq('id', id)
-                if (error) {
+                /* `.select('id')` : sous RLS, une mise à jour refusée ne lève
+                   pas d'erreur, elle touche simplement 0 ligne. Sans ce retour,
+                   l'écran affichait « Rendez-vous annulé » alors que la base
+                   (et l'agenda de l'agent) le gardaient actif. */
+                const { data: annules, error } = await supabase
+                    .from('rdv_requests')
+                    .update({ statut: 'annule' satisfies RdvStatut })
+                    .eq('id', id)
+                    .select('id')
+                if (error || !annules || annules.length === 0) {
                     toast(t('Erreur'), t("L'annulation a échoué. Réessayez."))
                     return
                 }

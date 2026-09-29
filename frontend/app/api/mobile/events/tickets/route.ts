@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
+import { motifEmailExact } from '@/lib/email-motif'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,7 +31,8 @@ export async function GET(req: NextRequest) {
     const { data: regs, error: regErr } = await supabase
         .from('event_registrations')
         .select('id, event_id, ticket_type, payment_status, created_at')
-        .eq('email', email)
+        // Sans jokers ni casse : une inscription web « Jean@x.com » reste la sienne.
+        .ilike('email', motifEmailExact(email) ?? '\u0000')
         .order('created_at', { ascending: false })
         .limit(100)
 

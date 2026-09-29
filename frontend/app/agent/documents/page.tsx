@@ -142,6 +142,24 @@ export default function AgentDocumentsPage() {
         setUploading(false)
     }
 
+    /* Bucket `agent-documents` rendu PRIVÉ (pièces d'identité) : lien signé de
+       5 minutes généré à la demande depuis le chemin du fichier. Repli sur
+       l'ancienne URL publique tant que la migration n'est pas exécutée. */
+    const telecharger = async (doc: Document) => {
+        const fenetre = window.open('', '_blank')
+        const { data, error } = doc.filename
+            ? await supabase.storage.from('agent-documents').createSignedUrl(doc.filename, 300)
+            : { data: null, error: null }
+        const lien = data?.signedUrl || doc.file_url
+        if (!lien) {
+            fenetre?.close()
+            alert(`Téléchargement impossible : ${error?.message || 'fichier introuvable'}`)
+            return
+        }
+        if (fenetre) fenetre.location.href = lien
+        else window.location.href = lien
+    }
+
     const handleDelete = async (doc: Document) => {
         try {
             await supabase.storage.from('agent-documents').remove([doc.filename])
@@ -233,8 +251,8 @@ export default function AgentDocumentsPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {doc.file_url && (
-                                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-blue-400" title="Télécharger"><Download size={14} /></a>
+                                    {(doc.filename || doc.file_url) && (
+                                        <button onClick={() => telecharger(doc)} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-blue-400" title="Télécharger"><Download size={14} /></button>
                                     )}
                                     <button onClick={() => handleDelete(doc)} className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-red-400" title="Supprimer"><Trash2 size={14} /></button>
                                 </div>

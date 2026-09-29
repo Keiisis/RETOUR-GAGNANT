@@ -589,7 +589,7 @@ export async function POST(request: NextRequest) {
             /* Aucun montant de repli : « 250 » écrit ici quand la requête n'en
                portait pas donnait une note interne qui affirmait un tarif
                jamais encaissé. Quand le montant est absent, on le dit. */
-            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant: ${body.amount ? `${body.amount} ${body.currency || 'USD'}` : 'non communiqué par le formulaire'}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
+            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant (tarif) : ${secureAmount} ${secureCurrency}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
         }).then(({ error: trackError }) => {
             if (trackError) console.error('[TRACKER] Erreur création dossier_tracking:', trackError.message)
             else console.log(`[TRACKER] Dossier ${ref} créé dans le Nexus Tracker`)
@@ -601,7 +601,7 @@ export async function POST(request: NextRequest) {
             email,
             telephone: body.telephone || null,
             sujet: `Demande de nationalité #${ref}`,
-            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant: ${body.amount ? `${body.amount} ${body.currency || 'USD'}` : 'non communiqué par le formulaire'}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
+            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant (tarif) : ${secureAmount} ${secureCurrency}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
             type: 'nationality',
             lu: false,
         }])
@@ -637,8 +637,9 @@ export async function POST(request: NextRequest) {
                 nom, prenom, email,
                 telephone: body.telephone || null,
                 refDossier: ref,
-                amount: Number(body.amount ?? 250),
-                currency: String(body.currency || 'USD'),
+                // Tarif serveur, jamais le montant du corps de la requête.
+                amount: Number(secureAmount),
+                currency: String(secureCurrency),
                 paymentMethod: String(body.payment_method || 'en ligne'),
                 paymentRef: String(body.payment_ref),
             }

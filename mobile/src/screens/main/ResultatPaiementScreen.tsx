@@ -43,7 +43,10 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbe
 const VERT_PROFOND = '#00643C'
 const AGENCE_TEL = '+2290160322121'
 
-export type EtatPaiement = 'succes' | 'echec' | 'annule'
+/* `attente` : la passerelle a encaissé mais le SERVEUR n'a pas encore
+   confirmé l'enregistrement (réseau coupé → envoi en file de reprise).
+   Afficher « Paiement confirmé » dans ce cas était un faux succès. */
+export type EtatPaiement = 'succes' | 'echec' | 'annule' | 'attente'
 
 export interface ParamsResultatPaiement {
     etat: EtatPaiement
@@ -113,6 +116,7 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
     const p: ParamsResultatPaiement = route?.params || { etat: 'annule', objet: '' }
     const succes = p.etat === 'succes'
     const echec = p.etat === 'echec'
+    const attente = p.etat === 'attente'
     const montant = money(p.montant, p.devise)
 
     useEffect(() => {
@@ -159,14 +163,18 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
     /* Le libellé d'en-tête dit l'état AVANT que l'œil ne descende sur l'icône. */
     const surtitre = succes
         ? t('Confirmation officielle')
-        : echec ? t('Statut du règlement') : t('Paiement interrompu')
+        : attente ? t('Confirmation en cours')
+            : echec ? t('Statut du règlement') : t('Paiement interrompu')
 
     const titre = succes
         ? t('Paiement confirmé')
-        : echec ? t('Le paiement n’a pas abouti') : t('Paiement annulé')
+        : attente ? t('Paiement reçu')
+            : echec ? t('Le paiement n’a pas abouti') : t('Paiement annulé')
 
     const sousTitre = p.message || (succes
         ? t('Votre règlement est enregistré. Notre équipe prend le relais.')
+        : attente
+            ? t('La passerelle a validé votre paiement, mais nos serveurs ne l’ont pas encore enregistré. L’envoi repartira automatiquement dès le retour du réseau. Conservez la référence ci-dessous.')
         : echec
             ? t('Aucun montant n’a été validé de notre côté. Si votre compte a été débité, la transaction sera automatiquement annulée par la passerelle.')
             : t('Vous avez fermé la fenêtre de paiement. Rien n’a été débité, et vous pouvez reprendre quand vous voulez.'))
@@ -271,7 +279,7 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                             {t('Elle porte l’en-tête de l’agence et vaut justificatif comptable. Vous pouvez aussi la télécharger ici, et cette référence suffit pour toute question sur ce règlement.')}
                         </Text>
                     </Animated.View>
-                ) : echec ? (
+                ) : (echec || attente) ? (
                     <Pressable
                         onPress={() => Linking.openURL(`tel:${AGENCE_TEL}`).catch(() => undefined)}
                         style={styles.blocBlanc}
@@ -307,11 +315,11 @@ export default function ResultatPaiementScreen({ navigation, route }: { navigati
                     style={({ pressed }) => [styles.ctaPlein, pressed && { transform: [{ scale: 0.98 }] }]}
                     accessibilityRole="button"
                 >
-                    {succes
+                    {(succes || attente)
                         ? <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.2} />
                         : <RotateCcw size={16} color="#FFFFFF" strokeWidth={2.2} />}
                     <Text style={styles.ctaPleinText}>
-                        {p.actionLabel || (succes ? t('Continuer') : t('Reprendre'))}
+                        {p.actionLabel || ((succes || attente) ? t('Continuer') : t('Reprendre'))}
                     </Text>
                 </Pressable>
 

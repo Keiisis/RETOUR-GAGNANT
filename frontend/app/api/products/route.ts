@@ -19,7 +19,8 @@ export async function GET() {
 
         if (error) {
             console.error('Products fetch error:', error)
-            return NextResponse.json({ products: [] })
+            // 500 (et non une liste vide) : l'app distingue une panne d'une boutique vide.
+            return NextResponse.json({ products: [], error: 'Catalogue indisponible' }, { status: 500 })
         }
 
         const products = (data || []).map((item: Record<string, unknown>) => ({
@@ -39,6 +40,6 @@ export async function GET() {
 
         return NextResponse.json({ products })
     } catch {
-        return NextResponse.json({ products: [] })
+        return NextResponse.json({ products: [], error: 'Catalogue indisponible' }, { status: 500 })
     }
 }

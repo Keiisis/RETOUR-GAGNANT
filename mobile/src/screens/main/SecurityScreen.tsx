@@ -335,6 +335,9 @@ export default function SecurityScreen({ navigation }: { navigation: Nav }) {
                 const token = await getToken()
                 if (!token) return null
                 const res = await fetch(`${API_BASE}/api/client/2fa/status`, { headers: { Authorization: `Bearer ${token}` } })
+                // 401/500 : ne pas afficher « 2FA désactivée » (et le mémoriser)
+                // pour un compte qui l'a peut-être activée.
+                if (!res.ok) throw new Error(`2fa/status HTTP ${res.status}`)
                 const json = await res.json().catch(() => ({}))
                 return !!json?.enabled
             },
