@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { randomInt } from 'crypto'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { sendEmail } from '@/lib/email'
+import { guardPublic, EMAIL_LIMIT } from '@/lib/api-guard'
 import { empreinteCodeSuppression, VALIDITE_CODE_MINUTES } from '@/lib/suppression-compte'
 
 /* ═══════════════════════════════════════════════════════════
@@ -55,6 +56,15 @@ function corpsEmail(code: string, prenom: string): string {
 export async function POST(request: NextRequest) {
     const userId = await getMobileUserId(request)
     if (!userId) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
+    /* Chaque appel envoie un e-mail : sans plafond, un jeton volé (ou un
+       script) arrosait la boîte du client et épuisait le quota SMTP. Deux
+       compteurs : par COMPTE (un compte, 3 codes / 15 min) et par IP (une
+       machine qui fait tourner plusieurs comptes). */
+    const tropCompte = guardPublic(request, 'account-delete-request:user', EMAIL_LIMIT, `u:${userId}`)
+    if (tropCompte) return tropCompte
+    const tropIp = guardPublic(request, 'account-delete-request:ip', EMAIL_LIMIT)
+    if (tropIp) return tropIp
 
     const admin = createClient(supabaseUrl, serviceKey)
 

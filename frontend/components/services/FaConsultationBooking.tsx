@@ -192,7 +192,8 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
             setSubmitting(false)
             if (oid) fetch('/api/checkout/cancel', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: oid }),
+                // Preuve d'appartenance exigée par la route : coordonnées saisies.
+                body: JSON.stringify({ order_id: oid, customer_email: form.email, customer_phone: form.phone }),
             }).catch(() => { })
             },
         })

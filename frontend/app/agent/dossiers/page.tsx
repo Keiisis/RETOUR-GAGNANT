@@ -10,6 +10,7 @@ import {
     DOSSIER_STATUTS, DOSSIER_PARCOURS, DOSSIER_PROGRESSION, DOSSIER_VERS_MOBILE,
     normaliserStatutDossier, type DossierStatut,
 } from '@/lib/constants/statuts'
+import { ouvrirPiece } from '@/lib/lien-piece'
 
 type DossierStatus = DossierStatut
 
@@ -785,15 +786,15 @@ export default function AgentDossiersPage() {
                                                 </div>
                                                 <div className="flex items-center gap-1.5 shrink-0">
                                                     {doc.file_url && (
-                                                        <a 
-                                                            href={doc.file_url}
-                                                            target="_blank"
-                                                            rel="noreferrer"
+                                                        <button
+                                                            type="button"
+                                                            // Lien signé frais à chaque clic : l'URL enregistrée par le mobile expire après 1 h.
+                                                            onClick={() => ouvrirPiece(doc.file_url || '')}
                                                             className="p-1.5 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300 rounded transition-colors"
                                                             title="Télécharger/Voir"
                                                         >
                                                             <Download size={14} />
-                                                        </a>
+                                                        </button>
                                                     )}
                                                     <button
                                                         onClick={() => handleDeleteDossierDoc(doc)}

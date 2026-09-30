@@ -6,6 +6,7 @@ import { Wallet, TrendDown as TrendingDown, ArrowUpRight, ArrowDownRight, Downlo
 import { cn } from '@/lib/utils'
 import { expenseCategoryLabel, EXPENSE_CATEGORIES } from '@/lib/constants/compta'
 import { exportToExcelMultiSheet } from '@/lib/exportExcel'
+import { dateEncaissementFacture } from '@/lib/compta-export'
 import { toXOF, loadExchangeRates, rateOf } from '@/lib/currency-convert'
 import { DOC_FIN_STATUTS, DOC_FIN_EN_ATTENTE, DOC_FIN_CLOS, COMMANDE_PAIEMENT_STATUTS } from '@/lib/constants/statuts'
 import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
@@ -88,6 +89,8 @@ interface DocRow {
     total: number
     status: string
     created_at: string
+    /** Date du paiement en ligne (rattachement des encaissements) */
+    paid_at?: string | null
     agent_id: string
     currency?: string
     signature_url?: string
@@ -503,18 +506,29 @@ export default function AdminComptabilitePage() {
     const pvDeps   = useMemo(() => depenses.filter(d => inRange(d.date_depense, pS, pE)), [depenses, pS, pE])
     const pvPaiements = useMemo(() => paiementsList.filter(p => inRange(p.date_paiement, pS, pE)), [paiementsList, pS, pE])
 
+    /* Factures payées SANS aucun paiement manuel (paiement en ligne) : leur
+       encaissement est daté du PAIEMENT (paid_at), pas de l'émission. Avant :
+       une facture émise en août et payée en septembre tombait en août. */
+    const payeesEnLigne = useMemo(() => {
+        const avecPaiement = new Set(paiementsList.map(p => p.document_id).filter(Boolean))
+        return docs
+            .filter(d => d.type === 'facture' && d.status === 'paye' && !avecPaiement.has(d.id))
+            .map(d => ({ doc: d, date: dateEncaissementFacture(d) }))
+    }, [docs, paiementsList])
+    const pPayeesEnLigne  = useMemo(() => payeesEnLigne.filter(x => inRange(x.date, start, end)).map(x => x.doc), [payeesEnLigne, start, end])
+    const pvPayeesEnLigne = useMemo(() => payeesEnLigne.filter(x => inRange(x.date, pS, pE)).map(x => x.doc), [payeesEnLigne, pS, pE])
+
     // ── KPIs globaux ──────────────────────────────────────────────
     const kpis = useMemo(() => {
-        const calc = (dList: DocRow[], oList: OrderRow[], deps: DepRow[], pList: typeof paiementsList) => {
+        const calc = (dList: DocRow[], oList: OrderRow[], deps: DepRow[], pList: typeof paiementsList, enLigne: DocRow[]) => {
             const invoices = dList.filter(d => d.type === 'facture')
             
-            // Somme de tous les paiements manuels de la période
+            // Somme de tous les paiements manuels de la période (datés du paiement)
             const encaissePaiements = pList.reduce((a, p) => a + Number(p.montant || 0), 0)
             
-            // Plus factures passées payées sans paiement manuel lié (Stripe/web)
-            const docsWithP = new Set(pList.map(p => p.document_id).filter(Boolean))
-            const invoicesPayeesSansP = invoices
-                .filter(d => d.status === 'paye' && !docsWithP.has(d.id))
+            // Plus factures PAYÉES dans la période sans paiement manuel (Stripe/web),
+            // rattachées à leur date de paiement (paid_at)
+            const invoicesPayeesSansP = enLigne
                 .reduce((a, d) => a + toXOF(d.total, d.currency) /* `total` est déjà net de remise (total = HT + TVA − remise) */, 0)
 
             const encaisseFactu = encaissePaiements + invoicesPayeesSansP
@@ -552,8 +566,8 @@ export default function AdminComptabilitePage() {
                      benefice: totalEncaisse - commission - totalDeps,
                      proj30: (totalEncaisse / jours) * 30, nbFactPaye, nbFactTotal }
         }
-        const curr = calc(pDocs, pOrders, pDeps, pPaiements)
-        const prev = calc(pvDocs, pvOrders, pvDeps, pvPaiements)
+        const curr = calc(pDocs, pOrders, pDeps, pPaiements, pPayeesEnLigne)
+        const prev = calc(pvDocs, pvOrders, pvDeps, pvPaiements, pvPayeesEnLigne)
         return {
             ...curr,
             trends: period === 'tous' ? null : {
@@ -564,7 +578,7 @@ export default function AdminComptabilitePage() {
                 tva:       calcTrend(curr.totalTVA,      prev.totalTVA),
             }
         }
-    }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end, pPaiements, pvPaiements, paiements])
+    }, [pDocs, pOrders, pDeps, pvDocs, pvOrders, pvDeps, commissionRate, period, start, end, pPaiements, pvPaiements, paiements, pPayeesEnLigne, pvPayeesEnLigne])
 
     // ── Balance âgée des créances (aged receivables) : toutes périodes ─
     // Feature ERP type-Odoo : qui doit combien, et depuis combien de temps.
@@ -693,10 +707,9 @@ export default function AdminComptabilitePage() {
             s.encaisse += Number(p.montant || 0)
         }
 
-        // Factures payées de la période sans paiement lié (web)
-        const docsWithP = new Set(pPaiements.map(p => p.document_id).filter(Boolean))
-        for (const d of pDocs) {
-            if (d.type === 'facture' && d.status === 'paye' && d.agent_id && !docsWithP.has(d.id)) {
+        // Factures PAYÉES dans la période (paid_at) sans paiement manuel (web)
+        for (const d of pPayeesEnLigne) {
+            if (d.agent_id) {
                 if (map.has(d.agent_id)) {
                     const s = map.get(d.agent_id)!
                     s.encaisse += toXOF(d.total, d.currency) /* `total` est déjà net de remise (total = HT + TVA − remise) */
@@ -712,7 +725,7 @@ export default function AdminComptabilitePage() {
         }
         const all = [...map.values()]
         return showAllAgents ? all : all.filter(s => s.caEmis > 0 || s.nbDevis > 0 || s.depenses > 0 || s.encaisse > 0)
-    }, [agents, pDocs, pDeps, pPaiements, commissionRate, showAllAgents, paiements])
+    }, [agents, pDocs, pDeps, pPaiements, pPayeesEnLigne, commissionRate, showAllAgents, paiements])
 
     // ── Charts ────────────────────────────────────────────────────
     const areaData = useMemo(() => {
@@ -732,11 +745,13 @@ export default function AdminComptabilitePage() {
             if (!days[k]) days[k] = { factu: 0, boutique: 0, depenses: 0 }
             days[k][champ] += v
         }
-        for (const d of pDocs.filter(d => d.status === 'paye' && d.type === 'facture')) ajouter(d.created_at, 'factu', toXOF(d.total, d.currency))
+        // Encaissé : paiements manuels à leur date + factures payées en ligne à leur date de paiement
+        for (const p of pPaiements) ajouter(p.date_paiement, 'factu', Number(p.montant || 0))
+        for (const d of pPayeesEnLigne) ajouter(dateEncaissementFacture(d), 'factu', toXOF(d.total, d.currency))
         for (const o of pOrders.filter(o => o.payment_status === 'completed')) ajouter(o.created_at, 'boutique', toXOF(o.amount, o.currency))
         for (const d of pDeps) ajouter(d.date_depense, 'depenses', Number(d.montant))
         return Object.keys(days).sort().slice(-60).map(k => ({ name: formatShortDate(`${k}T12:00:00`), ...days[k] }))
-    }, [pDocs, pOrders, pDeps])
+    }, [pPaiements, pPayeesEnLigne, pOrders, pDeps])
 
     const agentBarData = useMemo(() =>
         [...agentStats].sort((a, b) => b.encaisse - a.encaisse).slice(0, 8).map(s => ({
@@ -892,13 +907,6 @@ export default function AdminComptabilitePage() {
                 mobile_money: 'Mobile Money', carte: 'Carte bancaire', autre: 'Autre'
             }
 
-            // Formatage d'un montant dans sa devise d'origine (ex. « 337 € », « $120 »)
-            const fmtCur = (n: number, cur: string) => {
-                const sym: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
-                const s = sym[cur] || cur
-                const v = Math.round(Number(n) || 0).toLocaleString('fr-FR')
-                return (cur === 'USD' || cur === 'GBP') ? `${s}${v}` : `${v} ${s}`
-            }
 
             // Enrichissement des docs (HT/TVA reconstitués depuis items si colonnes vides)
             const enrichDoc = (d: DocRow) => {
@@ -972,9 +980,10 @@ export default function AdminComptabilitePage() {
             })
             // 2.b Factures payées SANS ligne de paiement (paiement en ligne
             //     vérifié / conversion de devis) = CRÉDIT : pour ne rien oublier
-            pDocs.filter(d => d.type === 'facture' && d.status === 'paye' && !paidDocIds.has(d.id)).forEach(d => {
+            //     Datées du PAIEMENT (paid_at), pas de l'émission.
+            pPayeesEnLigne.filter(d => !paidDocIds.has(d.id)).forEach(d => {
                 journalRows.push({
-                    date: new Date(d.created_at),
+                    date: new Date(dateEncaissementFacture(d)),
                     piece: d.numero || '-',
                     agent: d.agent_id ? (agentMap.get(d.agent_id) || '-') : '-',
                     libelle: `Encaissement : ${d.client_nom || ''} ${d.client_prenom || ''}`.trim(),
@@ -1080,9 +1089,9 @@ export default function AdminComptabilitePage() {
                     { header: 'Agent', key: 'agent', width: 22, group: 'Document' },
                     { header: 'Client', key: 'client', width: 28, group: 'Client' },
                     { header: 'Email', key: 'email', width: 26, group: 'Client' },
-                    { header: 'Téléphone', key: 'phone', width: 16, group: 'Client' },
+                    { header: 'Téléphone', key: 'phone', width: 18, type: 'phone' as const, group: 'Client' },
                     { header: 'Devise', key: 'devise', width: 10, type: 'status' as const, group: "Devise d'origine" },
-                    { header: 'TTC d\'origine', key: 'ttc_origine', width: 16, group: "Devise d'origine" },
+                    { header: 'TTC d\'origine', key: 'ttc_origine', width: 16, currencyKey: 'devise', group: "Devise d'origine" },
                     { header: 'Sous-total HT', key: 'ht', width: 16, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
                     { header: 'TVA', key: 'tva', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
                     { header: 'Remise', key: 'remise', width: 14, type: 'currency' as const, totalFormula: 'sum' as const, group: 'Montants convertis en FCFA' },
@@ -1102,8 +1111,8 @@ export default function AdminComptabilitePage() {
                         email: d.client_email || '-',
                         phone: d.client_phone || '-',
                         devise: cur,
-                        // Montant d'origine (dans la devise de la facture) : ex. « 337 € »
-                        ttc_origine: isXof ? '-' : fmtCur(d._ttc, cur),
+                        // Montant d'origine : NOMBRE au format de sa devise (ex. 337,00 €), vide si FCFA
+                        ttc_origine: isXof ? null : d._ttc,
                         // Montants TOUJOURS convertis en FCFA (conversion dynamique)
                         ht: toXOF(d._ht, cur),
                         tva: toXOF(d._tva, cur),
@@ -1121,7 +1130,7 @@ export default function AdminComptabilitePage() {
             // TVA correctement appliquée (montant TVA + Total TTC).
             type LineRow = {
                 numero: string; client: string; date: Date; description: string; devise: string
-                pu_origine: string; qty: number; pu: number; tva_rate: number
+                pu_origine: number | null; qty: number; pu: number; tva_rate: number
                 ht: number; tva_montant: number; ttc: number
             }
             const lignesRows: LineRow[] = []
@@ -1142,7 +1151,7 @@ export default function AdminComptabilitePage() {
                         date: new Date(d.created_at),
                         description: it.description || '-',
                         devise: cur,
-                        pu_origine: isXof ? '-' : fmtCur(puSrc, cur),
+                        pu_origine: isXof ? null : puSrc,
                         qty: q,
                         pu: puXof,
                         tva_rate: rate,
@@ -1164,7 +1173,7 @@ export default function AdminComptabilitePage() {
                     { header: 'Client', key: 'client', width: 26 },
                     { header: 'Description', key: 'description', width: 44 },
                     { header: 'Devise', key: 'devise', width: 9, type: 'status' as const },
-                    { header: "P.U. d'origine", key: 'pu_origine', width: 14 },
+                    { header: "P.U. d'origine", key: 'pu_origine', width: 14, currencyKey: 'devise' },
                     { header: 'Qté', key: 'qty', width: 8, type: 'number' as const, totalFormula: 'sum' as const },
                     { header: 'P.U. (FCFA)', key: 'pu', width: 15, type: 'currency' as const },
                     { header: 'HT (FCFA)', key: 'ht', width: 15, type: 'currency' as const, totalFormula: 'sum' as const },
@@ -1274,7 +1283,7 @@ export default function AdminComptabilitePage() {
                     { header: 'Numéro', key: 'numero', width: 16 },
                     { header: 'Client', key: 'client', width: 30 },
                     { header: 'Statut', key: 'statut', width: 14 },
-                    { header: 'Montant', key: 'montant', width: 16, type: 'currency' as const },
+                    { header: 'Montant', key: 'montant', width: 16, currencyKey: 'devise' },
                     { header: 'Devise', key: 'devise', width: 9 },
                     { header: 'Équivalent FCFA', key: 'xof', width: 18, type: 'currency' as const, totalFormula: 'sum' as const },
                     { header: 'Émis le', key: 'date', width: 13, type: 'date' as const },
@@ -1307,6 +1316,7 @@ export default function AdminComptabilitePage() {
                     { header: 'Devise', key: 'devise', width: 10 },
                     { header: 'Méthode', key: 'methode', width: 16, type: 'status' as const },
                     { header: 'Statut', key: 'statut', width: 14, type: 'status' as const },
+                    { header: "Montant d'origine", key: 'montant_origine', width: 16, currencyKey: 'devise' },
                     { header: 'Montant (FCFA)', key: 'montant', width: 16, type: 'currency' as const, totalFormula: 'sum' as const },
                 ],
                 data: pOrders.map(o => ({
@@ -1317,7 +1327,9 @@ export default function AdminComptabilitePage() {
                     devise: o.currency || 'XOF',
                     methode: PAYMENT_LABELS[(o.payment_method || '').toLowerCase()] || (o.payment_method || '-'),
                     statut: ORDER_STATUS[o.payment_status]?.label || o.payment_status,
-                    montant: Number(o.amount || 0),
+                    montant_origine: Number(o.amount || 0),
+                    // Converti : une commande EUR/USD n'est pas un montant en FCFA
+                    montant: toXOF(Number(o.amount || 0), o.currency),
                 })),
             }
 

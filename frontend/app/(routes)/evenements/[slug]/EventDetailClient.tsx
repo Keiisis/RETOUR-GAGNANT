@@ -150,7 +150,7 @@ export default function EventDetailPage() {
                 setPayProcessing(false)
                 if (orderIdRef.current) fetch('/api/checkout/cancel', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order_id: orderIdRef.current }),
+                    body: JSON.stringify({ order_id: orderIdRef.current, customer_email: form.email, customer_phone: form.phone }),
                 }).catch(() => { })
                 },
             })

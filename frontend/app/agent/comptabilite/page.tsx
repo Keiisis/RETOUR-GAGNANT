@@ -7,6 +7,7 @@ import { Wallet, TrendUp as TrendingUp, ArrowUpRight, ArrowDownRight, Download, 
 import { EXPENSE_CATEGORIES, agentHasComptaAccess, expenseCategoryLabel } from '@/lib/constants/compta'
 import { useTranslation } from '@/lib/translation'
 import { exportRegistreComptable, RegistreRecette, RegistreDepense } from '@/lib/exportRegistreComptable'
+import { dateEncaissementFacture } from '@/lib/compta-export'
 import { TVA_RATE } from '@/lib/tax'
 import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
 import { formatPrice, formatMontant, asCurrency } from '@/lib/currency'
@@ -40,6 +41,8 @@ interface DocumentFinancier {
     currency?: string
     status: string
     created_at: string
+    /** Date du paiement en ligne (rattachement des encaissements) */
+    paid_at?: string | null
 }
 
 interface Depense {
@@ -293,8 +296,21 @@ export default function AgentComptabilitePage() {
         return allDocs.find(d => d.id === documentId)?.currency || 'XOF'
     }, [allDocs])
 
+    /* Factures payées SANS aucun paiement manuel (paiement en ligne) : leur
+       encaissement est daté du PAIEMENT (paid_at), pas de l'émission. Avant :
+       une facture émise en août et payée en septembre tombait en août. */
+    const payeesEnLigne = useMemo(() => {
+        const avecPaiement = new Set(paiementsList.map(p => p.document_id).filter(Boolean))
+        return allDocs
+            .filter(d => d.type === 'facture' && d.status === 'paye' && !avecPaiement.has(d.id))
+            .map(d => ({ doc: d, date: new Date(dateEncaissementFacture(d)) }))
+            .filter(x => !isNaN(x.date.getTime()))
+    }, [allDocs, paiementsList])
+    const periodPayeesEnLigne = useMemo(() => payeesEnLigne.filter(x => x.date >= pStart && x.date <= pEnd).map(x => x.doc), [payeesEnLigne, pStart, pEnd])
+    const prevPayeesEnLigne = useMemo(() => payeesEnLigne.filter(x => x.date >= prevStart && x.date <= prevEnd).map(x => x.doc), [payeesEnLigne, prevStart, prevEnd])
+
     const stats = useMemo(() => {
-        const getStats = (list: DocumentFinancier[], expList: Depense[], pList: typeof paiementsList) => {
+        const getStats = (list: DocumentFinancier[], expList: Depense[], pList: typeof paiementsList, enLigne: DocumentFinancier[]) => {
             const invoices = list.filter(d => d.type === 'facture')
             // Somme des paiements réels reçus
             /* CONVERTI : un paiement est dans la devise de son document
@@ -302,10 +318,9 @@ export default function AgentComptabilitePage() {
                des dollars et des francs dans un meme total. */
             const encaissePaiements = pList.reduce(
                 (acc, p) => acc + toXOF(Number(p.montant), deviseDuPaiement(p.document_id)), 0)
-            // Plus factures passées payées sans paiement manuel lié (ventes web)
-            const docsWithP = new Set(pList.map(p => p.document_id).filter(Boolean))
-            const invoicesPayeesSansP = invoices
-                .filter(d => d.status === 'paye' && !docsWithP.has(d.id))
+            // Plus factures PAYÉES dans la période sans paiement manuel (ventes web),
+            // rattachées à leur date de paiement (paid_at)
+            const invoicesPayeesSansP = enLigne
                 .reduce((acc, d) => acc + toXOF(d.total, d.currency), 0)
 
             const encaisse = encaissePaiements + invoicesPayeesSansP
@@ -326,13 +341,13 @@ export default function AgentComptabilitePage() {
             const date = new Date(e.date_depense)
             if (isNaN(date.getTime())) return false
             return date >= pStart && date <= pEnd
-        }), periodPaiements)
+        }), periodPaiements, periodPayeesEnLigne)
         const prev = getStats(prevDocs, expenses.filter(e => {
             if (!e.date_depense) return false
             const date = new Date(e.date_depense)
             if (isNaN(date.getTime())) return false
             return date >= prevStart && date <= prevEnd
-        }), prevPaiements)
+        }), prevPaiements, prevPayeesEnLigne)
 
         // Predictive Logic
         const daysInPeriod = Math.max(1, (pEnd.getTime() - pStart.getTime()) / (1000 * 60 * 60 * 24))
@@ -350,7 +365,7 @@ export default function AgentComptabilitePage() {
                 benefice: (selectedPeriod === 'tous') ? null : calcTrend(curr.beneficeNet, prev.beneficeNet)
             }
         }
-    }, [periodDocs, prevDocs, expenses, selectedPeriod, pStart, pEnd, prevStart, prevEnd, commissionRate, periodPaiements, prevPaiements])
+    }, [periodDocs, prevDocs, expenses, selectedPeriod, pStart, pEnd, prevStart, prevEnd, commissionRate, periodPaiements, prevPaiements, periodPayeesEnLigne, prevPayeesEnLigne])
 
     // Data for Recharts (flux de trésorerie réel basé sur les paiements reçus par jour)
     const chartData = useMemo(() => {
@@ -361,8 +376,13 @@ export default function AgentComptabilitePage() {
                 days[day] = (days[day] || 0) + toXOF(Number(p.montant), deviseDuPaiement(p.document_id))
             }
         })
+        // + factures payées en ligne, à leur date de paiement
+        periodPayeesEnLigne.forEach(d => {
+            const day = new Date(dateEncaissementFacture(d)).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+            days[day] = (days[day] || 0) + toXOF(d.total, d.currency)
+        })
         return Object.entries(days).map(([name, total]) => ({ name, total })).reverse()
-    }, [periodPaiements])
+    }, [periodPaiements, periodPayeesEnLigne, deviseDuPaiement])
 
     const displayedDocs = useMemo(() => {
         let docs = periodDocs
@@ -671,16 +691,17 @@ export default function AgentComptabilitePage() {
 
         // 2. Factures avec statut 'paye' mais sans paiement manuel enregistré
         //    (paiements passés via le site web / webhook automatique)
-        displayedDocs
-            .filter(d => d.type === 'facture' && d.status === 'paye' && !docsWithPayments.has(d.id))
+        //    Datées du PAIEMENT (paid_at) et converties en XOF.
+        periodPayeesEnLigne
+            .filter(d => !docsWithPayments.has(d.id))
             .forEach(d => {
                 recettes.push({
-                    date: new Date(d.created_at),
+                    date: new Date(dateEncaissementFacture(d)),
                     numero: d.numero,
                     client: `${d.client_nom} ${d.client_prenom}`.trim(),
                     categorie: 'Accompagnement diaspora',
                     refDossier: '',
-                    montantHT: Number(d.total || 0),
+                    montantHT: toXOF(Number(d.total || 0), d.currency),
                     statut: 'Encaissé',
                 })
             })

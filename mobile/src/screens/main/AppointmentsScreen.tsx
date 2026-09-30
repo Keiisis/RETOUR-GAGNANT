@@ -417,21 +417,27 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
             }
 
             const rdvType = APPT_TYPE_TO_RDV[formType]
-            const clientName = `${profile!.prenom || ''} ${profile!.nom || ''}`.trim() || (profile!.email || '')
 
-            // 1. Écriture dans rdv_requests (table partagée, vue par les agents dans l'agenda)
-            const { data: inserted, error } = await supabase.from('rdv_requests').insert({
-                client_id: profile!.id,
-                client_email: String(profile!.email || '').trim().toLowerCase() || null,
-                date: formDate,
-                heure: formHeure,
-                type: rdvType,
-                motif: 'Consultation',
-                notes: formNotes.trim(),
-                statut: 'en_attente',
-            }).select('id').single()
-
-            if (error) throw error
+            // 1. Rendez-vous créé PAR LE SERVEUR (/api/rendez-vous) : contrôle du
+            //    créneau, notification des panels admin/agent, emails client et
+            //    équipe, notification in-app. Avant : écriture directe en base
+            //    depuis le téléphone, sans ces garanties (audit 29/09/2026).
+            const res = await fetchWithTimeout(`${API_BASE}/api/rendez-vous`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+                body: JSON.stringify({
+                    date: formDate,
+                    heure: formHeure,
+                    timeSlot: formHeure, // affiché dans les emails
+                    contactMethod: rdvType,
+                    service: serviceLabel || 'Consultation',
+                    message: formNotes.trim(),
+                }),
+                timeoutMs: 20000,
+            })
+            const reponse = await res.json().catch(() => ({})) as { id?: string; error?: string }
+            if (!res.ok) throw new Error(reponse.error || t('Le rendez-vous n’a pas pu être enregistré. Réessayez.'))
+            const inserted = { id: reponse.id }
 
             // 1.5 Ouvrir un DOSSIER « soumis » associé au service.
             //     Logique métier : une prise de rendez-vous POUR UN SERVICE
@@ -454,34 +460,7 @@ export default function AppointmentsScreen({ navigation, route }: { navigation: 
                 })
             }
 
-            // 2. Notification staff (email admin/agent) : même chemin que le panel web
-            //    Mise en file également : un rendez-vous que l'équipe ignore
-            //    vaut à peine mieux qu'un rendez-vous non pris.
-            void envoyerOuMettreEnFile({
-                chemin: '/api/rdv/confirm-client',
-                besoinJeton: false,
-                service: 'Rendez-vous',
-                reference: inserted?.id ? String(inserted.id) : undefined,
-                corps: {
-                    rdvId: inserted?.id,
-                    clientName,
-                    clientEmail: profile!.email,
-                    service: 'Consultation',
-                    date: formDate,
-                    heure: formHeure,
-                    type: rdvType,
-                },
-            })
-
-            // 3. Notification locale au client (informative)
-            await supabase.from('notifications').insert({
-                user_id: profile!.id,
-                title: 'Demande de RDV envoyée',
-                body: 'Notre équipe vous contactera sous 24h pour confirmer votre rendez-vous.',
-                type: 'appointment',
-                is_read: false,
-                created_at: new Date().toISOString(),
-            })
+            // 2-3. Emails équipe/client et notification in-app : faits par /api/rendez-vous.
 
             setShowModal(false)
             setFormNotes('')
