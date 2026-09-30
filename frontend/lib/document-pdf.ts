@@ -79,6 +79,8 @@ const C = {
     vert: [0, 135, 81] as RGB,
     vertFonce: [0, 96, 58] as RGB,
     or: [252, 209, 22] as RGB,
+    /** Jaune du logotype : or soutenu, même intensité que le vert et le rouge du drapeau */
+    jaune: [240, 176, 0] as RGB,
     rouge: [232, 17, 45] as RGB,
     nuit: [16, 26, 44] as RGB,
     texte: [34, 40, 52] as RGB,
@@ -208,7 +210,7 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     }
     const bandeau = () => {
         couleur(C.vert, 'fill'); pdf.rect(0, 0, PW / 3, 1.8, 'F')
-        couleur(C.or, 'fill'); pdf.rect(PW / 3, 0, PW / 3, 1.8, 'F')
+        couleur(C.jaune, 'fill'); pdf.rect(PW / 3, 0, PW / 3, 1.8, 'F')
         couleur(C.rouge, 'fill'); pdf.rect((PW * 2) / 3, 0, PW / 3 + 1, 1.8, 'F')
     }
 
@@ -230,13 +232,12 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     let y = 12
     try { pdf.addImage(LOGO_BASE64, 'PNG', ML, y, 17, 17) } catch { /* logo indisponible */ }
     const lx = ML + 21
-    // Logotype tricolore : RETOUR vert, GAGNANT jaune (contour or foncé pour
-    // rester lisible sur fond blanc), BÉNIN rouge en capitales espacées dessous.
+    // Logotype tricolore : RETOUR vert, GAGNANT jaune or (saturation alignée
+    // sur le vert et le rouge, lisible sur blanc sans contour), BÉNIN rouge.
     pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15)
     couleur(C.vert); pdf.text('RETOUR', lx, y + 6)
     const wRetour = pdf.getTextWidth('RETOUR ')
-    couleur(C.or); couleur([196, 150, 0], 'draw'); pdf.setLineWidth(0.12)
-    pdf.text('GAGNANT', lx + wRetour, y + 6, { renderingMode: 'fillThenStroke' })
+    couleur(C.jaune); pdf.text('GAGNANT', lx + wRetour, y + 6)
     police('bold', 8.2, C.rouge); pdf.setCharSpace(3.2)
     pdf.text('BÉNIN', lx, y + 11)
     pdf.setCharSpace(0)
@@ -396,55 +397,86 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     }
 
     // ── SIGNATURES ───────────────────────────────────────────────────────────
-    // Cadre client UNIQUEMENT s'il a un sens : devis (bon pour accord), ou
-    // document réellement signé. Une facture non signée n'en affiche pas.
+    // Deux cartes jumelles (même hauteur, même grammaire) : « Bon pour accord »
+    // du client à gauche, Direction générale à droite. La carte client n'existe
+    // que si elle a un sens : devis, ou document réellement signé.
     const paraphe = d.clientSignatureDataUrl
     const signe = !!paraphe || !!d.signedAt || (d.statut || '').toLowerCase() === 'accepte'
     const cadreClient = type === 'devis' || (type === 'facture' && signe)
-    const sigW = CW / 2 - 4, sigH = 36
-    if (y + sigH > BAS) nouvellePage()
+    const sigW = CW / 2 - 3, sigH = 44, hautH = 8.5
+    if (y + sigH + 2 > BAS) nouvellePage()
     y += 2
+    const carte = (x: number, fondHaut: RGB, etq: string, tricolore = false) => {
+        // ombre portée très douce + carte blanche
+        couleur([236, 240, 245], 'fill'); pdf.roundedRect(x + 0.5, y + 0.7, sigW, sigH, 2.6, 2.6, 'F')
+        couleur([255, 255, 255], 'fill'); couleur(C.trait, 'draw'); pdf.setLineWidth(0.3)
+        pdf.roundedRect(x, y, sigW, sigH, 2.6, 2.6, 'FD')
+        // bandeau d'en-tête de la carte
+        couleur(fondHaut, 'fill'); pdf.roundedRect(x + 0.15, y + 0.15, sigW - 0.3, hautH, 2.5, 2.5, 'F')
+        pdf.rect(x + 0.15, y + hautH - 2.5, sigW - 0.3, 2.5, 'F')
+        if (tricolore) {
+            const t = (sigW - 0.3) / 3
+            couleur(C.vert, 'fill'); pdf.rect(x + 0.15, y + hautH, t, 0.7, 'F')
+            couleur(C.jaune, 'fill'); pdf.rect(x + 0.15 + t, y + hautH, t, 0.7, 'F')
+            couleur(C.rouge, 'fill'); pdf.rect(x + 0.15 + 2 * t, y + hautH, t, 0.7, 'F')
+        } else {
+            filet(y + hautH + 0.2, x + 0.15, x + sigW - 0.15, C.trait, 0.25)
+        }
+        police('bold', 6.6, C.vertFonce); pdf.setCharSpace(0.7)
+        pdf.text(etq, x + 5, y + 5.6); pdf.setCharSpace(0)
+    }
+
     if (cadreClient) {
-        etiquette('BON POUR ACCORD — CLIENT', ML, y + 2)
+        carte(ML, C.fond, 'BON POUR ACCORD — CLIENT')
+        const zX = ML + 5, zY = y + hautH + 3, zW = sigW - 10, zH = sigH - hautH - 14
         let pose = false
         if (paraphe) {
             try {
-                const zX = ML, zY = y + 5, zW = sigW, zH = sigH - 14
                 const p = pdf.getImageProperties(paraphe)
                 const r = p.width > 0 && p.height > 0 ? p.width / p.height : zW / zH
                 let w = zW, h = w / r
                 if (h > zH) { h = zH; w = h * r }
-                pdf.addImage(paraphe, paraphe.startsWith('data:image/jp') ? 'JPEG' : 'PNG', zX, zY + (zH - h) / 2, w, h, undefined, 'FAST')
+                pdf.addImage(paraphe, paraphe.startsWith('data:image/jp') ? 'JPEG' : 'PNG', zX + (zW - w) / 2, zY + (zH - h) / 2, w, h, undefined, 'FAST')
                 pose = true
             } catch { /* paraphe illisible : mention textuelle */ }
         }
-        police('italic', 6.8, C.gris)
+        const yLigne = y + sigH - 9
         if (pose || signe) {
-            filet(y + sigH - 8, ML, ML + sigW, C.trait, 0.2)
-            pdf.text(`Signé électroniquement le ${dateLisible(d.signedAt || d.paidAt || d.date)}`, ML, y + sigH - 4)
+            filet(yLigne, zX, zX + zW, C.trait, 0.25)
+            // pastille « signé »
+            const cx = zX + 1.5, cy = y + sigH - 5.1
+            couleur(C.vert, 'fill'); pdf.circle(cx, cy, 1.5, 'F')
+            couleur([255, 255, 255], 'draw'); pdf.setLineWidth(0.35)
+            pdf.line(cx - 0.7, cy, cx - 0.2, cy + 0.55); pdf.line(cx - 0.2, cy + 0.55, cx + 0.75, cy - 0.5)
+            police('normal', 6.8, C.vertFonce)
+            pdf.text(`Signé électroniquement le ${dateLisible(d.signedAt || d.paidAt || d.date)}`, zX + 4.2, y + sigH - 4.2)
         } else {
             // Pas encore signé : espace de signature réel, sans mention trompeuse.
-            couleur(C.griseClair, 'draw'); pdf.setLineWidth(0.2)
-            pdf.setLineDashPattern([0.8, 0.8], 0)
-            pdf.line(ML, y + sigH - 8, ML + sigW, y + sigH - 8)
+            couleur(C.griseClair, 'draw'); pdf.setLineWidth(0.25)
+            pdf.setLineDashPattern([0.9, 0.9], 0)
+            pdf.line(zX, yLigne, zX + zW, yLigne)
             pdf.setLineDashPattern([], 0)
-            pdf.text('Date, signature et mention « Bon pour accord »', ML, y + sigH - 4)
+            police('italic', 6.6, C.gris)
+            pdf.text('Date, signature et mention « Bon pour accord »', zX, y + sigH - 4.2)
         }
     }
 
     // Direction générale (droite) — nom à gauche du cachet, jamais superposés.
     const dX = PW - MR - sigW
-    etiquette(modele.titreSignataire.toUpperCase(), dX, y + 2)
-    const cachet = 30
+    carte(dX, C.fondVert, modele.titreSignataire.toUpperCase(), true)
+    const cachet = 29
     try {
-        pdf.addImage(STAMP_BASE64, 'PNG', PW - MR - cachet, y + 4, cachet, cachet, undefined, 'FAST')
+        pdf.addImage(STAMP_BASE64, 'PNG', dX + sigW - cachet - 3, y + hautH + (sigH - hautH - cachet) / 2 + 0.3, cachet, cachet, undefined, 'FAST')
     } catch { /* cachet indisponible */ }
-    const texteW = sigW - cachet - 4
-    police('normal', 6.8, C.gris); pdf.text('La Directrice Générale', dX, y + 11)
+    const texteW = sigW - cachet - 11
+    police('normal', 6.6, C.gris); pdf.text('La Directrice Générale', dX + 5, y + hautH + 7.5)
     pdf.setFont('times', 'bolditalic'); couleur(C.vertFonce)
-    const tSig = ajuster(modele.signataire, texteW, 12)
-    pdf.setFontSize(tSig); pdf.text(modele.signataire, dX, y + 19)
-    couleur(C.or, 'draw'); pdf.setLineWidth(0.5); pdf.line(dX, y + 21, dX + Math.min(texteW, pdf.getTextWidth(modele.signataire)), y + 21)
+    const tSig = ajuster(modele.signataire, texteW, 13)
+    pdf.setFontSize(tSig); pdf.text(modele.signataire, dX + 5, y + hautH + 16)
+    couleur(C.jaune, 'draw'); pdf.setLineWidth(0.6)
+    pdf.line(dX + 5, y + hautH + 18.2, dX + 5 + Math.min(texteW, pdf.getTextWidth(modele.signataire)), y + hautH + 18.2)
+    police('normal', 6.3, C.griseClair)
+    pdf.text('Signature et cachet de l’entreprise', dX + 5, y + sigH - 4.2)
     y += sigH + 4
 
     // ── PIED DE PAGE (toutes les pages) ──────────────────────────────────────
