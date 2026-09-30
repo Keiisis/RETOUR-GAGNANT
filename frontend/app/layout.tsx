@@ -1,52 +1,71 @@
 import type { Metadata, Viewport } from "next";
-import { Poppins, Inter, Montserrat, Playfair_Display, Fraunces, Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { TranslationProvider } from "@/lib/translation";
 import AnalyticsProvider from "@/components/analytics/AnalyticsProvider";
 import "./globals.css";
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
+/* Polices AUTO-HÉBERGÉES (app/fonts/, sous-ensemble latin, fichiers woff2
+   téléchargés depuis Google Fonts le 30/09/2026). Avant : next/font/google
+   les récupérait à CHAQUE build ; le 30/09, une réponse anormale de Google a
+   fait échouer le déploiement (« Cannot read properties of null »). Le build
+   ne dépend plus d'aucun service externe. Mêmes variables CSS qu'avant. */
+const poppins = localFont({
+  src: [
+    { path: "./fonts/poppins-normal-300.woff2", weight: "300", style: "normal" },
+    { path: "./fonts/poppins-normal-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/poppins-normal-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/poppins-normal-600.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/poppins-normal-700.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/poppins-normal-800.woff2", weight: "800", style: "normal" },
+  ],
   variable: "--font-poppins",
+  display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+const inter = localFont({
+  src: "./fonts/inter-normal-300-600.woff2",
+  weight: "300 600",
   variable: "--font-inter",
+  display: "swap",
 });
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+const montserrat = localFont({
+  src: "./fonts/montserrat-normal-400-900.woff2",
+  weight: "400 900",
   variable: "--font-montserrat",
+  display: "swap",
 });
 
 // Serif éditorial premium : grands titres (pages vitrines : nationalité…).
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const playfair = localFont({
+  src: "./fonts/playfair-normal-400-800.woff2",
+  weight: "400 800",
   variable: "--font-playfair",
+  display: "swap",
 });
 
 // Refonte accueil (Phase 1) : titres cinétiques Fraunces (serif variable
 // haute-contraste), corps Geist, chiffres Geist Mono.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
+const fraunces = localFont({
+  src: [
+    { path: "./fonts/fraunces-normal-400-900.woff2", weight: "400 900", style: "normal" },
+    { path: "./fonts/fraunces-italic-400-900.woff2", weight: "400 900", style: "italic" },
+  ],
   variable: "--font-fraunces",
+  display: "swap",
 });
-const geist = Geist({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+const geist = localFont({
+  src: "./fonts/geist-normal-300-700.woff2",
+  weight: "300 700",
   variable: "--font-geist",
+  display: "swap",
 });
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const geistMono = localFont({
+  src: "./fonts/geist-mono-normal-400-600.woff2",
+  weight: "400 600",
   variable: "--font-geist-mono",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

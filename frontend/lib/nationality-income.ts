@@ -13,6 +13,7 @@ import { generateInvoicePdf } from './invoice-pdf-generator'
 import { sendEmail } from './email'
 import { insertOnce } from './payment-integrity'
 import { fromHt, TVA_RATE } from './tax'
+import { detaillerMoyenPaiement } from '@/lib/moyen-paiement-detail'
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantbenin.bj'
 const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -56,6 +57,8 @@ export async function recordNationalityIncome(
 
         // Idempotence garantie par la BASE (index unique sur source_ref) :
         // deux chemins simultanes ne peuvent plus creer deux factures.
+        // Moyen EXACT (Kkiapay encaisse cartes ET Mobile Money)
+        const moyen = (await detaillerMoyenPaiement(p.paymentMethod, p.txId)) || p.paymentMethod || 'en ligne'
         const inserted = await insertOnce(supabase, 'documents_financiers', {
             type: 'facture',
             numero,
@@ -73,6 +76,9 @@ export async function recordNationalityIncome(
             total: ttc,
             status: 'paye',
             paid_at: new Date().toISOString(),
+            payment_provider: p.paymentMethod || null,
+            payment_method: moyen,
+            payment_transaction_id: p.txId || null,
             notes: `Facture auto-générée : Nationalité\nDossier: ${p.ref}\nMéthode: ${p.paymentMethod || 'en ligne'}${p.txId ? `\nTransaction: ${p.txId}` : ''}`,
             conditions: 'Document généré automatiquement après paiement vérifié.',
             validite: 'Acquittée',
@@ -87,7 +93,7 @@ export async function recordNationalityIncome(
                 numero, label, amount: p.amount, currency,
                 nom: p.nom || '', prenom: p.prenom || '', email: p.email,
                 phone: p.phone || '', ref: p.ref,
-                paymentMethod: p.paymentMethod || 'en ligne', txId: p.txId || '',
+                paymentMethod: moyen, txId: p.txId || '',
             })
         }
     } catch (e) {

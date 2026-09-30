@@ -16,6 +16,7 @@
 import { jsPDF } from 'jspdf'
 import { LOGO_BASE64, STAMP_BASE64 } from './logoBase64'
 import { descriptionPourPdf, elementsDescription } from '@/lib/description-lignes'
+import { libelleMoyenPaiement } from '@/lib/moyen-paiement-libelle'
 
 export interface DocumentPdfLigne {
     description: string
@@ -248,7 +249,10 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     // Titre + références (droite)
     police('bold', 22, C.nuit)
     pdf.text(titre, PW - MR, y + 7, { align: 'right' })
-    const moyen = d.paymentMethod || (/zeyow/i.test(d.notes || '') ? 'Zeyow' : /stripe/i.test(d.notes || '') ? 'Stripe' : /paypal/i.test(d.notes || '') ? 'PayPal' : /kkiapay|mobile money/i.test(d.notes || '') ? 'Mobile Money' : '')
+    // Moyen ENREGISTRÉ (payment_method, détaillé au paiement), sinon le
+    // prestataire noté « Méthode : … ». Jamais deviné (« kkiapay » ≠ Mobile
+    // Money : Kkiapay encaisse aussi les cartes bancaires).
+    const moyen = libelleMoyenPaiement(d.paymentMethod) || libelleMoyenPaiement(/M[ée]thode\s*:\s*([^\n]+)/i.exec(d.notes || '')?.[1])
     const meta: string[] = [`N° ${d.invoiceRef}`, `Date : ${dateLisible(d.date)}`]
     if (type === 'devis' && d.validite) meta.push(`Validité : ${d.validite}`)
     if (type === 'facture' && d.dueDate && !d.isPaid) meta.push(`Échéance : ${dateLisible(d.dueDate)}`)
@@ -359,10 +363,14 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     y += hMention + 3
 
     // Conditions / références : les lignes techniques internes ne sont pas pour le client.
+    // « Méthode : » répétait le moyen déjà affiché en en-tête (et en code brut).
     const notesClient = (d.notes || '').split('\n').map(l => l.trim())
-        .filter(l => l && !/auto-?g[ée]n[ée]r|^\[|^paiement en ligne via/i.test(l)).join('\n')
+        .filter(l => l && !/auto-?g[ée]n[ée]r|^\[|^paiement en ligne via|^m[ée]thode\s*:/i.test(l)).join('\n')
+    // Conditions techniques des documents automatiques : rien d'utile au client.
+    const conditions = (d.conditions || '').trim()
+    const conditionsClient = /g[ée]n[ée]r[ée] automatiquement|paiement effectu[ée] en ligne/i.test(conditions) ? '' : conditions
     const blocs = [
-        ...(d.conditions ? [['CONDITIONS', d.conditions]] : []),
+        ...(conditionsClient ? [['CONDITIONS', conditionsClient]] : []),
         ...(notesClient ? [['RÉFÉRENCES', notesClient]] : []),
     ] as [string, string][]
     for (const [etq, texte] of blocs) {
