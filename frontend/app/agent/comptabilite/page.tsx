@@ -219,6 +219,18 @@ export default function AgentComptabilitePage() {
         paiem.forEach(p => {
             if (p.document_id) map[p.document_id] = (map[p.document_id] || 0) + Number(p.montant)
         })
+        // COHÉRENCE (même règle que l'admin) : une facture au statut « payé »
+        // (paiement en ligne vérifié — nationalité, boutique, portail —,
+        // conversion de devis, facture manuelle) est SOLDÉE même sans ligne
+        // dans paiements_manuels. Avant : solde affiché + bouton « Encaisser »
+        // sur une facture déjà réglée (cas TOUCHE, FAC-2026-0007) → risque de
+        // double encaissement. Montant dans la devise du document (convention
+        // des paiements de cette page).
+        for (const d of (data.documents || []) as Array<{ id: string; type: string; status: string; total: number }>) {
+            if (d.type === 'facture' && d.status === 'paye') {
+                map[d.id] = Math.max(map[d.id] || 0, Number(d.total) || 0)
+            }
+        }
         setPaiements(map)
         setPaiementsList(paiem.map(p => ({
             id: String(p.id),

@@ -16,6 +16,7 @@ import { toXOFStrict } from '@/lib/server-rates'
 import { insertOnce } from '@/lib/payment-integrity'
 import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
 import { nextDocumentNumber } from './document-numbering'
+import { detaillerMoyenPaiement } from '@/lib/moyen-paiement-detail'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -215,7 +216,7 @@ async function sendDocPaymentEmails(doc: DocRow, provider: string, txId: string)
                     conditions: 'Paiement effectué en ligne.',
                     isManual: true,
                     statut: 'paye',
-                    paymentMethod: provider || undefined,
+                    paymentMethod: (await detaillerMoyenPaiement(provider, txId)) || provider || undefined,
                     clientSignatureDataUrl: paraphe,
                 })
             } catch (pdfErr) {
@@ -365,7 +366,8 @@ export async function confirmDocumentPayment(opts: {
     const updatePayload: Record<string, unknown> = {
         status: 'paye',
         payment_provider: provider,
-        payment_method: provider,
+        // Moyen EXACT (carte / Mobile Money…) lu chez le prestataire
+        payment_method: (await detaillerMoyenPaiement(provider, transactionId)) || provider,
         payment_transaction_id: transactionId,
         paid_at: new Date().toISOString(),
     }

@@ -12,6 +12,7 @@ import { createClient } from '@supabase/supabase-js'
 import { nextDocumentNumber } from './document-numbering'
 import { classifyProposalPayment } from './proposal-classify'
 import { TVA_RATE } from './tax'
+import { detaillerMoyenPaiement } from '@/lib/moyen-paiement-detail'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
@@ -129,7 +130,8 @@ export async function createErpInvoiceForOrder(opts: {
             client_id: compteDuPayeur,
             payment_transaction_id: transactionId || null,
             payment_provider: method || null,
-            payment_method: method || null,
+            // Moyen EXACT (carte / Mobile Money…) lu chez le prestataire
+            payment_method: (await detaillerMoyenPaiement(method, transactionId)) || method || null,
             notes: `Facture auto-générée : ${sourceLabel} (webhook)\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transactionId}`,
             conditions: 'Document généré automatiquement après paiement vérifié.',
             validite: 'Acquittée',

@@ -15,6 +15,7 @@ import { TVA_RATE } from '@/lib/tax'
 import { createTicketForRegistration } from '@/lib/event-tickets'
 import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
 import { usagesTransaction } from '@/lib/mobile-paiement'
+import { detaillerMoyenPaiement } from '@/lib/moyen-paiement-detail'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -968,7 +969,8 @@ export async function POST(request: Request) {
                         client_id: compteDuPayeur,
                         payment_transaction_id: transaction_id || null,
                         payment_provider: method || null,
-                        payment_method: method || null,
+                        // Moyen EXACT (carte / Mobile Money…) lu chez le prestataire
+                        payment_method: (await detaillerMoyenPaiement(method, transaction_id)) || method || null,
                         notes: `Facture auto-générée : ${sourceLabel}\nCommande: ${orderRef}\nMéthode: ${method}\nTransaction: ${transaction_id}`,
                         conditions: 'Document généré automatiquement après paiement vérifié.',
                         validite: 'Acquittée',
