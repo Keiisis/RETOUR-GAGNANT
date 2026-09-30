@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Bell, MagnifyingGlass as Search, Clock, ShieldCheck, Envelope as Mail, MapTrifold as Map, Archive, CircleNotch as Loader2, ShoppingCart, Warning as AlertTriangle, CheckCircle as CheckCircle2 } from '@phosphor-icons/react';
 import { T } from '@/lib/translation'
+import { titreDemande, resumeDemande } from '@/lib/resume-demande'
 
 // Notification unifiée (messages de nationalité + alertes de commandes)
 interface UnifiedNotification {
@@ -70,7 +71,7 @@ export default function AgentNotificationsPage() {
         const cmdNotifs: UnifiedNotification[] = (orderNotifs || []).map(n => ({
             id: n.id,
             title: n.title,
-            message: n.message,
+            message: n.message || n.body || '',
             type: n.type || 'order_update',
             lu: n.is_read || false,
             created_at: n.created_at,
@@ -264,16 +265,10 @@ export default function AgentNotificationsPage() {
                                                     )}
                                                 </div>
                                                 <h3 className={`text-sm font-bold truncate mb-1 ${!notif.lu ? 'text-white' : 'text-gray-400'}`}>
-                                                    {notif.source === 'messages' 
-                                                        ? `${notif.nom || ''} ${notif.prenom || ''}`
-                                                        : notif.title
-                                                    }
+                                                    {notif.source === 'messages' ? titreDemande(notif) : notif.title}
                                                 </h3>
                                                 <p className="text-xs text-nexus-text-muted line-clamp-2">
-                                                    {notif.source === 'messages'
-                                                        ? `Le profil ${notif.nom} a soumis une nouvelle demande de passeport / CI.`
-                                                        : notif.message
-                                                    }
+                                                    {notif.source === 'messages' ? resumeDemande(notif) : notif.message}
                                                 </p>
                                                 {notif.email && (
                                                     <div className="flex items-center gap-1 mt-2 text-[10px] text-gray-500 font-mono">

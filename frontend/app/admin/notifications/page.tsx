@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { supabase } from '@/lib/supabase';
+import { titreDemande, resumeDemande } from '@/lib/resume-demande'
 
 // Notification unifiée (messages de nationalité + alertes commandes)
 interface UnifiedNotification {
@@ -75,7 +76,7 @@ export default function AdminNotificationsPage() {
         const cmdNotifs: UnifiedNotification[] = (orderNotifs || []).map(n => ({
             id: n.id,
             title: n.title,
-            message: n.message,
+            message: n.message || n.body || '',
             type: n.type || 'order_update',
             lu: n.is_read || false,
             created_at: n.created_at,
@@ -275,10 +276,7 @@ export default function AdminNotificationsPage() {
                                                     "text-lg font-bold truncate",
                                                     !item.lu ? "text-white" : "text-gray-400"
                                                 )}>
-                                                    {item.source === 'messages'
-                                                        ? `Demande de Nationalité : ${item.nom} ${item.prenom}`
-                                                        : item.title
-                                                    }
+                                                    {item.source === 'messages' ? titreDemande(item) : item.title}
                                                 </h3>
                                                 {!item.lu && (
                                                     <span className={cn(
@@ -291,10 +289,7 @@ export default function AdminNotificationsPage() {
                                             </div>
                                             
                                             <p className="text-xs text-gray-500 line-clamp-2 mt-1">
-                                                {item.source === 'messages'
-                                                    ? `Le profil ${item.nom} a soumis une nouvelle demande de passeport / CI.`
-                                                    : item.message
-                                                }
+                                                {item.source === 'messages' ? resumeDemande(item) : item.message}
                                             </p>
 
                                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-2">
