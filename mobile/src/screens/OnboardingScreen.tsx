@@ -47,7 +47,7 @@ const SLIDES: Slide[] = [
         key: 'process',
         kicker: 'Votre Dossier',
         title: 'Nationalité, passeport, simplifié',
-        body: 'Démarches administratives, obtention de la nationalité béninoise, passeport : notre expertise VIP transforme le complexe en simple.',
+        body: 'Démarches administratives, obtention de la nationalité béninoise, passeport : notre expertise transforme le complexe en simple.',
         image: require('../../assets/onboarding/slide_2_process.png'),
         accent: '#00643C',
     },

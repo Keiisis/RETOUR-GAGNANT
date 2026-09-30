@@ -100,7 +100,7 @@ export default function NationaliteVipContentPage() {
                 const { error } = await supabase.from('page_sections').update({ content: c, updated_at: new Date().toISOString() }).eq('id', sectionId)
                 if (error) throw error
             } else {
-                const { data, error } = await supabase.from('page_sections').insert({ page: 'nationalite-vip', section_key: 'page_content', title: 'Contenu page Nationalité VIP', content: c, sort_order: 1, is_active: true }).select().single()
+                const { data, error } = await supabase.from('page_sections').insert({ page: 'nationalite-vip', section_key: 'page_content', title: 'Contenu page Nationalité béninoise', content: c, sort_order: 1, is_active: true }).select().single()
                 if (error) throw error
                 if (data) setSectionId(data.id)
             }
@@ -125,8 +125,8 @@ export default function NationaliteVipContentPage() {
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <Link href="/admin/nationalite" className="text-xs text-gray-500 hover:text-white flex items-center gap-1.5 mb-2 transition-colors"><ArrowLeft size={12} /> Retour aux demandes</Link>
-                        <h1 className="text-2xl font-black text-white flex items-center gap-3"><Layout size={22} className="text-emerald-400" /> Contenu : Nationalité VIP</h1>
-                        <p className="text-xs text-gray-500 mt-1">Toutes les sections de <span className="font-mono text-gray-400">/services/nationalite-vip</span> : 100% éditable.</p>
+                        <h1 className="text-2xl font-black text-white flex items-center gap-3"><Layout size={22} className="text-emerald-400" /> Contenu : Nationalité béninoise</h1>
+                        <p className="text-xs text-gray-500 mt-1">Toutes les sections de <span className="font-mono text-gray-400">/services/nationalite-beninoise</span> : 100% éditable.</p>
                     </div>
                     <SaveBtn />
                 </div>
@@ -232,7 +232,7 @@ export default function NationaliteVipContentPage() {
 
                 <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-5 flex items-start gap-4">
                     <Info size={18} className="text-blue-400 shrink-0 mt-0.5" />
-                    <div className="text-xs text-gray-400 space-y-1"><p className="font-bold text-blue-400">Page concernée</p><p>Les modifications s&apos;appliquent immédiatement sur <span className="font-mono text-white">/services/nationalite-vip</span>.</p></div>
+                    <div className="text-xs text-gray-400 space-y-1"><p className="font-bold text-blue-400">Page concernée</p><p>Les modifications s&apos;appliquent immédiatement sur <span className="font-mono text-white">/services/nationalite-beninoise</span>.</p></div>
                 </div>
 
                 <div className="flex justify-end pb-10"><SaveBtn full /></div>

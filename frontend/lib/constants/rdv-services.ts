@@ -17,7 +17,7 @@ export const RDV_SERVICES: RdvService[] = [
     { slug: 'culture', label: 'Tourisme & Culture' },
     { slug: 'construction', label: 'Suivi de Chantier' },
     { slug: 'investissement', label: 'Investissement' },
-    { slug: 'nationalite-vip', label: 'Nationalité VIP' },
+    { slug: 'nationalite-beninoise', label: 'Nationalité béninoise' },
     { slug: 'recherche-ancestrale', label: 'Recherche Ancestrale' },
     { slug: 'consultation-fa-racines', label: 'Consultation Fa & Racines' },
     { slug: 'langues-racines-presentiel', label: 'Langues & Racines (Présentiel)' },
@@ -31,6 +31,8 @@ const SLUG_TO_LABEL = new Map(RDV_SERVICES.map(s => [s.slug, s.label]))
 // Alias : slugs génériques → libellé par défaut (le client précisera dans le formulaire)
 const SLUG_ALIASES: Record<string, string> = {
     'langues-racines': 'Langues & Racines (Présentiel)',
+    // anciens liens (/rendez-vous?service=nationalite-vip)
+    'nationalite-vip': 'Nationalité béninoise',
 }
 
 /** Convertit un slug de service (depuis l'URL) en libellé du formulaire. */

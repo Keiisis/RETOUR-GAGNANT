@@ -43,7 +43,7 @@ export default function ConditionsGeneralesPage() {
                                 <li>Suivi de chantier de construction</li>
                                 <li>Conseil en investissement</li>
                                 <li>Recherche ancestrale et généalogie</li>
-                                <li>Accompagnement nationalité VIP</li>
+                                <li>Accompagnement à la nationalité béninoise</li>
                                 <li>Vente de produits artisanaux (boutique en ligne)</li>
                             </ul>
                         </div>

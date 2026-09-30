@@ -33,7 +33,7 @@ const CHIPS = [
     { icon: Zap, label: 'Réponse 48 h' },
 ]
 const PILIERS = [
-    { icon: Crown, title: 'Accompagnement VIP', desc: 'Prise en charge totale de votre dossier administratif.' },
+    { icon: Crown, title: 'Accompagnement complet', desc: 'Prise en charge totale de votre dossier administratif.' },
     { icon: UserCheck, title: 'Suivi personnalisé', desc: 'Un interlocuteur unique pour toutes vos questions.' },
     { icon: Globe, title: 'Diaspora focus', desc: "Procédure optimisée pour les résidents à l'étranger." },
     { icon: Clock, title: 'Réponse 48 h', desc: "Traitement prioritaire de vos demandes d'information." },
@@ -83,8 +83,8 @@ export default function NationaliteVipScreen({ navigation }: { navigation: any }
     const [openFaq, setOpenFaq] = useState<number | null>(null)
 
     const goForm = () => navigation.navigate('NationaliteForm')
-    const goRdv = () => navigation.navigate('Appointments', { openRequest: true, serviceLabel: 'Nationalité VIP' })
-    const onShare = () => Share.share({ message: t('Nationalité béninoise : accompagnement VIP par Retour Gagnant : https://www.retourgagnantbenin.bj/services/nationalite-vip') }).catch(() => {})
+    const goRdv = () => navigation.navigate('Appointments', { openRequest: true, serviceLabel: 'Nationalité béninoise' })
+    const onShare = () => Share.share({ message: t('Nationalité béninoise : accompagnement complet par Retour Gagnant : https://www.retourgagnantbenin.bj/services/nationalite-beninoise') }).catch(() => {})
     const toggleFaq = (i: number) => {
         LayoutAnimation.configureNext(LayoutAnimation.create(220, 'easeInEaseOut', 'opacity'))
         setOpenFaq(prev => (prev === i ? null : i))
@@ -119,7 +119,7 @@ export default function NationaliteVipScreen({ navigation }: { navigation: any }
                 <Pressable onPress={() => navigation.goBack()} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Retour')}>
                     <ChevronLeft size={24} color={C.text} strokeWidth={2.2} />
                 </Pressable>
-                <Text style={styles.headerTitle}>{t('Nationalité VIP')}</Text>
+                <Text style={styles.headerTitle}>{t('Nationalité béninoise')}</Text>
                 <Pressable onPress={onShare} style={styles.circleBtn} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Partager')}>
                     <Share2 size={19} color={C.text} strokeWidth={2} />
                 </Pressable>
@@ -132,7 +132,7 @@ export default function NationaliteVipScreen({ navigation }: { navigation: any }
                         <Star size={14} color={C.primary} strokeWidth={2.2} fill={C.primary} />
                         <Text style={styles.badgeText}>{t('Service phare : Nationalité béninoise')}</Text>
                     </View>
-                    <Text style={styles.heroTitle}>{t('Nationalité Béninoise : Accompagnement VIP')}</Text>
+                    <Text style={styles.heroTitle}>{t('Nationalité Béninoise : Accompagnement complet')}</Text>
                     <Text style={styles.heroSub}>{t('Un service exclusif dédié à la diaspora afro-descendante pour sécuriser votre lien juridique avec la terre de vos ancêtres.')}</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
                         {CHIPS.map(({ icon: Ic, label }) => (

@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  Contenu ÉDITABLE de la page /services/nationalite-vip
+//  Contenu ÉDITABLE de la page /services/nationalite-beninoise
 //  Source unique partagée par la page publique ET l'éditeur admin
 //  (/admin/nationalite/content) → aucune dérive possible.
 //  Stocké dans Supabase : page_sections(page='nationalite-vip',
@@ -65,12 +65,12 @@ export interface NationaliteVipContent {
 
 export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     hero_badge: "Service phare : Nationalité béninoise",
-    hero_title: "Nationalité Béninoise : Accompagnement VIP",
+    hero_title: "Nationalité Béninoise : Accompagnement complet",
     hero_subtitle: "Procédure personnalisée et accompagnée de A à Z pour obtenir la nationalité béninoise.",
     hero_chips: ["De A à Z", "Suivi transparent", "Diaspora afro-descendante", "Réponse 48 h"],
 
     piliers: [
-        { title: "Accompagnement VIP", desc: "Pris en charge de A à Z" },
+        { title: "Accompagnement complet", desc: "Pris en charge de A à Z" },
         { title: "Suivi personnalisé", desc: "Un conseiller dédié, transparent" },
         { title: "Pensé pour la diaspora", desc: "Tout géré à distance" },
         { title: "Réponse sous 48 h", desc: "Sans engagement" },
@@ -141,7 +141,7 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     pricing_show_calculator: false,
     pricing_options: [
         { label: "Accompagnement dossier standard", price: "150.000 FCFA" },
-        { label: "Pack VIP : suivi prioritaire complet", price: "350.000 FCFA" },
+        { label: "Formule prioritaire : suivi complet", price: "350.000 FCFA" },
         { label: "Consultation initiale", price: "Gratuit" },
     ],
 

@@ -111,6 +111,11 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
+  // « VIP » retiré côté nationalité (30/09/2026) : l'ancienne adresse, déjà
+  // partagée et indexée, redirige de façon permanente vers la nouvelle.
+  redirects: async () => [
+    { source: '/services/nationalite-vip', destination: '/services/nationalite-beninoise', permanent: true },
+  ],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
