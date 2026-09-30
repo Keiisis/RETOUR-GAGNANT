@@ -12,6 +12,7 @@
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { COMPANY } from '@/lib/company'
+import { nomPropre } from '@/lib/compta-export'
 
 // ═══════════════════════════════════════════════════════════════
 // Palette (extraite du fichier de référence)
@@ -234,9 +235,11 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
     r++
 
     // Data rows (18 slots minimum, filled with actual data)
+    // 18 lignes minimum (gabarit de saisie) ; au-delà, autant que de recettes
+    // (avant : les recettes au-delà de la 18e disparaissaient du registre).
     const DATA_ROWS = 18
     const recDataStart = r
-    for (let i = 0; i < DATA_ROWS; i++) {
+    for (let i = 0; i < Math.max(DATA_ROWS, recettes.length); i++) {
         const row = ws.getRow(r)
         const rec = recettes[i]
         // Col A: N°
@@ -252,16 +255,16 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
             row.getCell(2).numFmt = 'DD/MM/YYYY'
             row.getCell(2).fill = fill(C.lightGold)
             // N° FACTURE
-            row.getCell(3).value = rec.numero || ''
+            row.getCell(3).value = nomPropre(rec.numero)
             row.getCell(3).fill = fill(C.lightGold)
             // CLIENT
-            row.getCell(4).value = rec.client || ''
+            row.getCell(4).value = nomPropre(rec.client)
             row.getCell(4).fill = fill(C.lightGold)
             // CATEGORIE
-            row.getCell(5).value = rec.categorie || ''
+            row.getCell(5).value = nomPropre(rec.categorie)
             row.getCell(5).fill = fill(C.lightGold)
             // REF DOSSIER
-            row.getCell(6).value = rec.refDossier || ''
+            row.getCell(6).value = nomPropre(rec.refDossier)
             row.getCell(6).fill = fill(C.lightGold)
             // MONTANT HT
             row.getCell(7).value = rec.montantHT || 0
@@ -276,7 +279,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
             row.getCell(9).numFmt = numFmt
             row.getCell(9).fill = fill(C.lightBlue)
             // STATUT
-            row.getCell(10).value = rec.statut || ''
+            row.getCell(10).value = nomPropre(rec.statut)
             row.getCell(10).fill = fill(C.lightGold)
         } else {
             // Empty row : formulas still present
@@ -430,7 +433,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
 
     // Data rows dépenses
     const depDataStart = r
-    for (let i = 0; i < DATA_ROWS; i++) {
+    for (let i = 0; i < Math.max(DATA_ROWS, depenses.length); i++) {
         const row = ws.getRow(r)
         const dep = depenses[i]
 
@@ -444,13 +447,13 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
             row.getCell(2).value = dep.date
             row.getCell(2).numFmt = 'DD/MM/YYYY'
             row.getCell(2).fill = fill(C.lightGold)
-            row.getCell(3).value = dep.numero || ''
+            row.getCell(3).value = nomPropre(dep.numero)
             row.getCell(3).fill = fill(C.lightGold)
-            row.getCell(4).value = dep.fournisseur || ''
+            row.getCell(4).value = nomPropre(dep.fournisseur)
             row.getCell(4).fill = fill(C.lightGold)
-            row.getCell(5).value = dep.categorie || ''
+            row.getCell(5).value = nomPropre(dep.categorie)
             row.getCell(5).fill = fill(C.lightGold)
-            row.getCell(6).value = dep.ref || ''
+            row.getCell(6).value = nomPropre(dep.ref)
             row.getCell(6).fill = fill(C.lightGold)
             row.getCell(7).value = dep.montantHT || 0
             row.getCell(7).numFmt = numFmt
@@ -461,7 +464,7 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
             row.getCell(9).value = { formula: `G${r}+H${r}` }
             row.getCell(9).numFmt = numFmt
             row.getCell(9).fill = fill(C.lightBlue)
-            row.getCell(10).value = dep.statut || ''
+            row.getCell(10).value = nomPropre(dep.statut)
             row.getCell(10).fill = fill(C.lightGold)
         } else {
             for (let c = 2; c <= 6; c++) {
@@ -667,7 +670,8 @@ function buildMonthSheet(wb: ExcelJS.Workbook, opts: RegistreOptions) {
 // ═══════════════════════════════════════════════════════════════
 // Main export function
 // ═══════════════════════════════════════════════════════════════
-export async function exportRegistreComptable(opts: RegistreOptions) {
+/** Construit le registre et renvoie son contenu (testable hors navigateur). */
+export async function buildRegistreComptableBuffer(opts: RegistreOptions): Promise<ArrayBuffer> {
     const wb = new ExcelJS.Workbook()
     wb.creator = COMPANY.name
     wb.created = new Date()
@@ -682,6 +686,10 @@ export async function exportRegistreComptable(opts: RegistreOptions) {
 
     buildMonthSheet(wb, opts)
 
-    const buffer = await wb.xlsx.writeBuffer()
+    return await wb.xlsx.writeBuffer() as ArrayBuffer
+}
+
+export async function exportRegistreComptable(opts: RegistreOptions) {
+    const buffer = await buildRegistreComptableBuffer(opts)
     saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${opts.filename}.xlsx`)
 }

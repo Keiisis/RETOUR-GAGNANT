@@ -24,6 +24,12 @@ interface UnifiedNotification {
     source: 'messages' | 'notifications'
 }
 
+/** Alertes d'agence (user_id vide) + notifications de l'utilisateur connecté.
+ *  Jamais celles, personnelles, des clients de l'application mobile. */
+function filtreProprietaire(userId?: string | null): string {
+    return userId && /^[0-9a-f-]{36}$/i.test(userId) ? `user_id.is.null,user_id.eq.${userId}` : 'user_id.is.null'
+}
+
 export default function AdminNotificationsPage() {
     const { t } = useTranslation();
     const [notifications, setNotifications] = useState<UnifiedNotification[]>([])
@@ -53,9 +59,16 @@ export default function AdminNotificationsPage() {
         }))
 
         // 2. Alertes commandes (paniers abandonnés + nouvelles commandes)
+        // `notifications` mélange les alertes d'agence (user_id vide) et les
+        // notifications PERSONNELLES des clients (app mobile, user_id = client).
+        // Sans filtre, l'admin voyait — et pouvait marquer « lues » ou supprimer
+        // à la place du client — les notifications de l'application d'un client.
+        // Même règle que /agent/notifications.
+        const { data: { user } } = await supabase.auth.getUser()
         const { data: orderNotifs } = await supabase
             .from('notifications')
             .select('*')
+            .or(filtreProprietaire(user?.id))
             .order('created_at', { ascending: false })
             .limit(100)
 
@@ -98,17 +111,22 @@ export default function AdminNotificationsPage() {
 
     const toggleReadStatus = async (notif: UnifiedNotification) => {
         const newStatus = !notif.lu
+        // Le même filtre de propriétaire borne l'écriture : une notification
+        // personnelle d'un client ne peut être modifiée d'ici, même par id.
+        const { data: { user } } = await supabase.auth.getUser()
         const { error } = notif.source === 'messages'
             ? await supabase.from('messages').update({ lu: newStatus }).eq('id', notif.id)
-            : await supabase.from('notifications').update({ is_read: newStatus }).eq('id', notif.id)
+            : await supabase.from('notifications').update({ is_read: newStatus }).eq('id', notif.id).or(filtreProprietaire(user?.id))
         if (error) { alert(`Mise à jour impossible : ${error.message}`); return }
         setNotifications(notifications.map(n => n.id === notif.id ? { ...n, lu: newStatus } : n))
     }
 
     const deleteNotification = async (notif: UnifiedNotification) => {
         if (!window.confirm("Êtes-vous sûr de vouloir supprimer cette alerte ?")) return
-        const table = notif.source === 'messages' ? 'messages' : 'notifications'
-        const { error } = await supabase.from(table).delete().eq('id', notif.id)
+        const { data: { user } } = await supabase.auth.getUser()
+        const { error } = notif.source === 'messages'
+            ? await supabase.from('messages').delete().eq('id', notif.id)
+            : await supabase.from('notifications').delete().eq('id', notif.id).or(filtreProprietaire(user?.id))
         if (error) { alert(`Suppression impossible : ${error.message}`); return }
         setNotifications(notifications.filter(n => n.id !== notif.id))
     }

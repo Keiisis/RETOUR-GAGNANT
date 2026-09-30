@@ -344,9 +344,10 @@ export default function DevisPaiementScreen({ navigation, route }: { navigation:
         try {
             await fetchWithTimeout(`${API_BASE}/api/checkout/cancel`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                // Jeton requis : la route n'annule que la commande de son acheteur.
+                headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
                 timeoutMs: 12000,
-                body: JSON.stringify({ order_id: oid }),
+                body: JSON.stringify({ order_id: oid, customer_email: email.trim(), customer_phone: tel.trim() }),
             })
         } catch { /* la commande restera « pending », sans effet comptable */ }
     }

@@ -135,7 +135,7 @@ export default function TicketTemplateEditor({ eventId, eventTitle, onClose }: P
     }, [html, defautHtml, qrDemo])
 
     return (
-        <div className="fixed inset-0 z-[70] flex flex-col bg-[#070B10]">
+        <div className="fixed inset-0 z-[70] flex flex-col bg-[var(--panel-bg)]">
             {/* Barre haute */}
             <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
                 <div className="min-w-0 flex-1">
@@ -202,7 +202,7 @@ export default function TicketTemplateEditor({ eventId, eventTitle, onClose }: P
                                 placeholder={eventId
                                     ? 'Vide = ce type d’événement utilise le modèle global.'
                                     : 'Collez ici le HTML du billet. Placez {{QR_CODE}} dans le src d’une image.'}
-                                className="h-full w-full resize-none border-0 bg-[#0B1017] p-5 font-mono text-[12.5px] leading-relaxed text-gray-200 outline-none"
+                                className="h-full w-full resize-none border-0 bg-[var(--panel-surface-alt)] p-5 font-mono text-[12.5px] leading-relaxed text-[var(--panel-text)] outline-none"
                             />
                         </div>
 

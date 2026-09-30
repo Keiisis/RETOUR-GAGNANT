@@ -16,6 +16,15 @@
 //                                          C 521 Banque
 // Chaque écriture est équilibrée (Σ débit = Σ crédit). Montants en XOF
 // (devise de tenue) ; la devise d'origine est conservée (Montantdevise/Idevise).
+//
+// Dates : la VENTE est datée de l'émission (created_at) ; l'ENCAISSEMENT est
+// daté du paiement (date_paiement du paiement manuel ; pour une facture payée
+// en ligne sans paiement manuel : paid_at, à défaut created_at).
+// Compte auxiliaire client : code lisible et stable (« C » + 6 hex), voir
+// codeClient() — avant : un morceau d'UUID de la FACTURE (« cf023719-608 »),
+// donc un compte client différent par facture.
+
+import { codeClient, nomPropre } from '@/lib/compta-export'
 
 export interface FecDoc {
     id: string
@@ -30,6 +39,10 @@ export interface FecDoc {
     status: string
     client_nom?: string | null
     client_prenom?: string | null
+    client_id?: string | null
+    client_email?: string | null
+    paid_at?: string | null
+    payment_method?: string | null
 }
 export interface FecPaiement {
     id: string
@@ -133,7 +146,8 @@ const ymd = (d: string) => {
 }
 // FEC : séparateur décimal = virgule (convention francophone), 2 décimales
 const amt = (n: number) => (Math.round((Number(n) || 0) * 100) / 100).toFixed(2).replace('.', ',')
-const clean = (s?: string | null) => (s || '').replace(/[\t\r\n]+/g, ' ').trim()
+// Tabulations/sauts de ligne interdits (séparateurs FEC) + espaces multiples réduits
+const clean = (s?: string | null) => nomPropre((s || '').replace(/[\t\r\n]+/g, ' '))
 
 export interface BuildFecOptions {
     docs: FecDoc[]
@@ -143,10 +157,17 @@ export interface BuildFecOptions {
     toXof: (amount: number, currency?: string | null) => number
     /** Date de validation (ex. date de clôture/génération). YYYYMMDD. */
     validDate?: string
+    /** Factures PAYÉES dans la période SANS paiement manuel (paiement en ligne) :
+     *  écriture d'encaissement datée de paid_at (à défaut created_at). */
+    facturesEncaissees?: FecDoc[]
+    /** Documents de référence (hors période) pour libeller les paiements
+     *  d'une facture émise un autre mois : n° de pièce, client, code auxiliaire. */
+    docsRef?: FecDoc[]
 }
 
 export function buildFec(opts: BuildFecOptions): FecRow[] {
     const { docs, paiements, depenses, toXof } = opts
+    const facturesEncaissees = opts.facturesEncaissees || []
     const validDate = opts.validDate || ''
     const rows: FecRow[] = []
     const counters: Record<string, number> = {}
@@ -162,9 +183,11 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
     const factures = docs.filter(d => d.type === 'facture')
     const numById: Record<string, string> = {}
     const cliById: Record<string, string> = {}
-    for (const d of factures) {
+    const auxById: Record<string, string> = {}
+    for (const d of [...(opts.docsRef || []), ...facturesEncaissees, ...factures]) {
         numById[d.id] = clean(d.numero) || d.id.slice(0, 8)
         cliById[d.id] = clean(`${d.client_nom || ''} ${d.client_prenom || ''}`) || 'Client'
+        auxById[d.id] = codeClient(d)
     }
 
     // ── Journal des ventes (VT) ──
@@ -184,7 +207,7 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
         const lib = `Facture ${piece} - ${cli}`
         const devCols = cur !== 'XOF' ? { Montantdevise: amt(Number(d.total) || 0), Idevise: cur } : { Montantdevise: '', Idevise: '' }
         // D 411 Clients (TTC)
-        rows.push({ ...base(), JournalCode: 'VT', JournalLib: 'Journal des ventes', EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: d.id.slice(0, 12), CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(ttc), Credit: amt(0), ...devCols })
+        rows.push({ ...base(), JournalCode: 'VT', JournalLib: 'Journal des ventes', EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: codeClient(d), CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(ttc), Credit: amt(0), ...devCols })
         // C 706 Ventes (HT)
         rows.push({ ...base(), JournalCode: 'VT', JournalLib: 'Journal des ventes', EcritureNum: num, EcritureDate: date, CompteNum: ACC.ventes.num, CompteLib: ACC.ventes.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(ht) })
         // C 443 TVA facturée
@@ -224,7 +247,7 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
             rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.tvaFacturee.num, CompteLib: ACC.tvaFacturee.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(tva), Credit: amt(0) })
         }
         // C 411 Clients (TTC)
-        rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: d.id.slice(0, 12), CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(ttc), ...devCols })
+        rows.push({ ...base(), JournalCode: 'AV', JournalLib: 'Journal des avoirs', EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: codeClient(d), CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(ttc), ...devCols })
     }
 
     // ── Journal de trésorerie (BQ / CA) : encaissements ──
@@ -240,7 +263,24 @@ export function buildFec(opts: BuildFecOptions): FecRow[] {
         // D 521/571 Trésorerie
         rows.push({ ...base(), JournalCode: journal.code, JournalLib: journal.lib, EcritureNum: num, EcritureDate: date, CompteNum: acc.num, CompteLib: acc.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(montant), Credit: amt(0) })
         // C 411 Clients
-        rows.push({ ...base(), JournalCode: journal.code, JournalLib: journal.lib, EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: p.document_id ? p.document_id.slice(0, 12) : '', CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(montant) })
+        rows.push({ ...base(), JournalCode: journal.code, JournalLib: journal.lib, EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: p.document_id ? (auxById[p.document_id] || '') : '', CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(montant) })
+    }
+
+    // ── Encaissements en ligne (facture payée sans paiement manuel) ──
+    //    Datés du PAIEMENT (paid_at), pas de l'émission de la facture.
+    for (const d of facturesEncaissees) {
+        const cur = d.currency || 'XOF'
+        const montant = toXof(Number(d.total) || 0, cur)
+        if (montant <= 0) continue
+        const { acc, journal } = tresorerie(d.payment_method)
+        const num = nextNum(journal.code)
+        const date = ymd(d.paid_at || d.created_at)
+        const piece = clean(d.numero) || d.id.slice(0, 8)
+        const cli = clean(`${d.client_nom || ''} ${d.client_prenom || ''}`) || 'Client'
+        const lib = `Encaissement ${piece} - ${cli}`
+        const devCols = cur !== 'XOF' ? { Montantdevise: amt(Number(d.total) || 0), Idevise: cur } : { Montantdevise: '', Idevise: '' }
+        rows.push({ ...base(), JournalCode: journal.code, JournalLib: journal.lib, EcritureNum: num, EcritureDate: date, CompteNum: acc.num, CompteLib: acc.lib, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(montant), Credit: amt(0) })
+        rows.push({ ...base(), JournalCode: journal.code, JournalLib: journal.lib, EcritureNum: num, EcritureDate: date, CompteNum: ACC.clients.num, CompteLib: ACC.clients.lib, CompAuxNum: codeClient(d), CompAuxLib: cli, PieceRef: piece, PieceDate: date, EcritureLib: lib, Debit: amt(0), Credit: amt(montant), ...devCols })
     }
 
     // ── Journal des achats (AC) : dépenses ──
@@ -288,4 +328,20 @@ export function fecBalance(rows: FecRow[]): { debit: number; credit: number; bal
     const debit = rows.reduce((a, r) => a + parse(r.Debit), 0)
     const credit = rows.reduce((a, r) => a + parse(r.Credit), 0)
     return { debit: Math.round(debit * 100) / 100, credit: Math.round(credit * 100) / 100, balanced: Math.abs(debit - credit) < 0.5 }
+}
+
+/**
+ * Factures encaissées EN LIGNE sur [start, end[ : payées, SANS paiement
+ * manuel (sinon c'est le paiement manuel qui porte l'encaissement), datées
+ * de paid_at (à défaut created_at). Dédoublonnées par id.
+ */
+export function facturesPayeesEnLigne(candidats: FecDoc[], idsAvecPaiementManuel: Set<string>, start: Date, end: Date): FecDoc[] {
+    const vus = new Set<string>()
+    return candidats.filter(d => {
+        if (vus.has(d.id)) return false
+        vus.add(d.id)
+        if (d.type !== 'facture' || d.status !== 'paye' || idsAvecPaiementManuel.has(d.id)) return false
+        const t = new Date(d.paid_at || d.created_at)
+        return !isNaN(t.getTime()) && t >= start && t < end
+    })
 }

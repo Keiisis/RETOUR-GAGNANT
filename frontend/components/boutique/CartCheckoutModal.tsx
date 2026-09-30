@@ -154,6 +154,11 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     const [customerName, setCustomerName] = useState('')
     const [customerEmail, setCustomerEmail] = useState('')
     const [customerPhone, setCustomerPhone] = useState('')
+    /* Coordonnées saisies, lues par cancelOrder : /api/checkout/cancel exige
+       une preuve d'appartenance. Ref (et non state) : cancelOrder est capturé
+       par des callbacks de widgets créés à un rendu antérieur. */
+    const contactRef = useRef({ email: '', phone: '' })
+    useEffect(() => { contactRef.current = { email: customerEmail, phone: customerPhone } }, [customerEmail, customerPhone])
     const [errorMessage, setErrorMessage] = useState('')
     const [orderId, setOrderId] = useState<string | null>(null)
     const [settings, setSettings] = useState<Record<string, string>>({})
@@ -218,7 +223,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 fetch('/api/checkout/cancel', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order_id: orderId }),
+                    body: JSON.stringify({ order_id: orderId, customer_email: customerEmail, customer_phone: customerPhone }),
                 }).catch(() => { })
             }
             setStep('info')
@@ -511,7 +516,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             await fetch('/api/checkout/cancel', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: oid }),
+                body: JSON.stringify({ order_id: oid, customer_email: contactRef.current.email, customer_phone: contactRef.current.phone }),
             })
         } catch { /* fire and forget */ }
     }, [])

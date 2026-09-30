@@ -9,6 +9,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 // Formatage serveur-side des devises (pas d'import client-side)
 const CURRENCY_SYMBOLS: Record<string, string> = { XOF: 'FCFA', EUR: '€', USD: '$', GBP: '£' }
+const escapeHtml = (v: string) => v.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
 const formatAmount = (amount: number, cur: string) => {
     const symbol = CURRENCY_SYMBOLS[cur] || cur
     const formatted = Math.round(amount).toLocaleString('fr-FR')
@@ -25,11 +26,19 @@ export async function POST(req: Request) {
 
         const supabase = createClient(supabaseUrl, supabaseKey)
         const body = await req.json()
-        const { proposal_id, client_email, client_name } = body
+        /* `client_email` / `client_name` du corps sont IGNORÉS : le reçu partait
+           vers l'adresse que l'appelant choisissait. Seule l'adresse stockée sur
+           la proposition fait foi. */
+        const { proposal_id } = body
 
-        if (!proposal_id) {
+        if (!proposal_id || typeof proposal_id !== 'string' || proposal_id.length > 64) {
             return NextResponse.json({ error: 'proposal_id requis' }, { status: 400 })
         }
+
+        // Second plafond, par proposition : la même proposition ne peut être
+        // martelée depuis plusieurs IP.
+        const tropProposition = guardPublic(req, 'proposal-paid:prop', PAYMENT_ROUTE_LIMIT, `p:${proposal_id}`)
+        if (tropProposition) return tropProposition
 
         // ═══════════════════════════════════════════════════════════
         //  PREUVE DE PAIEMENT OBLIGATOIRE
@@ -57,16 +66,22 @@ export async function POST(req: Request) {
             )
         }
 
-        // Marquer la proposition comme "paid"
-        const { error } = await supabase
+        // Marquer la proposition comme "paid" — transition CONDITIONNELLE :
+        // seule la première bascule (status ≠ paid) renvoie une ligne. Les
+        // rejeux (double appel navigateur, mobile, attaquant) ne renvoient
+        // donc plus l'email de confirmation.
+        const { data: bascule, error } = await supabase
             .from('ai_client_proposals')
             .update({ status: 'paid' })
             .eq('id', proposal_id)
+            .or('status.is.null,status.neq.paid')
+            .select('id')
 
         if (error) {
             console.error('Erreur update proposal:', error)
             return NextResponse.json({ error: 'Mise à jour échouée' }, { status: 500 })
         }
+        const premierPassage = (bascule || []).length > 0
 
         // Récupérer les détails complets de la proposition
         const { data: proposal } = await supabase
@@ -103,7 +118,10 @@ export async function POST(req: Request) {
         // officiel + PDF : on évite ici le doublon et le libellé « voyage ».
         // ═══════════════════════════════════════════════════════════
         const isPaymentLink = String(proposal.notes || '').startsWith('LIEN-PAIEMENT')
-        if (client_email && proposal && !isPaymentLink) {
+        const emailStocke = String(proposal.client_email || '').trim().toLowerCase()
+        const emailValide = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(emailStocke)
+        const nomStocke = escapeHtml(String(proposal.client_name || '').trim())
+        if (premierPassage && emailValide && proposal.status === 'paid' && !isPaymentLink) {
             try {
                 const displayAmount = formatAmount(proposal.total_amount || 0, proposalCurrency)
 
@@ -111,7 +129,7 @@ export async function POST(req: Request) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        to: client_email,
+                        to: emailStocke,
  subject: `Confirmation de réservation : Voyage ${proposal.destination}`,
                         html: `
                         <div style="font-family: system-ui, sans-serif; max-width: 600px; margin: 0 auto; background: #0f141e; color: white; border-radius: 16px; overflow: hidden;">
@@ -120,8 +138,8 @@ export async function POST(req: Request) {
                                 <p style="margin: 8px 0 0; color: #0f141e; opacity: 0.8; font-size: 14px;">Votre voyage est confirmé !</p>
                             </div>
                             <div style="padding: 32px;">
-                                <h2 style="color: #F59E0B; font-size: 22px; margin-bottom: 8px;">Bonjour ${client_name || 'cher client'} </h2>
-                                <p style="color: #94a3b8; line-height: 1.8;">Nous avons bien reçu votre paiement pour votre voyage à <strong style="color: white;">${proposal.destination}</strong>.</p>
+                                <h2 style="color: #F59E0B; font-size: 22px; margin-bottom: 8px;">Bonjour ${nomStocke || 'cher client'} </h2>
+                                <p style="color: #94a3b8; line-height: 1.8;">Nous avons bien reçu votre paiement pour votre voyage à <strong style="color: white;">${escapeHtml(String(proposal.destination || ''))}</strong>.</p>
                                 <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin: 24px 0;">
                                     <p style="color: #94a3b8; margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">Montant payé</p>
                                     <p style="color: #F59E0B; font-size: 32px; font-weight: 900; margin: 0;">${displayAmount}</p>

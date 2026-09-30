@@ -11,6 +11,7 @@ import { markClientConverted } from '@/lib/classement/track'
 import { verifyMyafroToken, decodeMyafroToken } from '@/lib/nationality-token'
 import { toXOFStrict } from '@/lib/server-rates'
 import { ttcFromHt } from '@/lib/tax'
+import { usagesTransaction } from '@/lib/mobile-paiement'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // On préfère la clé Service Role côté serveur pour contourner les restrictions RLS (sécurité maximale)
@@ -74,6 +75,50 @@ async function tarifOfficielXof(): Promise<number | null> {
     const xof = await toXOFStrict(montant, devise)
     if (xof === null) return null
     return ttcFromHt(xof, 'XOF')
+}
+
+/**
+ * La transaction a-t-elle déjà servi à un AUTRE parcours ?
+ *
+ * Un même reçu Kkiapay/FedaPay ouvrait un dossier nationalité alors qu'il
+ * avait déjà payé une commande boutique, un billet, un dossier mobile, une
+ * facture ou un récap MyAfroOrigins. Règle :
+ *   · autre table (commande, billet, suivi, facture, récap)  → 409 ;
+ *   · autre fiche nationalité sous un AUTRE email             → 409 ;
+ *   · fiche nationalité du MÊME email (rejeu : auto-submit,
+ *     double envoi)                                           → réponse idempotente.
+ * Lecture en échec → 503 : on ne suppose jamais la transaction libre.
+ * Renvoie `null` si la transaction est libre.
+ */
+async function controleUnicite(tx: string, email: string): Promise<NextResponse | null> {
+    const { usages, erreur } = await usagesTransaction(supabase, tx)
+    if (erreur) {
+        console.error(`[nationality] contrôle d'unicité impossible (tx ${tx}) : ${erreur}`)
+        return NextResponse.json({ error: 'Vérification du paiement indisponible. Réessayez dans un instant.' }, { status: 503 })
+    }
+    const e = String(email || '').trim().toLowerCase()
+    const ailleurs = usages.find(u =>
+        u.table !== 'nationality_applications' || String(u.email || '').trim().toLowerCase() !== e)
+    if (ailleurs) {
+        console.error(`[nationality] transaction ${tx} déjà utilisée (${ailleurs.table} ${ailleurs.id}) : dossier refusé`)
+        return NextResponse.json(
+            { error: 'Cette transaction a déjà été utilisée pour un autre paiement. Contactez-nous avec votre reçu.' },
+            { status: 409 },
+        )
+    }
+    const meme = usages.find(u => u.table === 'nationality_applications')
+    if (meme) {
+        const { data } = await supabase.from('nationality_applications')
+            .select('application_ref').eq('id', meme.id).maybeSingle()
+        if (data?.application_ref) {
+            return NextResponse.json({
+                success: true,
+                reference: data.application_ref,
+                message: 'Demande déjà enregistrée pour ce paiement.',
+            })
+        }
+    }
+    return null
 }
 
 const apiKey = getGroqApiKey()
@@ -309,10 +354,19 @@ export async function POST(request: NextRequest) {
             // Idempotence : si une demande existe déjà avec ce payment_ref…
             const { data: existing } = await supabase
                 .from('nationality_applications')
-                .select('id, application_ref, last_step_completed')
+                .select('id, application_ref, last_step_completed, email')
                 .eq('payment_ref', body.payment_ref)
                 .maybeSingle()
             if (existing?.application_ref) {
+                const memeEmail = String(existing.email || '').trim().toLowerCase() === String(email || '').trim().toLowerCase()
+                if (existing.last_step_completed !== 0 && !memeEmail) {
+                    // Reçu d'un AUTRE client : ni dossier, ni sa référence.
+                    console.error(`[nationality] payment_ref ${body.payment_ref} déjà utilisé par un autre email : refusé`)
+                    return NextResponse.json(
+                        { error: 'Cette transaction a déjà été utilisée pour un autre paiement. Contactez-nous avec votre reçu.' },
+                        { status: 409 },
+                    )
+                }
                 if (existing.last_step_completed === 0) {
                     // …fiche minimale créée par le webhook : on la COMPLÈTE avec les
                     // données du formulaire (paiement déjà vérifié par le webhook).
@@ -329,6 +383,12 @@ export async function POST(request: NextRequest) {
 
             // Vérification Kkiapay (inutile si le webhook a déjà validé la transaction)
             if (!stubToComplete) {
+                // Unicité AVANT l'appel Kkiapay : un reçu déjà consommé ailleurs
+                // (commande, billet, dossier, facture, récap) ne rouvre rien.
+                if (!invitation) {
+                    const refus = await controleUnicite(String(body.payment_ref), email)
+                    if (refus) return refus
+                }
                 const verify = await verifyKkiapayTransaction(body.payment_ref)
                 if (!verify.ok) {
                     console.warn(`[nationality] Paiement Kkiapay non confirmé : ${verify.status}`)
@@ -367,6 +427,16 @@ export async function POST(request: NextRequest) {
                     )
                 }
             }
+        }
+
+        // Autres moyens portant une vraie référence de transaction (FedaPay,
+        // Zeyow) : même contrôle d'unicité. Exclus : code d'invitation et
+        // MyAfroOrigins prépayé (référence de facture / « manuel », partagée
+        // légitimement et réécrite plus bas).
+        if (body.payment_ref && body.payment_method !== 'kkiapay' && !invitation
+            && ['fedapay', 'zeyow'].includes(String(body.payment_method))) {
+            const refus = await controleUnicite(String(body.payment_ref), email)
+            if (refus) return refus
         }
 
         const ref = `RG-NAT-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`

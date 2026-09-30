@@ -7,6 +7,7 @@ import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
 import { trackClient } from '@/lib/classement/track';
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { getMobileUserId } from '@/lib/mobile-auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -126,24 +127,44 @@ function mapContactMethod(contactMethod: string): 'presentiel' | 'visio' | 'tele
 }
 
 export async function POST(req: NextRequest) {
-    const trop = guardPublic(req, 'rendez-vous', PUBLIC_FORM_LIMIT)
+    /* Deux parcours : visiteur du site (formulaire public) ou client CONNECTÉ
+       de l'app mobile (jeton). Avant le 29/09/2026, l'app écrivait directement
+       dans rdv_requests : sans contrôle de créneau, sans notification des panels
+       ni emails d'équipe fiables. Elle passe désormais par ici. */
+    const clientId = await getMobileUserId(req)
+    const trop = guardPublic(req, 'rendez-vous', PUBLIC_FORM_LIMIT, clientId ? `rdv:${clientId}` : undefined)
     if (trop) return trop
 
     try {
         const body = await req.json();
-        const { nom, prenom, email, telephone, service, message, date, timeSlot, heure, contactMethod } = body;
+        const { service, message, date, timeSlot, heure, contactMethod } = body;
+        let { nom, prenom, email, telephone } = body;
 
-        if (!nom || !email) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // Client connecté : identité lue sur SON profil, jamais dans le corps.
+        if (clientId) {
+            const { data: prof } = await supabase.from('client_profiles')
+                .select('email, prenom, nom, phone').eq('id', clientId).maybeSingle();
+            if (!prof?.email) {
+                return NextResponse.json({ error: 'Complétez votre profil (email) avant de prendre rendez-vous.' }, { status: 400 });
+            }
+            email = String(prof.email).trim().toLowerCase();
+            nom = prof.nom || '';
+            prenom = prof.prenom || '';
+            telephone = prof.phone || telephone || '';
+        }
+
+        if ((!nom && !clientId) || !email) {
             return NextResponse.json({ error: 'Nom et email sont requis.' }, { status: 400 });
         }
 
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        const clientName = `${prenom || ''} ${nom}`.trim();
+        const clientName = `${prenom || ''} ${nom || ''}`.trim() || email;
 
-        // Encoder les infos visiteur dans notes (pas de compte, pas de client_id)
-        // Format structuré pour que l'agenda agent puisse parser le nom/téléphone
-        const notesParts = [`__VISITOR__: ${clientName} | Tel: ${telephone || 'N/A'}`];
-        if (message?.trim()) notesParts.push(`---\nMessage: ${message.trim()}`);
+        // Visiteur : infos encodées dans notes (pas de compte, pas de client_id),
+        // format structuré lu par l'agenda agent. Client connecté : son message seul.
+        const notesParts = clientId ? [] : [`__VISITOR__: ${clientName} | Tel: ${telephone || 'N/A'}`];
+        if (message?.trim()) notesParts.push(clientId ? message.trim() : `---\nMessage: ${message.trim()}`);
         const notesContent = notesParts.join('\n');
 
         // ── CONTRÔLE DE DISPONIBILITÉ (anti-conflit) ──────────────────
@@ -168,7 +189,7 @@ export async function POST(req: NextRequest) {
         const { data: insertedRdv, error: rdvError } = await supabase
             .from('rdv_requests')
             .insert([{
-                client_id: null,
+                client_id: clientId || null,
                 client_email: email,
                 date: date || null,
                 heure: heureDemandee,
@@ -182,6 +203,17 @@ export async function POST(req: NextRequest) {
 
         if (rdvError) throw rdvError;
         const rdvId = insertedRdv?.id || '';
+
+        // Notification dans l'app du client connecté (cloche mobile).
+        if (clientId) {
+            void supabase.from('notifications').insert({
+                user_id: clientId,
+                title: 'Demande de RDV envoyée',
+                body: 'Notre équipe vous contactera sous 24h pour confirmer votre rendez-vous.',
+                type: 'appointment',
+                is_read: false,
+            }).then(({ error: nErr }) => { if (nErr) console.log('[RDV] notification client échouée :', nErr.message) });
+        }
 
         // Notification in-app pour les panels Admin + Agent (fire-and-forget)
         void supabase.from('messages').insert([{
@@ -244,7 +276,7 @@ export async function POST(req: NextRequest) {
             await trackClient({ email, full_name: clientName, phone: telephone, serviceLabel: service, source: 'rdv' });
         })();
 
-        return NextResponse.json({ success: true, message: 'Demande de rendez-vous envoyée !' });
+        return NextResponse.json({ success: true, id: rdvId, message: 'Demande de rendez-vous envoyée !' });
     } catch (error) {
         console.error('[RDV POST]', error);
         return NextResponse.json({ error: 'Erreur lors de la soumission.' }, { status: 500 });

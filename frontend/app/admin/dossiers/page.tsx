@@ -9,6 +9,7 @@ import { exportToExcel } from '@/lib/exportExcel'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 import { DOSSIER_STATUTS, DOSSIER_VERS_MOBILE, DOSSIER_PROGRESSION, DOSSIER_STATUTS_ACTIFS, statutDossier, normaliserStatutDossier } from '@/lib/constants/statuts'
+import { ouvrirPiece } from '@/lib/lien-piece'
 
 // Statuts : référence unique lib/constants/statuts. Avant, liste locale : les
 // valeurs historiques (`en_cours` écrit par la synchro boutique…) n'avaient ni
@@ -705,15 +706,15 @@ export default function AdminDossiersPage() {
                                                                     </div>
                                                                     <div className="flex items-center gap-1.5 shrink-0">
                                                                         {doc.file_url && (
-                                                                            <a 
-                                                                                href={doc.file_url}
-                                                                                target="_blank"
-                                                                                rel="noreferrer"
+                                                                            <button
+                                                                                type="button"
+                                                                                // Lien signé frais à chaque clic : l'URL enregistrée par le mobile expire après 1 h.
+                                                                                onClick={() => ouvrirPiece(doc.file_url)}
                                                                                 className="p-1.5 bg-[#008751]/10 text-[#008751] hover:bg-[#008751]/20 rounded transition-colors"
                                                                                 title={t("Télécharger/Voir")}
                                                                             >
                                                                                 <Download size={14} />
-                                                                            </a>
+                                                                            </button>
                                                                         )}
                                                                         <button
                                                                             onClick={() => handleDeleteDossierDoc(doc)}

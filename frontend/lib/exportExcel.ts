@@ -1,8 +1,10 @@
 import * as ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
 import { companyHeaderLines } from '@/lib/company'
+import { nomPropre, telephoneTexte, numFmtDevise } from '@/lib/compta-export'
 
-type CellType = 'text' | 'currency' | 'number' | 'date' | 'percent' | 'status'
+/** 'phone' : texte forcé (numFmt '@'), « + » international restauré. */
+type CellType = 'text' | 'currency' | 'number' | 'date' | 'percent' | 'status' | 'phone'
 
 interface ColumnConfig {
   header: string
@@ -11,9 +13,12 @@ interface ColumnConfig {
   type?: CellType
   totalFormula?: 'sum' | 'count' | 'avg'
   group?: string
+  /** Montant en devise d'ORIGINE : clé de la ligne portant le code devise
+   *  (XOF/EUR/USD…). La cellule reste un NOMBRE, au format de sa devise. */
+  currencyKey?: string
 }
 
-interface SheetConfig {
+export interface SheetConfig {
   sheetName: string
   columns: ColumnConfig[]
   data: Record<string, unknown>[]
@@ -43,7 +48,7 @@ interface DashboardKpi {
   tone?: 'good' | 'warn' | 'bad' | 'neutral' | 'accent'
 }
 
-interface MultiSheetOptions {
+export interface MultiSheetOptions {
   filename: string
   sheets: SheetConfig[]
   coverTitle?: string
@@ -89,6 +94,8 @@ function applyNumFmt(cell: ExcelJS.Cell, type?: CellType) {
   } else if (type === 'percent') {
     cell.numFmt = '0.0%'
     cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  } else if (type === 'phone') {
+    cell.numFmt = '@'
   }
 }
 
@@ -240,7 +247,12 @@ function buildSheet(worksheet: ExcelJS.Worksheet, cfg: SheetConfig) {
     const rowColor = index % 2 === 0 ? 'FFFFFFFF' : COLOR_ROW_ALT
     columns.forEach((col, i) => {
       const cell = dataRow.getCell(i + 1)
-      cell.value = row[col.key] as ExcelJS.CellValue
+      const brut = row[col.key]
+      // Texte : espaces multiples réduits (« ORLAY  Gilles ») ; téléphone :
+      // TOUJOURS du texte, jamais un nombre (le « + » disparaissait).
+      cell.value = (col.type === 'phone'
+        ? telephoneTexte(brut)
+        : typeof brut === 'string' ? nomPropre(brut) : brut) as ExcelJS.CellValue
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowColor } }
       cell.font = { name: 'Arial', size: 10, color: { argb: COLOR_TEXT } }
       cell.border = {
@@ -251,6 +263,10 @@ function buildSheet(worksheet: ExcelJS.Worksheet, cfg: SheetConfig) {
       }
       cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1, wrapText: true }
       applyNumFmt(cell, col.type)
+      if (col.currencyKey && typeof cell.value === 'number') {
+        cell.numFmt = numFmtDevise(String(row[col.currencyKey] ?? 'XOF'))
+        cell.alignment = { horizontal: 'right', vertical: 'middle', indent: 1 }
+      }
       if (col.type === 'currency' || col.type === 'number') {
         const num = Number(cell.value)
         if (!isNaN(num) && num < 0) {
@@ -276,6 +292,18 @@ function buildSheet(worksheet: ExcelJS.Worksheet, cfg: SheetConfig) {
     })
     currentRow++
   })
+  // Feuille sans donnée : une ligne explicite plutôt qu'un tableau vide
+  // (le comptable ne sait pas si l'export a échoué ou s'il n'y a rien).
+  if (data.length === 0) {
+    const r = worksheet.getRow(currentRow)
+    r.height = 22
+    if (columns.length > 1) worksheet.mergeCells(currentRow, 1, currentRow, columns.length)
+    const c = r.getCell(1)
+    c.value = 'Aucune opération sur la période'
+    c.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF8A8F98' } }
+    c.alignment = { horizontal: 'center', vertical: 'middle' }
+    currentRow++
+  }
   const dataEndRow = currentRow - 1
 
   // Data bars visuels sur les colonnes currency avec total (facilite lecture par le comptable)
@@ -577,7 +605,8 @@ function addDashboardSheet(wb: ExcelJS.Workbook, dash: NonNullable<MultiSheetOpt
   addTricoloreBand(ws, r, 'J')
 }
 
-export async function exportToExcelMultiSheet({ filename, sheets, coverTitle, coverSubtitle, coverPeriod, dashboard }: MultiSheetOptions) {
+/** Construit le classeur et renvoie son contenu (testable hors navigateur). */
+export async function buildExcelMultiSheetBuffer({ sheets, coverTitle, coverSubtitle, coverPeriod, dashboard }: Omit<MultiSheetOptions, 'filename'>): Promise<ArrayBuffer> {
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'Retour Gagnant Bénin : Comptabilité'
   workbook.lastModifiedBy = 'Retour Gagnant Bénin'
@@ -596,7 +625,11 @@ export async function exportToExcelMultiSheet({ filename, sheets, coverTitle, co
     buildSheet(ws, sheet)
   })
 
-  const buffer = await workbook.xlsx.writeBuffer()
+  return await workbook.xlsx.writeBuffer() as ArrayBuffer
+}
+
+export async function exportToExcelMultiSheet({ filename, ...opts }: MultiSheetOptions) {
+  const buffer = await buildExcelMultiSheetBuffer(opts)
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
   saveAs(blob, `${filename}.xlsx`)
 }

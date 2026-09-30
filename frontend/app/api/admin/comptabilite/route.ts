@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
                 id, type, numero,
                 client_nom, client_prenom, client_email, client_phone, client_adresse,
                 items, sous_total, total_tva, remise, notes, conditions,
-                total, status, created_at, agent_id, currency,
+                total, status, created_at, paid_at, agent_id, currency,
                 signature_url, signed_at
             `)
             .order('created_at', { ascending: false })
