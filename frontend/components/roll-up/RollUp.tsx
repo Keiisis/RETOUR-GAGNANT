@@ -84,7 +84,7 @@ const SERVICES = [
     { icon: Hammer,      title: 'SUIVI DE CHANTIER' },
     { icon: TrendingUp,  title: 'INVESTISSEMENT' },
     { icon: Users,       title: 'RECHERCHE ANCESTRALE' },
-    { icon: BadgeCheck,  title: 'NATIONALITÉ VIP' },
+    { icon: BadgeCheck,  title: 'NATIONALITÉ BÉNINOISE' },
 ]
 const SERVICE_EXTRA = { icon: LayoutGrid, title: 'AUTRES SERVICES' }
 

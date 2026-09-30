@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { CaretLeft as ChevronLeft, Sparkle as Sparkles, Globe, Target, Calendar, Wallet, Medal as Award, CircleNotch as Loader2, ArrowRight } from '@phosphor-icons/react';
 import Link from 'next/link'
 import ConsentCheckbox from '@/components/shared/ConsentCheckbox'
+import { lienService } from '@/lib/constants/service-urls'
 
 interface OracleResult {
     service: string
@@ -334,7 +335,7 @@ export default function SimulateurPage() {
                                 {/* CTA Buttons */}
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
                                     <Link
-                                        href={`/services/${result.slug}`}
+                                        href={lienService(result.slug)}
                                         className="flex-1 py-4 px-6 rounded-2xl bg-[#008751] text-white font-black uppercase tracking-widest text-[12px] hover:bg-[#006a41] transition-all flex items-center justify-center gap-2"
                                     >
                                         Découvrir ce service

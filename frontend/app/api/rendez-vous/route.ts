@@ -42,7 +42,7 @@ const SERVICE_KNOWLEDGE: { match: string[]; brief: string }[] = [
     },
     {
         match: ['nationalité', 'nationalite', 'vip', 'citoyenneté', 'citoyennete'],
-        brief: "Nationalité VIP (afro-descendants) : accompagnement à l'obtention de la nationalité béninoise. Pièces souvent demandées : actes de naissance (et ascendants si possible), pièce d'identité, justificatifs de filiation/afro-descendance. Le test d'éligibilité gratuit (« L'Oracle ») permet une première analyse.",
+        brief: "Nationalité béninoise (afro-descendants) : accompagnement à l'obtention de la nationalité béninoise. Pièces souvent demandées : actes de naissance (et ascendants si possible), pièce d'identité, justificatifs de filiation/afro-descendance. Le test d'éligibilité gratuit (« L'Oracle ») permet une première analyse.",
     },
     {
         match: ['ancestral', 'ancêtre', 'ancetre', 'généalogie', 'genealogie', 'recherche'],

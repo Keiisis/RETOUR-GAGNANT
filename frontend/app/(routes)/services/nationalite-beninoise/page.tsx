@@ -57,7 +57,7 @@ export default function NationaliteVipPage() {
                         <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
                             <Link href="/" className="hover:text-[#008751]"><T>Accueil</T></Link><ChevronRight size={13} />
                             <Link href="/services" className="hover:text-[#008751]"><T>Services</T></Link><ChevronRight size={13} />
-                            <span className="text-slate-600 font-medium"><T>Nationalité VIP</T></span>
+                            <span className="text-slate-600 font-medium"><T>Nationalité béninoise</T></span>
                         </nav>
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FDF6D8] text-[#7a5c00] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Crown size={13} weight="fill" /> {t(c.hero_badge)}</div>
                         <h1 className="font-display text-4xl md:text-[3.6rem] font-bold leading-[1.04] tracking-[-0.02em] max-w-3xl">
@@ -66,7 +66,7 @@ export default function NationaliteVipPage() {
                         <p className="mt-5 text-[17px] text-slate-600 max-w-2xl leading-relaxed">{t(c.hero_subtitle)}</p>
                         <div className="mt-7 flex flex-wrap gap-3">
                             <Link href="/nationalite" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-all hover:shadow-[0_16px_38px_-12px_rgba(0,135,81,0.75)]"><Send size={18} /> {t(c.cta1_button_text)}</Link>
-                            <Link href="/rendez-vous?service=nationalite-vip" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><Calendar size={18} className="text-[#008751]" /> {t(c.cta2_button_text)}</Link>
+                            <Link href="/rendez-vous?service=nationalite-beninoise" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><Calendar size={18} className="text-[#008751]" /> {t(c.cta2_button_text)}</Link>
                         </div>
                         <div className="mt-9 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
                             {c.hero_chips.map((label, i) => {
@@ -83,7 +83,7 @@ export default function NationaliteVipPage() {
                             transition={reduce ? undefined : { duration: 5.5, ease: 'easeInOut', repeat: Infinity }}
                             className="relative h-56 w-56 md:h-72 md:w-72"
                         >
-                            <Image src="/assets/icones/Nationalité Béninoise.png" alt="Nationalité Béninoise" fill sizes="288px" className="object-contain drop-shadow-[0_24px_45px_rgba(0,0,0,0.25)]" priority />
+                            <Image src="/assets/icones/icone_Nationalite_Beninoise.png" alt="Nationalité Béninoise" fill sizes="288px" className="object-contain drop-shadow-[0_24px_45px_rgba(0,0,0,0.25)]" priority />
                         </motion.div>
                     </div>
                 </div>
@@ -231,7 +231,7 @@ export default function NationaliteVipPage() {
                             <div className="w-11 h-11 rounded-2xl bg-[#FDF6D8] text-[#7a5c00] flex items-center justify-center mb-4"><Calendar size={20} /></div>
                             <h3 className="font-display text-2xl font-bold text-slate-900">{t(c.cta2_title)}</h3>
                             <p className="text-slate-600 mt-2">{t(c.cta2_description)}</p>
-                            <Link href="/rendez-vous?service=nationalite-vip" className="mt-5 inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors">{t(c.cta2_button_text)} <ChevronRight size={17} /></Link>
+                            <Link href="/rendez-vous?service=nationalite-beninoise" className="mt-5 inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors">{t(c.cta2_button_text)} <ChevronRight size={17} /></Link>
                             <p className="text-xs text-slate-400 mt-3">{t(c.cta2_note)}</p>
                         </div>
                     </div>

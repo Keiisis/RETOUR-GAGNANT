@@ -187,7 +187,7 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         ],
     },
     'nationalite-vip': {
-        title: 'Nationalité VIP',
+        title: 'Nationalité béninoise',
         subtitle: 'Obtenir la nationalité béninoise pour la diaspora afro-descendante',
         description: "Accompagnement personnalisé pour les membres de la diaspora souhaitant obtenir la nationalité béninoise. Suivi de dossier, coordination avec les autorités compétentes et prise en charge prioritaire.",
         features: [
@@ -195,7 +195,7 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
             'Liaison avec le Ministère de la Justice',
             'Suivi administratif pas à pas',
             "Accompagnement pour l'apostille et traductions certifiées",
-            'Pack VIP : suivi prioritaire avec référent dédié',
+            'Formule prioritaire : suivi avec référent dédié',
         ],
         price: 'À partir de 150 000 FCFA',
         color: '#FCD116',
@@ -203,7 +203,7 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
         image_url: '',
         pricing_options: [
             { label: 'Accompagnement dossier standard', price: '150 000 FCFA' },
-            { label: 'Pack VIP : suivi prioritaire', price: '350 000 FCFA' },
+            { label: 'Formule prioritaire : suivi complet', price: '350 000 FCFA' },
             { label: 'Consultation initiale', price: 'Gratuit' },
         ],
     },

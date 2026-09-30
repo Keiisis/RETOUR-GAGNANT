@@ -24,7 +24,7 @@ export default function FAQPage() {
         },
         {
             q: "Puis-je obtenir la nationalité béninoise en tant qu'afro-descendant ?",
-            a: "Oui, le Bénin offre des procédures facilitées pour les afro-descendants. Notre Pack VIP inclut la constitution du dossier, la liaison avec le Ministère de la Justice et un suivi prioritaire avec référent dédié."
+            a: "Oui, le Bénin offre des procédures facilitées pour les afro-descendants. Notre accompagnement inclut la constitution du dossier, la liaison avec le Ministère de la Justice et un suivi prioritaire avec référent dédié."
         },
         {
             q: "Comment se déroule un accompagnement immobilier ?",

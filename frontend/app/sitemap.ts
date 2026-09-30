@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Service detail pages
     const servicesSlugs = [
         'passeport', 'logement', 'business', 'culture',
-        'construction', 'investissement', 'nationalite-vip',
+        'construction', 'investissement', 'nationalite-beninoise',
         'recherche-ancestrale', 'autres',
     ]
     const servicePages: MetadataRoute.Sitemap = servicesSlugs.map(slug => ({

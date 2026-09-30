@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { ArrowUpRight, Phone, Envelope as Mail, MapPin, Globe, CheckCircle as CheckCircle2, CaretRight as ChevronRight, Translate as Languages } from '@phosphor-icons/react';
 import { useTranslation } from '@/lib/translation/useTranslation'
 import { SUPPORTED_LANGUAGES } from '@/lib/translation/constants'
+import { lienService } from '@/lib/constants/service-urls'
 
 // ---  Selecteur de Langue Mobile-First (Dynamic Island Style) ---
 const MinimalLanguageSelector = () => {
@@ -164,7 +165,7 @@ export default function PortfolioImmersivePage() {
         { id: '04', slug: 'culture', title: t("Tourisme & Culture"), desc: t("Circuits, patrimoine, séjours"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
         { id: '05', slug: 'construction', title: t("Suivi de Chantier"), desc: t("Maîtrise d'ouvrage, coordination"), bg: "bg-[#E8112D]", text: "text-white", iconBg: "bg-white/20" },
         { id: '06', slug: 'investissement', title: t("Investissement"), desc: t("Opportunités, partenariats locaux"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
-        { id: '07', slug: 'nationalite-vip', title: t("Nationalité VIP"), desc: t("Reconnaissance prioritaire"), bg: "bg-[#008751]", text: "text-white", iconBg: "bg-white/20" },
+        { id: '07', slug: 'nationalite-vip', title: t("Nationalité béninoise"), desc: t("Reconnaissance prioritaire"), bg: "bg-[#008751]", text: "text-white", iconBg: "bg-white/20" },
         { id: '08', slug: 'recherche-ancestrale', title: t("Recherche Ancestrale"), desc: t("Plan de composition de Famille, archives d'esclavage"), bg: "bg-[#FCD116]", text: "text-gray-900", iconBg: "bg-white/40" },
         { id: '09', slug: 'autres', title: t("Autres Services"), desc: t("Transport, santé, scolarité"), bg: "bg-white", text: "text-gray-900", iconBg: "bg-[#008751]/10 text-[#008751]" },
     ]
@@ -382,7 +383,7 @@ export default function PortfolioImmersivePage() {
                         {services.map((service, index) => (
                             <motion.a
                                 key={index}
-                                href={`/services/${service.slug}`}
+                                href={lienService(service.slug)}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.5, delay: 0.8 + (index * 0.1) }}

@@ -81,7 +81,7 @@ const PAYMENT_STATUS: Record<string, { label: string; color: string }> = {
 }
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
-    'nationalite': 'Nationalité VIP',
+    'nationalite': 'Nationalité béninoise',
     'recherche-ancestrale': 'Recherche Ancestrale',
     'transport': 'Transport & Logistique',
     'sante': 'Santé',
@@ -102,7 +102,7 @@ const SERVICE_TYPE_COLOR: Record<string, string> = {
 const FEATURED_SERVICES = [
     {
         id: 'nationalite',
-        title: 'Nationalité VIP',
+        title: 'Nationalité béninoise',
         description: 'Récupérez votre nationalité béninoise. Service complet de A à Z avec accompagnement personnalisé.',
         icon: Award,
         color: 'from-amber-500 to-orange-600',
@@ -463,7 +463,7 @@ export default function ClientServicesPage() {
                                         <div>
                                             <div className="flex items-center gap-2 mb-1">
                                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-amber-400 bg-amber-500/10 border border-amber-500/20">
-                                                    Nationalité VIP
+                                                    Nationalité béninoise
                                                 </span>
                                                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${s.bg} ${s.color}`}>
                                                     <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${s.dot}`} />
@@ -607,7 +607,7 @@ export default function ClientServicesPage() {
                                                             </button>
                                                         </div>
                                                     ) : isNat ? (
-                                                        /* Nationalité VIP → redirige vers formulaire externe */
+                                                        /* Nationalité béninoise → redirige vers formulaire externe */
                                                         <Link href={withBack(svc.href, clientEmail ? { email: clientEmail } : {})}
                                                             className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-2 rounded-xl bg-gradient-to-r ${svc.color} text-white transition-all hover:opacity-90 ${svc.glow}`}>
                                                             {svc.ctaLabel}
@@ -752,7 +752,7 @@ export default function ClientServicesPage() {
                 )}
             </AnimatePresence>
 
-            {/* Drawer commande de service (in-panel, pour tout sauf Nationalité VIP) */}
+            {/* Drawer commande de service (in-panel, pour tout sauf Nationalité béninoise) */}
             <ServiceOrderDrawer
                 service={drawerService}
                 onClose={() => setDrawerService(null)}

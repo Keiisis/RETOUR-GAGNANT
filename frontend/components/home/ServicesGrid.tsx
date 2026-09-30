@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { motion, useReducedMotion, type Variants } from "framer-motion"
 import { ArrowUpRight, CircleNotch } from "@phosphor-icons/react"
 import { useTranslation, T } from "@/lib/translation"
+import { lienService } from '@/lib/constants/service-urls'
 
 interface ServiceItem {
     id: string | number
@@ -23,7 +24,7 @@ const IMG_BY_SLUG: Record<string, string> = {
     culture: '/assets/icones/icone_Guide_culturel.png',
     construction: '/assets/icones/icone_Construction.png',
     investissement: '/assets/icones/icone_Investissement.png',
-    'nationalite-vip': '/assets/icones/Nationalité Béninoise.png',
+    'nationalite-vip': '/assets/icones/icone_Nationalite_Beninoise.png',
     'recherche-ancestrale': '/assets/icones/Recherche Ancestrale.png',
     'consultation-fa-racines': '/assets/icones/icone_Consultation_Fa_Racines.png',
     'langues-racines': '/assets/icones/icone_Langues_Racines.png',
@@ -34,7 +35,7 @@ const IMG_BY_SLUG: Record<string, string> = {
 
 // Liste de repli COMPLÈTE (affichée si l'API `services` est vide).
 const FALLBACK_SERVICES: ServiceItem[] = [
-    { id: 'f-7', slug: 'nationalite-vip', title: 'Nationalité VIP', description: "Obtention de la nationalité béninoise : dossier complet monté par nos experts, suivi prioritaire et accompagnement de bout en bout.", imageUrl: IMG_BY_SLUG['nationalite-vip'] },
+    { id: 'f-7', slug: 'nationalite-vip', title: 'Nationalité béninoise', description: "Obtention de la nationalité béninoise : dossier complet monté par nos experts, suivi prioritaire et accompagnement de bout en bout.", imageUrl: IMG_BY_SLUG['nationalite-vip'] },
     { id: 'f-1', slug: 'passeport', title: 'Passeport & Documents', description: "Passeport, acte de naissance, légalisation et apostille : vos démarches officielles prises en charge de bout en bout.", imageUrl: IMG_BY_SLUG.passeport },
     { id: 'f-2', slug: 'logement', title: 'Acheter ou Louer', description: "Acquisition, location longue durée et sécurisation foncière de vos biens au Bénin.", imageUrl: IMG_BY_SLUG.logement },
     { id: 'f-3', slug: 'business', title: "Création d'Entreprise", description: "Immatriculation RCCM, compte professionnel et formalités de création.", imageUrl: IMG_BY_SLUG.business },
@@ -110,7 +111,7 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
         )
     }
 
-    // Le service phare (nationalité VIP) ouvre la grille ; le reste suit.
+    // Le service phare (nationalité béninoise) ouvre la grille ; le reste suit.
     const featured = list.find((s) => s.slug === featuredSlug)
     const ordered = featured ? [featured, ...list.filter((s) => s.id !== featured.id)] : list
     const shown = limit ? ordered.slice(0, limit) : ordered
@@ -126,7 +127,7 @@ export default function ServicesGrid({ featuredSlug = 'nationalite-vip', limit }
             {shown.map((service, i) => (
                 <motion.div key={service.id} variants={item}>
                     <Link
-                        href={`/services/${service.slug}`}
+                        href={lienService(service.slug)}
                         className={`group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[#e7e4db] ${TINTS[i % TINTS.length]} p-7 transition-all duration-500 hover:-translate-y-1.5 hover:border-[#FCD116] hover:shadow-[0_26px_60px_-30px_rgba(0,135,81,0.5)]`}
                     >
                         {/* Filet tricolore révélé au survol (charte, discret) */}

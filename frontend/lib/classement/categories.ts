@@ -19,7 +19,7 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     { slug: 'culture',               label: 'Tourisme & Culture',     color: '#F59E0B', icon: 'Globe' },
     { slug: 'construction',          label: 'Suivi de Chantier',      color: '#EF4444', icon: 'HardHat' },
     { slug: 'investissement',        label: 'Investissement',         color: '#14B8A6', icon: 'TrendingUp' },
-    { slug: 'nationalite-vip',       label: 'Nationalité VIP',        color: '#C9A84C', icon: 'Award' },
+    { slug: 'nationalite-vip',       label: 'Nationalité béninoise',        color: '#C9A84C', icon: 'Award' },
     { slug: 'recherche-ancestrale',  label: 'Recherche Ancestrale',   color: '#A855F7', icon: 'Dna' },
     { slug: 'autres',                label: 'Autres Services',        color: '#64748B', icon: 'LayoutGrid' },
 ]

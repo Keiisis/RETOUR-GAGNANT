@@ -1285,7 +1285,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
 
                 <View style={styles.navCounter}>
                     <LucideIcon name="shield-checkmark" size={12} color={C.primary} />
-                    <Text style={styles.navCounterText}>{t('Nationalité VIP')}</Text>
+                    <Text style={styles.navCounterText}>{t('Nationalité béninoise')}</Text>
                 </View>
             </View>
 
@@ -1358,7 +1358,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
             <KkiapayModal
                 visible={showKkiapay && montantKkiapay !== null}
                 amount={String(montantKkiapay ?? 0)}
-                serviceName="Nationalité VIP"
+                serviceName="Nationalité béninoise"
                 onClose={() => setShowKkiapay(false)}
                 onSuccess={handlePaymentSuccess}
             />

@@ -357,11 +357,11 @@ export default function FrontendSettingsPage() {
                                 </button>
                             </div>
 
-                            {/* Toggle PricingCalculator : spécifique Passeport / Nationalité VIP */}
+                            {/* Toggle PricingCalculator : spécifique Passeport / Nationalité béninoise */}
                             <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5">
                                 <div>
                                     <p className="text-sm font-bold text-white"><T>Afficher le calculateur de prix</T></p>
-                                    <p className="text-xs text-gray-500 mt-1"><T>Page Passeport / Nationalité Béninoise VIP (ignoré si le réglage global est désactivé)</T></p>
+                                    <p className="text-xs text-gray-500 mt-1"><T>Page Passeport / Nationalité Béninoise (ignoré si le réglage global est désactivé)</T></p>
                                 </div>
                                 <button
                                     type="button"
