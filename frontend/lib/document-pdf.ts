@@ -13,7 +13,7 @@
 //  sont faits par les appelants (lib/document-pdf-navigateur.ts côté site,
 //  lib/invoice-pdf-generator.ts côté serveur).
 // ══════════════════════════════════════════════════════════════
-import { jsPDF } from 'jspdf'
+import { jsPDF, GState } from 'jspdf'
 import { LOGO_BASE64, STAMP_BASE64 } from './logoBase64'
 import { descriptionPourPdf, elementsDescription } from '@/lib/description-lignes'
 import { libelleMoyenPaiement } from '@/lib/moyen-paiement-libelle'
@@ -486,6 +486,43 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     police('normal', 6.3, C.griseClair)
     pdf.text('Signature et cachet de l’entreprise', dX + 5, y + sigH - 4.2)
     y += sigH + 4
+
+    // ── SIGNATURE GRAPHIQUE « GRAFFITI » (choix de Kevin, 30/09/2026) ──────
+    // Trois coups de pinceau tricolores, éclaboussures et « Merci ! » manuscrit,
+    // dans l'espace libre de la DERNIÈRE page. Tracés vectoriels (aucune image :
+    // poids du PDF inchangé). Réduit si la place manque ; absent s'il n'y en a
+    // pas assez (jamais sur le contenu, jamais de page ajoutée pour lui).
+    // Pas sur les avoirs (un remerciement n'a pas de sens sur une note de crédit).
+    if (type !== 'avoir') {
+        const ZH = 57                            // hauteur de la zone de référence (mm)
+        const libre = BAS - 2 - y
+        const k = Math.min(1, libre / ZH)
+        if (k >= 0.55) {
+            const oy = BAS - 2 - ZH * k, ox = ML  // ancré en bas de page, à gauche
+            const X = (x: number) => ox + x * k, Y = (v: number) => oy + v * k
+            const opacite = (o: number) => pdf.setGState(new GState({ opacity: o, 'stroke-opacity': o }))
+            // Coups de pinceau (courbes de Bézier, extrémités arrondies)
+            const coup = (c: RGB, y0: number, ep: number, dx: number) => {
+                couleur(c, 'draw'); pdf.setLineWidth(ep * k); pdf.setLineCap('round')
+                pdf.lines([[40 * k, -14 * k, 90 * k, 6 * k, (150 + dx) * k, -20 * k]], X(6), Y(y0), [1, 1], 'S')
+            }
+            opacite(0.9)
+            coup(C.vert, 35, 7, 0); coup(C.jaune, 44, 5.5, -8); coup(C.rouge, 51, 4, -18)
+            // Éclaboussures (positions fixes : rendu identique d'un document à l'autre)
+            opacite(0.25)
+            const tons = [C.vert, C.jaune, C.rouge]
+            for (let i = 0; i < 26; i++) {
+                couleur(tons[i % 3], 'fill')
+                pdf.circle(X(134 + (i * 37) % 44), Y(7 + (i * 53) % 22), (0.4 + (i % 4) * 0.35) * k, 'F')
+            }
+            opacite(1)
+            pdf.setLineCap('butt')
+            pdf.setFont('times', 'bolditalic'); pdf.setFontSize(30 * k); couleur(C.nuit)
+            pdf.text('Merci !', X(8), Y(17), { angle: 6 })
+            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7 * k); couleur(C.vert)
+            pdf.text('BIENVENUE AU BÉNIN', X(10), Y(24), { angle: 6, charSpace: 1.4 * k })
+        }
+    }
 
     // ── PIED DE PAGE (toutes les pages) ──────────────────────────────────────
     // Mentions légales seulement (les coordonnées sont dans l'en-tête).
