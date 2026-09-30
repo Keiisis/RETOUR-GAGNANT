@@ -175,11 +175,16 @@ function badge(d: DocumentPdfDonnees): { texte: string; couleur: RGB } {
 }
 
 // ── Dessin ───────────────────────────────────────────────────────────────────
+/* Mise en page ÉPURÉE (30/09/2026, demande de Kevin) : chaque information
+   n'apparaît qu'UNE fois. Coordonnées en en-tête, mentions légales (RCCM,
+   IFU, TVA, juridiction) au pied ; plus de bloc « Émetteur » en double, plus
+   de cadre client sur une facture non signée, plus de « Paiement reçu » qui
+   répétait le badge. Logotype : RETOUR (vert) GAGNANT (jaune), BÉNIN (rouge). */
 export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     const pdf = new jsPDF('p', 'mm', 'a4')
-    const PW = 210, PH = 297, ML = 14, MR = 14, CW = PW - ML - MR
-    const PIED_H = 22
-    const BAS = PH - PIED_H - 3          // limite utile avant le pied de page
+    const PW = 210, PH = 297, ML = 16, MR = 16, CW = PW - ML - MR
+    const PIED_H = 16
+    const BAS = PH - PIED_H - 4          // limite utile avant le pied de page
     const modele = { ...MODELE_PAR_DEFAUT, ...Object.fromEntries(Object.entries(d.modele || {}).filter(([, v]) => v)) }
     const type = d.docType || 'facture'
     const titre = type === 'devis' ? 'DEVIS' : type === 'avoir' ? 'AVOIR' : 'FACTURE'
@@ -195,182 +200,188 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
         while (pdf.getTextWidth(txt) > largeur && t > 5) { t -= 0.25; pdf.setFontSize(t) }
         return t
     }
+    const filet = (yy: number, x1 = ML, x2 = PW - MR, c: RGB = C.trait, e = 0.2) => {
+        couleur(c, 'draw'); pdf.setLineWidth(e); pdf.line(x1, yy, x2, yy)
+    }
+    const etiquette = (txt: string, x: number, yy: number) => {
+        police('bold', 6.4, C.griseClair); pdf.setCharSpace(0.7); pdf.text(txt, x, yy); pdf.setCharSpace(0)
+    }
     const bandeau = () => {
-        couleur(C.vert, 'fill'); pdf.rect(0, 0, PW / 3, 2.6, 'F')
-        couleur(C.or, 'fill'); pdf.rect(PW / 3, 0, PW / 3, 2.6, 'F')
-        couleur(C.rouge, 'fill'); pdf.rect((PW * 2) / 3, 0, PW / 3 + 1, 2.6, 'F')
+        couleur(C.vert, 'fill'); pdf.rect(0, 0, PW / 3, 1.8, 'F')
+        couleur(C.or, 'fill'); pdf.rect(PW / 3, 0, PW / 3, 1.8, 'F')
+        couleur(C.rouge, 'fill'); pdf.rect((PW * 2) / 3, 0, PW / 3 + 1, 1.8, 'F')
     }
 
     const tauxTva = Math.max(0, ...d.items.map(i => Number(i.tva) || 0))
+    const colonneTva = d.items.some(i => (Number(i.tva) || 0) > 0)
     // Débours : lignes « TVA … » refacturées à l'identique (ex. TVA du notaire)
     // alors que RGB, exonérée, ne collecte aucune TVA.
     const debours = d.total_tva === 0 && d.items.some(i => /\bT\.?V\.?A\b/i.test(elementsDescription(i.description).join(' ')))
 
+    // Modèle administrable : les lignes légales (RCCM/IFU) vont au pied, le
+    // reste (adresse, téléphones, email) sous le logotype — une seule fois.
+    const lignesEntete = modele.entete.split('\n').map(l => l.trim()).filter(Boolean)
+    const raison = lignesEntete[0] || 'RETOUR GAGNANT BÉNIN'
+    const legales = lignesEntete.slice(1).filter(l => /RCCM|IFU/i.test(l))
+    const contacts = lignesEntete.slice(1).filter(l => !/RCCM|IFU/i.test(l))
+
     // ── EN-TÊTE ──────────────────────────────────────────────────────────────
     bandeau()
     let y = 12
-    try { pdf.addImage(LOGO_BASE64, 'PNG', ML, y, 19, 19) } catch { /* logo indisponible */ }
-    const lignesEntete = modele.entete.split('\n').map(l => l.trim()).filter(Boolean)
-    police('bold', 15, C.vert)
-    pdf.text(lignesEntete[0] || 'RETOUR GAGNANT BÉNIN', ML + 23, y + 5)
-    police('normal', 7.2, C.gris)
-    pdf.text(lignesEntete.slice(1, 5), ML + 23, y + 9.5, { lineHeightFactor: 1.35 })
+    try { pdf.addImage(LOGO_BASE64, 'PNG', ML, y, 17, 17) } catch { /* logo indisponible */ }
+    const lx = ML + 21
+    // Logotype tricolore : RETOUR vert, GAGNANT jaune (contour or foncé pour
+    // rester lisible sur fond blanc), BÉNIN rouge en capitales espacées dessous.
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15)
+    couleur(C.vert); pdf.text('RETOUR', lx, y + 6)
+    const wRetour = pdf.getTextWidth('RETOUR ')
+    couleur(C.or); couleur([196, 150, 0], 'draw'); pdf.setLineWidth(0.12)
+    pdf.text('GAGNANT', lx + wRetour, y + 6, { renderingMode: 'fillThenStroke' })
+    police('bold', 8.2, C.rouge); pdf.setCharSpace(3.2)
+    pdf.text('BÉNIN', lx, y + 11)
+    pdf.setCharSpace(0)
+    if (!/RETOUR\s+GAGNANT/i.test(raison)) { police('bold', 8, C.texte); pdf.text(raison, lx, y + 15) }
+    police('normal', 6.9, C.gris)
+    pdf.text(contacts.slice(0, 3), lx, y + 16, { lineHeightFactor: 1.35 })
 
-    police('bold', 24, C.nuit)
+    // Titre + références (droite)
+    police('bold', 22, C.nuit)
     pdf.text(titre, PW - MR, y + 7, { align: 'right' })
-    police('normal', 8, C.gris)
+    const moyen = d.paymentMethod || (/zeyow/i.test(d.notes || '') ? 'Zeyow' : /stripe/i.test(d.notes || '') ? 'Stripe' : /paypal/i.test(d.notes || '') ? 'PayPal' : /kkiapay|mobile money/i.test(d.notes || '') ? 'Mobile Money' : '')
     const meta: string[] = [`N° ${d.invoiceRef}`, `Date : ${dateLisible(d.date)}`]
     if (type === 'devis' && d.validite) meta.push(`Validité : ${d.validite}`)
     if (type === 'facture' && d.dueDate && !d.isPaid) meta.push(`Échéance : ${dateLisible(d.dueDate)}`)
-    if (type === 'facture' && d.isPaid && d.paidAt) meta.push(`Réglée le ${dateLisible(d.paidAt)}`)
+    if (type === 'facture' && d.isPaid) meta.push(`Réglée le ${dateLisible(d.paidAt || d.date)}${moyen ? ` · ${moyen}` : ''}`)
+    police('normal', 7.8, C.gris)
     pdf.text(meta, PW - MR, y + 12.5, { align: 'right', lineHeightFactor: 1.4 })
     const b = badge(d)
-    police('bold', 7.4, [255, 255, 255])
-    const bW = Math.max(26, pdf.getTextWidth(b.texte) + 10)
-    const bY = y + 13 + meta.length * 3.95
+    police('bold', 7, [255, 255, 255])
+    const bW = Math.max(22, pdf.getTextWidth(b.texte) + 9)
+    const bY = y + 13 + meta.length * 3.85
     couleur(b.couleur, 'fill')
-    pdf.roundedRect(PW - MR - bW, bY, bW, 6.2, 3.1, 3.1, 'F')
-    pdf.text(b.texte, PW - MR - bW / 2, bY + 4.2, { align: 'center' })
-    y = Math.max(y + 29, bY + 9)
+    pdf.roundedRect(PW - MR - bW, bY, bW, 5.6, 2.8, 2.8, 'F')
+    pdf.text(b.texte, PW - MR - bW / 2, bY + 3.85, { align: 'center' })
+    y = Math.max(y + 16 + Math.min(3, contacts.length) * 3.3, bY + 8)
 
-    couleur(C.trait, 'draw'); pdf.setLineWidth(0.3)
-    pdf.line(ML, y, PW - MR, y)
-    y += 5
+    filet(y, ML, PW - MR, C.trait, 0.25)
+    y += 7
 
-    // ── ÉMETTEUR / CLIENT ─────────────────────────────────────────────────────
-    const boxW = CW / 2 - 3
+    // ── CLIENT ────────────────────────────────────────────────────────────────
     const client = nomPropre(d.clientName) || 'Client'
+    etiquette(type === 'devis' ? 'DEVIS ÉTABLI POUR' : type === 'avoir' ? 'AVOIR EN FAVEUR DE' : 'FACTURÉ À', ML, y)
+    police('bold', 10.5, C.texte)
+    ajuster(client, CW, 10.5)
+    pdf.text(client, ML, y + 5.5)
     const infosClient = [d.clientEmail, d.clientPhone, d.clientAddress].map(nomPropre).filter(Boolean)
-    police('normal', 7.2)
-    const adresseLignes = infosClient.flatMap(l => pdf.splitTextToSize(l, boxW - 10) as string[]).slice(0, 4)
-    const boxH = Math.max(27, 15 + adresseLignes.length * 3.8 + 4)
-    // Émetteur
-    couleur(C.fond, 'fill'); pdf.roundedRect(ML, y, boxW, boxH, 2, 2, 'F')
-    couleur(C.vert, 'fill'); pdf.rect(ML, y + 2, 1.1, boxH - 4, 'F')
-    police('bold', 6.6, C.vertFonce); pdf.setCharSpace(0.6)
-    pdf.text('ÉMETTEUR', ML + 5, y + 5.5); pdf.setCharSpace(0)
-    police('bold', 9, C.texte); pdf.text(lignesEntete[0] || 'RETOUR GAGNANT BÉNIN', ML + 5, y + 11)
-    police('normal', 7.2, C.gris)
-    pdf.text(['Haie-Vive Cocotiers, Cotonou — Bénin', 'IFU : 3202644573981', 'contact@retourgagnantbenin.bj'], ML + 5, y + 15.5, { lineHeightFactor: 1.4 })
-    // Client
-    const cX = ML + boxW + 6
-    couleur(C.fond, 'fill'); pdf.roundedRect(cX, y, boxW, boxH, 2, 2, 'F')
-    couleur(C.or, 'fill'); pdf.rect(cX, y + 2, 1.1, boxH - 4, 'F')
-    police('bold', 6.6, C.vertFonce); pdf.setCharSpace(0.6)
-    pdf.text(type === 'devis' ? 'DEVIS ÉTABLI POUR' : type === 'avoir' ? 'AVOIR EN FAVEUR DE' : 'FACTURÉ À', cX + 5, y + 5.5); pdf.setCharSpace(0)
-    police('bold', 9, C.texte)
-    ajuster(client, boxW - 10, 9)
-    pdf.text(client, cX + 5, y + 11)
-    police('normal', 7.2, C.gris)
-    if (adresseLignes.length) pdf.text(adresseLignes, cX + 5, y + 15.5, { lineHeightFactor: 1.4 })
-    y += boxH + 6
+    police('normal', 7.4, C.gris)
+    const ligneInfos = pdf.splitTextToSize(infosClient.join('   ·   '), CW) as string[]
+    if (ligneInfos.length) pdf.text(ligneInfos.slice(0, 2), ML, y + 10, { lineHeightFactor: 1.35 })
+    y += 10 + Math.min(2, ligneInfos.length) * 3.6 + 4
 
     // ── TABLEAU ──────────────────────────────────────────────────────────────
+    const wQte = 14, wPu = 32, wTva = colonneTva ? 15 : 0, wTot = 34
     const cols = [
-        { label: 'DÉSIGNATION', w: 84, align: 'left' as const },
-        { label: 'QTÉ', w: 13, align: 'center' as const },
-        { label: 'P.U. HT', w: 30, align: 'right' as const },
-        { label: 'TVA', w: 15, align: 'center' as const },
-        { label: 'TOTAL HT', w: CW - 84 - 13 - 30 - 15, align: 'right' as const },
+        { label: 'DÉSIGNATION', w: CW - wQte - wPu - wTva - wTot, align: 'left' as const },
+        { label: 'QTÉ', w: wQte, align: 'center' as const },
+        { label: 'P.U. HT', w: wPu, align: 'right' as const },
+        ...(colonneTva ? [{ label: 'TVA', w: wTva, align: 'center' as const }] : []),
+        { label: 'TOTAL HT', w: wTot, align: 'right' as const },
     ]
     const xCol = (i: number) => ML + cols.slice(0, i).reduce((a, c) => a + c.w, 0)
+    const iTot = cols.length - 1
     const enteteTableau = () => {
-        couleur(C.nuit, 'fill'); pdf.roundedRect(ML, y, CW, 9, 1.5, 1.5, 'F')
-        police('bold', 6.9, [255, 255, 255])
+        couleur(C.fond, 'fill'); pdf.rect(ML, y, CW, 7.5, 'F')
+        // Pas d'espacement de lettres : jsPDF l'ignore au calcul de largeur,
+        // les libellés alignés à droite débordaient.
+        police('bold', 6.6, C.gris)
         cols.forEach((c, i) => {
-            const x = c.align === 'right' ? xCol(i) + c.w - 3 : c.align === 'center' ? xCol(i) + c.w / 2 : xCol(i) + 4
-            pdf.text(c.label, x, y + 5.9, { align: c.align })
+            const x = c.align === 'right' ? xCol(i) + c.w - 3 : c.align === 'center' ? xCol(i) + c.w / 2 : xCol(i) + 3
+            pdf.text(c.label, x, y + 4.9, { align: c.align })
         })
-        y += 9
+        y += 7.5
     }
     const nouvellePage = () => { pdf.addPage(); bandeau(); y = 14 }
     enteteTableau()
-    d.items.forEach((it, i) => {
-        police('normal', 7.8)
-        const lignes = pdf.splitTextToSize(descriptionPourPdf(it.description), cols[0].w - 7) as string[]
-        const h = Math.max(8, lignes.length * 3.9 + 4.2)
+    d.items.forEach(it => {
+        police('normal', 8)
+        const lignes = pdf.splitTextToSize(descriptionPourPdf(it.description), cols[0].w - 6) as string[]
+        const h = Math.max(8.5, lignes.length * 3.9 + 4.6)
         if (y + h > BAS) { nouvellePage(); enteteTableau() }
-        couleur(i % 2 ? [255, 255, 255] : C.fond, 'fill'); pdf.rect(ML, y, CW, h, 'F')
-        couleur(C.trait, 'draw'); pdf.setLineWidth(0.15); pdf.line(ML, y + h, ML + CW, y + h)
-        police('normal', 7.8, C.texte)
-        lignes.forEach((l, li) => pdf.text(l, ML + 4, y + 5.2 + li * 3.9))
-        const yMil = y + 5.2
-        police('normal', 7.6, C.gris)
+        police('normal', 8, C.texte)
+        lignes.forEach((l, li) => pdf.text(l, ML + 3, y + 5.4 + li * 3.9))
+        const yMil = y + 5.4
+        police('normal', 7.8, C.gris)
         pdf.text(String(Number(it.quantity) || 0), xCol(1) + cols[1].w / 2, yMil, { align: 'center' })
         pdf.text(montant(it.unit_price, cur), xCol(2) + cols[2].w - 3, yMil, { align: 'right' })
-        pdf.text(`${Number(it.tva) || 0} %`, xCol(3) + cols[3].w / 2, yMil, { align: 'center' })
-        police('bold', 7.8, C.texte)
-        pdf.text(montant((Number(it.quantity) || 0) * (Number(it.unit_price) || 0), cur), ML + CW - 3, yMil, { align: 'right' })
+        if (colonneTva) pdf.text(`${Number(it.tva) || 0} %`, xCol(3) + cols[3].w / 2, yMil, { align: 'center' })
+        police('bold', 8, C.texte)
+        pdf.text(montant((Number(it.quantity) || 0) * (Number(it.unit_price) || 0), cur), xCol(iTot) + cols[iTot].w - 3, yMil, { align: 'right' })
+        filet(y + h, ML, PW - MR, C.trait, 0.15)
         y += h
     })
-    y += 4
+    y += 5
 
     // ── TOTAUX ────────────────────────────────────────────────────────────────
-    const totW = 86, totX = PW - MR - totW
-    const lignesTot: [string, string][] = [['Sous-total HT', montant(d.sous_total, cur)]]
+    const totW = 80, totX = PW - MR - totW
+    const lignesTot: [string, string][] = []
+    // Sous-total affiché seulement s'il diffère du total (remise ou TVA)
+    if (d.remise > 0 || d.total_tva > 0) lignesTot.push(['Sous-total HT', montant(d.sous_total, cur)])
     if (d.remise > 0) lignesTot.push(['Remise', '- ' + montant(d.remise, cur)])
-    lignesTot.push([tauxTva > 0 ? `TVA ${tauxTva} %` : 'TVA RGB (exonérée)', montant(d.total_tva, cur)])
-    const hTot = lignesTot.length * 6 + 16
+    if (d.total_tva > 0) lignesTot.push([`TVA ${tauxTva} %`, montant(d.total_tva, cur)])
+    const hTot = lignesTot.length * 6 + 14
     if (y + hTot > BAS) nouvellePage()
     lignesTot.forEach(([l, v]) => {
-        police('normal', 8, C.gris); pdf.text(l, totX + 4, y + 4.5)
-        police('bold', 8, C.texte); pdf.text(v, PW - MR - 4, y + 4.5, { align: 'right' })
-        couleur(C.trait, 'draw'); pdf.setLineWidth(0.15); pdf.line(totX + 4, y + 6.5, PW - MR - 4, y + 6.5)
-        y += 6.4
+        police('normal', 8, C.gris); pdf.text(l, totX + 3, y + 4.2)
+        police('normal', 8, C.texte); pdf.text(v, PW - MR - 3, y + 4.2, { align: 'right' })
+        y += 6
     })
-    y += 1.5
-    couleur(C.vert, 'fill'); pdf.roundedRect(totX, y, totW, 11.5, 2, 2, 'F')
-    police('bold', 8.6, [255, 255, 255]); pdf.setCharSpace(0.5)
-    pdf.text(type === 'avoir' ? 'TOTAL AVOIR' : 'TOTAL TTC', totX + 5, y + 7.3); pdf.setCharSpace(0)
+    couleur(C.vert, 'fill'); pdf.roundedRect(totX, y, totW, 10.5, 1.8, 1.8, 'F')
+    police('bold', 8, [255, 255, 255]); pdf.setCharSpace(0.4)
+    pdf.text(type === 'avoir' ? 'TOTAL AVOIR' : 'TOTAL TTC', totX + 4, y + 6.7); pdf.setCharSpace(0)
     const totalTxt = montant(d.total, cur)
-    police('bold', 11.5, C.or)
-    ajuster(totalTxt, totW - 40, 11.5)
-    pdf.text(totalTxt, PW - MR - 5, y + 7.5, { align: 'right' })
+    police('bold', 11, [255, 255, 255])
+    ajuster(totalTxt, totW - 34, 11)
+    pdf.text(totalTxt, PW - MR - 4, y + 7, { align: 'right' })
     y += 15
 
-    // ── SOMME EN LETTRES + MENTIONS ──────────────────────────────────────────
+    // ── SOMME EN LETTRES (+ débours) ─────────────────────────────────────────
     const phrases = [
-        `${type === 'devis' ? 'Arrêté le présent devis' : type === 'avoir' ? 'Arrêté le présent avoir' : 'Arrêtée la présente facture'} à la somme de ${montantEnLettres(d.total, cur)} (${totalTxt}) TTC.`,
+        `${type === 'devis' ? 'Arrêté le présent devis' : type === 'avoir' ? 'Arrêté le présent avoir' : 'Arrêtée la présente facture'} à la somme de ${montantEnLettres(d.total, cur).toLowerCase().replace(/\bcfa\b/g, 'CFA')} TTC.`,
     ]
-    if (debours) phrases.push('Retour Gagnant Bénin est exonérée de TVA. Les montants de TVA figurant dans les lignes sont des frais réels refacturés à l’identique (débours), notamment la TVA facturée par le notaire.')
-    police('italic', 7.6)
-    const lignesMention = phrases.flatMap(p => pdf.splitTextToSize(p, CW - 10) as string[])
-    const hMention = lignesMention.length * 3.8 + 6
+    if (debours) phrases.push('Les montants de TVA figurant dans les lignes sont des frais réels refacturés à l’identique (débours), notamment la TVA facturée par le notaire.')
+    police('italic', 7.4)
+    const lignesMention = phrases.flatMap(p => pdf.splitTextToSize(p, CW) as string[])
+    const hMention = lignesMention.length * 3.6 + 3
     if (y + hMention > BAS) nouvellePage()
-    couleur(C.fondVert, 'fill'); pdf.roundedRect(ML, y, CW, hMention, 2, 2, 'F')
-    couleur(C.vert, 'fill'); pdf.rect(ML, y + 1.5, 1.1, hMention - 3, 'F')
-    police('italic', 7.6, C.texte)
-    pdf.text(lignesMention, ML + 5, y + 5, { lineHeightFactor: 1.3 })
-    y += hMention + 4
+    police('italic', 7.4, C.gris)
+    pdf.text(lignesMention, ML, y, { lineHeightFactor: 1.3 })
+    y += hMention + 3
 
-    // Notes / conditions (saisies sur le document)
-    // Notes : les lignes techniques internes (« Facture auto-générée… ») ne sont pas pour le client.
+    // Conditions / références : les lignes techniques internes ne sont pas pour le client.
     const notesClient = (d.notes || '').split('\n').map(l => l.trim())
         .filter(l => l && !/auto-?g[ée]n[ée]r|^\[|^paiement en ligne via/i.test(l)).join('\n')
     const blocs = [
         ...(d.conditions ? [['CONDITIONS', d.conditions]] : []),
         ...(notesClient ? [['RÉFÉRENCES', notesClient]] : []),
     ] as [string, string][]
-    for (const [etiquette, texte] of blocs) {
+    for (const [etq, texte] of blocs) {
         police('normal', 7.2)
-        const l = (pdf.splitTextToSize(texte.trim(), CW - 10) as string[]).slice(0, 10)
-        const h = l.length * 3.5 + 10
+        const l = (pdf.splitTextToSize(texte.trim(), CW) as string[]).slice(0, 10)
+        const h = l.length * 3.5 + 7
         if (y + h > BAS) nouvellePage()
-        couleur(C.trait, 'draw'); pdf.setLineWidth(0.25); pdf.roundedRect(ML, y, CW, h, 2, 2, 'S')
-        police('bold', 6.6, C.vertFonce); pdf.setCharSpace(0.6); pdf.text(etiquette, ML + 5, y + 5); pdf.setCharSpace(0)
-        police('normal', 7.2, C.gris); pdf.text(l, ML + 5, y + 9.5, { lineHeightFactor: 1.3 })
-        y += h + 3
+        etiquette(etq, ML, y + 2)
+        police('normal', 7.2, C.gris); pdf.text(l, ML, y + 6.5, { lineHeightFactor: 1.3 })
+        y += h + 2
     }
 
     // Certification fiscale e-MCF / MECeF
     if (d.mecef && (d.mecef.code || d.mecef.nim)) {
-        const h = 28
+        const h = 26
         if (y + h > BAS) nouvellePage()
-        couleur(C.fondVert, 'fill'); couleur(C.vert, 'draw'); pdf.setLineWidth(0.3)
-        pdf.roundedRect(ML, y, CW, h, 2, 2, 'FD')
+        couleur(C.fondVert, 'fill'); pdf.roundedRect(ML, y, CW, h, 2, 2, 'F')
         let tX = ML + 5
         if (d.mecef.qrDataUrl) {
-            try { pdf.addImage(d.mecef.qrDataUrl, 'PNG', ML + 3, y + 3, 22, 22); tX = ML + 29 } catch { /* QR illisible */ }
+            try { pdf.addImage(d.mecef.qrDataUrl, 'PNG', ML + 3, y + 2, 22, 22); tX = ML + 29 } catch { /* QR illisible */ }
         }
         police('bold', 7.2, C.vertFonce); pdf.text('FACTURE CERTIFIÉE — e-MCF / MECeF (DGI BÉNIN)', tX, y + 7)
         police('normal', 6.8, C.gris)
@@ -385,90 +396,75 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     }
 
     // ── SIGNATURES ───────────────────────────────────────────────────────────
-    const sigW = CW / 2 - 3, sigH = 44
-    if (y + sigH > BAS) nouvellePage()
-    const cadre = (x: number, fond: RGB, bord: RGB, etiquette: string) => {
-        couleur(fond, 'fill'); couleur(bord, 'draw'); pdf.setLineWidth(0.35)
-        pdf.roundedRect(x, y, sigW, sigH, 2.5, 2.5, 'FD')
-        police('bold', 6.6, C.vertFonce); pdf.setCharSpace(0.6); pdf.text(etiquette, x + 5, y + 6.5); pdf.setCharSpace(0)
-        couleur(C.trait, 'draw'); pdf.setLineWidth(0.15); pdf.line(x + 5, y + 8.5, x + sigW - 5, y + 8.5)
-    }
-
-    // Client — l'état affiché suit la réalité du document.
+    // Cadre client UNIQUEMENT s'il a un sens : devis (bon pour accord), ou
+    // document réellement signé. Une facture non signée n'en affiche pas.
     const paraphe = d.clientSignatureDataUrl
-    const confirmationPaiement = type === 'facture' && (d.isManual || (d.isPaid && !paraphe))
-    cadre(ML, [252, 254, 253], C.vert, confirmationPaiement ? 'CONFIRMATION DE PAIEMENT' : type === 'avoir' ? 'ACCUSÉ DE RÉCEPTION' : 'BON POUR ACCORD — CLIENT')
-    if (confirmationPaiement) {
-        police('bold', 10, C.vert); pdf.text('PAIEMENT REÇU', ML + 5, y + 17)
-        police('normal', 7.4, C.gris)
-        const moyen = d.paymentMethod || (/zeyow/i.test(d.notes || '') ? 'Zeyow' : /stripe/i.test(d.notes || '') ? 'Stripe' : /paypal/i.test(d.notes || '') ? 'PayPal' : /kkiapay|mobile money/i.test(d.notes || '') ? 'Mobile Money' : '')
-        pdf.text([
-            `Date de règlement : ${dateLisible(d.paidAt || d.date)}`,
-            ...(moyen ? [`Moyen de paiement : ${moyen}`] : []),
-            'Le règlement vaut acceptation de la prestation.',
-        ], ML + 5, y + 24, { lineHeightFactor: 1.5 })
-    } else {
+    const signe = !!paraphe || !!d.signedAt || (d.statut || '').toLowerCase() === 'accepte'
+    const cadreClient = type === 'devis' || (type === 'facture' && signe)
+    const sigW = CW / 2 - 4, sigH = 36
+    if (y + sigH > BAS) nouvellePage()
+    y += 2
+    if (cadreClient) {
+        etiquette('BON POUR ACCORD — CLIENT', ML, y + 2)
         let pose = false
         if (paraphe) {
             try {
-                const zX = ML + 6, zY = y + 11, zW = sigW - 12, zH = sigH - 22
+                const zX = ML, zY = y + 5, zW = sigW, zH = sigH - 14
                 const p = pdf.getImageProperties(paraphe)
                 const r = p.width > 0 && p.height > 0 ? p.width / p.height : zW / zH
                 let w = zW, h = w / r
                 if (h > zH) { h = zH; w = h * r }
-                pdf.addImage(paraphe, paraphe.startsWith('data:image/jp') ? 'JPEG' : 'PNG', zX + (zW - w) / 2, zY + (zH - h) / 2, w, h, undefined, 'FAST')
+                pdf.addImage(paraphe, paraphe.startsWith('data:image/jp') ? 'JPEG' : 'PNG', zX, zY + (zH - h) / 2, w, h, undefined, 'FAST')
                 pose = true
             } catch { /* paraphe illisible : mention textuelle */ }
         }
-        police('bold', 8.2, C.texte)
-        pdf.text(client, ML + 5, y + sigH - 9)
         police('italic', 6.8, C.gris)
-        if (pose || d.signedAt || (d.statut || '').toLowerCase() === 'accepte') {
-            pdf.text(`Signé électroniquement le ${dateLisible(d.signedAt || d.paidAt || d.date)}`, ML + 5, y + sigH - 4.5)
+        if (pose || signe) {
+            filet(y + sigH - 8, ML, ML + sigW, C.trait, 0.2)
+            pdf.text(`Signé électroniquement le ${dateLisible(d.signedAt || d.paidAt || d.date)}`, ML, y + sigH - 4)
         } else {
             // Pas encore signé : espace de signature réel, sans mention trompeuse.
             couleur(C.griseClair, 'draw'); pdf.setLineWidth(0.2)
             pdf.setLineDashPattern([0.8, 0.8], 0)
-            pdf.line(ML + 5, y + 26, ML + sigW - 5, y + 26)
+            pdf.line(ML, y + sigH - 8, ML + sigW, y + sigH - 8)
             pdf.setLineDashPattern([], 0)
-            pdf.text('Date, signature et mention « Bon pour accord »', ML + 5, y + sigH - 4.5)
+            pdf.text('Date, signature et mention « Bon pour accord »', ML, y + sigH - 4)
         }
     }
 
-    // Direction générale — nom à gauche, cachet à droite : jamais superposés.
-    const dX = ML + sigW + 6
-    cadre(dX, C.fondVert, C.vert, modele.titreSignataire.toUpperCase())
-    const cachet = 36
+    // Direction générale (droite) — nom à gauche du cachet, jamais superposés.
+    const dX = PW - MR - sigW
+    etiquette(modele.titreSignataire.toUpperCase(), dX, y + 2)
+    const cachet = 30
     try {
-        pdf.addImage(STAMP_BASE64, 'PNG', dX + sigW - cachet - 2, y + (sigH - cachet) / 2 + 2.5, cachet, cachet, undefined, 'FAST')
+        pdf.addImage(STAMP_BASE64, 'PNG', PW - MR - cachet, y + 4, cachet, cachet, undefined, 'FAST')
     } catch { /* cachet indisponible */ }
-    const texteW = sigW - cachet - 12
-    police('normal', 6.8, C.gris); pdf.text('La Directrice Générale', dX + 5, y + 14)
+    const texteW = sigW - cachet - 4
+    police('normal', 6.8, C.gris); pdf.text('La Directrice Générale', dX, y + 11)
     pdf.setFont('times', 'bolditalic'); couleur(C.vertFonce)
     const tSig = ajuster(modele.signataire, texteW, 12)
-    pdf.setFontSize(tSig); pdf.text(modele.signataire, dX + 5, y + 22)
-    couleur(C.or, 'draw'); pdf.setLineWidth(0.5); pdf.line(dX + 5, y + 24, dX + 5 + Math.min(texteW, pdf.getTextWidth(modele.signataire)), y + 24)
-    police('normal', 6.6, C.gris)
-    pdf.text(['Signature et cachet officiels', `Fait à Cotonou, le ${dateLisible(d.date)}`], dX + 5, y + 30, { lineHeightFactor: 1.5 })
+    pdf.setFontSize(tSig); pdf.text(modele.signataire, dX, y + 19)
+    couleur(C.or, 'draw'); pdf.setLineWidth(0.5); pdf.line(dX, y + 21, dX + Math.min(texteW, pdf.getTextWidth(modele.signataire)), y + 21)
     y += sigH + 4
 
     // ── PIED DE PAGE (toutes les pages) ──────────────────────────────────────
-    const pied = modele.pied.split('\n').map(l => l.trim()).filter(Boolean)
-        // Toute mention de TVA figée dans le modèle est remplacée par la mention calculée.
+    // Mentions légales seulement (les coordonnées sont dans l'en-tête).
+    const piedModele = modele.pied.split('\n').map(l => l.trim()).filter(Boolean)
         .map(l => l.replace(/\s*[—:-]?\s*TVA[^—:]*applicable\s*[—:-]?\s*/i, ' ').trim())
-        .filter(l => !/^En cas de litige/i.test(l) && l)
-        .slice(0, 2)
-    const mentionTva = tauxTva > 0 ? `TVA ${tauxTva} % applicable` : 'Retour Gagnant Bénin : exonérée de TVA'
-    pied.push(`${mentionTva} — En cas de litige, seules les juridictions béninoises sont compétentes.`)
+        .filter(l => l && !/^En cas de litige/i.test(l) && !/si[èe]ge|@/i.test(l))
+    const legal = piedModele[0] || [raison, ...legales].join(' — ')
+    const mentionTva = tauxTva > 0 && d.total_tva > 0 ? `TVA ${tauxTva} % applicable` : 'Exonérée de TVA'
+    const pied = [legal, `${mentionTva} — En cas de litige, seules les juridictions béninoises sont compétentes.`]
     const nb = pdf.getNumberOfPages()
     for (let p = 1; p <= nb; p++) {
         pdf.setPage(p)
-        couleur(C.nuit, 'fill'); pdf.rect(0, PH - PIED_H, PW, PIED_H, 'F')
-        couleur(C.vert, 'fill'); pdf.rect(0, PH - PIED_H, PW, 0.8, 'F')
-        police('normal', 6.9, [182, 196, 214])
-        pied.forEach((l, i) => pdf.text(l, PW / 2, PH - PIED_H + 6 + i * 4, { align: 'center' }))
-        police('normal', 6.2, [120, 138, 160])
-        pdf.text(`${titre} N° ${d.invoiceRef}  ·  Page ${p}/${nb}`, PW / 2, PH - 3.5, { align: 'center' })
+        filet(PH - PIED_H, ML, PW - MR, C.trait, 0.25)
+        police('normal', 6.6, C.griseClair)
+        pied.forEach((l, i) => pdf.text(l, PW / 2, PH - PIED_H + 5 + i * 3.6, { align: 'center' }))
+        if (nb > 1) {
+            police('normal', 6.4, C.griseClair)
+            pdf.text(`${d.invoiceRef} · ${p}/${nb}`, PW - MR, PH - 4, { align: 'right' })
+        }
     }
     return pdf
 }

@@ -31,21 +31,34 @@ export async function GET(request: NextRequest) {
     if (refus) return refus
     const moi = garde.userId!
 
-    const [docs, depenses, paiements, reglage] = await Promise.all([
-        supabase.from('documents_financiers').select('*').eq('agent_id', moi).order('created_at', { ascending: false }),
+    /* Documents : les siens + ceux de l'AGENCE (agent_id vide) — factures
+       émises automatiquement au paiement en ligne (nationalité, propositions,
+       services…). Avant : visibles chez l'admin seulement ; la comptable ne
+       les voyait pas, ses totaux divergeaient et elle risquait de refacturer
+       (cas TOUCHE Teddy Mickaël, FAC-2026-0007). */
+    const [docs, depenses, reglage] = await Promise.all([
+        supabase.from('documents_financiers').select('*')
+            .or(`agent_id.eq.${moi},agent_id.is.null`)
+            .order('created_at', { ascending: false }),
         supabase.from('depenses').select('*').eq('agent_id', moi).order('date_depense', { ascending: false }),
-        supabase.from('paiements_manuels')
-            .select('id, document_id, type, montant, date_paiement, reference, notes')
-            .eq('agent_id', moi)
-            .order('date_paiement', { ascending: false }),
         supabase.from('settings').select('key, value').eq('key', 'commission_rate').maybeSingle(),
     ])
+    if (docs.error || depenses.error) {
+        return NextResponse.json({ error: (docs.error || depenses.error)!.message }, { status: 500 })
+    }
 
-    const erreur = docs.error || depenses.error || paiements.error
-    if (erreur) return NextResponse.json({ error: erreur.message }, { status: 500 })
+    // Paiements : ceux qu'elle a saisis + ceux rattachés aux documents de
+    // l'agence (saisis par l'admin), sinon ces factures paraîtraient impayées.
+    const idsAgence = (docs.data || []).filter(d => !d.agent_id).map(d => d.id as string)
+    const paiements = await supabase.from('paiements_manuels')
+        .select('id, document_id, type, montant, date_paiement, reference, notes')
+        .or(idsAgence.length ? `agent_id.eq.${moi},document_id.in.(${idsAgence.join(',')})` : `agent_id.eq.${moi}`)
+        .order('date_paiement', { ascending: false })
+    if (paiements.error) return NextResponse.json({ error: paiements.error.message }, { status: 500 })
 
     return NextResponse.json({
-        documents: docs.data || [],
+        // `agence` : document émis automatiquement (aucun agent) — badge côté page
+        documents: (docs.data || []).map(d => ({ ...d, agence: !d.agent_id })),
         depenses: depenses.data || [],
         paiements: paiements.data || [],
         commission_rate: reglage.data?.value ?? null,

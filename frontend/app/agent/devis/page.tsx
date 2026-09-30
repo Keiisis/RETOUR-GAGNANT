@@ -12,6 +12,7 @@ import { DOC_FIN_STATUTS, DOC_FIN_CLOS, type DocFinStatut } from '@/lib/constant
 import DescriptionLignes from '@/components/shared/DescriptionLignes'
 import { descriptionEnLigne } from '@/lib/description-lignes'
 import { telechargerDocumentPdf, type DocumentSource } from '@/lib/document-pdf-navigateur'
+import { agentHasComptaAccess } from '@/lib/constants/compta'
 
 // Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
 /* Delegue a la table UNIQUE des devises (`lib/currency.ts`).
@@ -97,7 +98,21 @@ export default function AgentDevisPage() {
             linkedFactures = ((linked || []) as DocumentFinancier[]).filter(d => !ownedIds.has(d.id))
         }
 
-        const allDocs = [...owned, ...linkedFactures]
+        // Requête 3 : agent COMPTABLE — factures de l'agence émises automatiquement
+        // au paiement en ligne (agent_id vide : nationalité, propositions…).
+        // Sans elles, la comptable les ignorait et risquait de les refacturer
+        // (cas TOUCHE Teddy Mickaël, FAC-2026-0007).
+        let agenceDocs: DocumentFinancier[] = []
+        if (agentHasComptaAccess(user.email)) {
+            const dejaVus = new Set([...ownedIds, ...linkedFactures.map(d => d.id)])
+            const { data: agence } = await supabase
+                .from('documents_financiers')
+                .select('*')
+                .is('agent_id', null)
+            agenceDocs = ((agence || []) as DocumentFinancier[]).filter(d => !dejaVus.has(d.id))
+        }
+
+        const allDocs = [...owned, ...linkedFactures, ...agenceDocs]
         allDocs.sort((a, b) => {
             const timeA = a.created_at && !isNaN(new Date(a.created_at).getTime()) ? new Date(a.created_at).getTime() : 0
             const timeB = b.created_at && !isNaN(new Date(b.created_at).getTime()) ? new Date(b.created_at).getTime() : 0

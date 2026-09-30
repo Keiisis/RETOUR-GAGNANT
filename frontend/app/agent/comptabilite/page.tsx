@@ -43,6 +43,9 @@ interface DocumentFinancier {
     created_at: string
     /** Date du paiement en ligne (rattachement des encaissements) */
     paid_at?: string | null
+    /** Facture émise automatiquement au paiement en ligne (aucun agent) */
+    agence?: boolean
+    source_ref?: string | null
 }
 
 interface Depense {
@@ -1025,7 +1028,15 @@ export default function AgentComptabilitePage() {
                                                 <div className="flex items-center gap-3">
                                                     <FileText size={15} className="text-emerald-400" />
                                                     <div>
-                                                        <p className="text-sm font-bold text-white">{tx.numero}</p>
+                                                        <p className="text-sm font-bold text-white flex items-center gap-2">
+                                                            {tx.numero}
+                                                            {tx.agence && (
+                                                                <span title="Facture émise automatiquement au paiement en ligne : déjà facturée, ne pas refacturer"
+                                                                    className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-sky-400">
+                                                                    Auto · en ligne
+                                                                </span>
+                                                            )}
+                                                        </p>
                                                         <p className="text-[9px] text-gray-500">
                                                             {tx.created_at && !isNaN(new Date(tx.created_at).getTime()) ? new Date(tx.created_at).toLocaleDateString('fr-FR') : '-'}
                                                         </p>
