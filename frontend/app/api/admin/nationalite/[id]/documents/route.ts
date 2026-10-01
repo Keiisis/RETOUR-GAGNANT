@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import JSZip from 'jszip'
 import { requireStaff } from '@/lib/api-guard'
 import { lireLigneDocument } from '@/lib/nationality-docs'
+import { mettreALaCorbeille } from '@/lib/nationality-corbeille'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // PATCH : remplace le FICHIER d'une pièce en conservant son libellé + sa
-// position ; { oldPath, newPath }. L'ancien fichier storage est supprimé.
+// position ; { oldPath, newPath }. L'ancien fichier part en corbeille.
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
@@ -132,11 +133,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // effacé et la réponse annonçait un succès.
     const { error: majErr } = await supabase.from('nationality_applications').update({ documents_uploaded: updated }).eq('id', id)
     if (majErr) return NextResponse.json({ error: majErr.message }, { status: 500 })
-    await supabase.storage.from(BUCKET).remove([oldPath]).catch(() => {})
+    await mettreALaCorbeille(supabase, [oldPath])   // ancien fichier récupérable
     return NextResponse.json({ success: true })
 }
 
-// DELETE ?path=… : retire une pièce (storage + ligne DB).
+// DELETE ?path=… : retire une pièce (ligne DB ; fichier en corbeille).
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const garde = await requireStaff(request, 'agent')
     if (!garde.ok) return garde.response!
@@ -155,7 +156,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     // Base d'abord : un échec ne doit pas laisser une ligne vers un fichier effacé.
     const { error: majErr } = await supabase.from('nationality_applications').update({ documents_uploaded: kept }).eq('id', id)
     if (majErr) return NextResponse.json({ error: majErr.message }, { status: 500 })
-    await supabase.storage.from(BUCKET).remove([path]).catch(() => {})
+    await mettreALaCorbeille(supabase, [path])
 
     return NextResponse.json({ success: true, removed: lines.length - kept.length })
 }
