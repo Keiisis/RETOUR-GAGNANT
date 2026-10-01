@@ -45,6 +45,15 @@ web-build/
 # ── Sources de design et maquettes ────────────────────────────
 /Assets/
 /design/
+/maquettes-factures/
+/mobile/stitch/
+# Vidéos de présentation : 3,3 Go d'images de rendu (build refusé le 01/10/2026,
+# archive > 2 Go)
+/video-rgb/
+/video-rgb2/
+/graphify-out/
+/*.pdf
+/plan.md
 /mobile/assets/Ajouts/
 
 # ── Sorties d'outils d'analyse et scripts hors app ────────────
