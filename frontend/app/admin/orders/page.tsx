@@ -9,6 +9,7 @@ import { toXOF, loadExchangeRates } from '@/lib/currency-convert'
 import { COMMANDE_PAIEMENT_STATUTS, COMMANDE_LIVRAISON_STATUTS } from '@/lib/constants/statuts'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { libelleMoyenPaiement } from '@/lib/moyen-paiement-libelle'
 
 interface OrderItem {
     id: string
@@ -257,7 +258,7 @@ export default function AdminOrdersPage() {
                                         {/* Method */}
                                         <div className="col-span-1">
                                             <span className="px-2 py-1 rounded-lg bg-white/5 text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                                                {order.payment_method}
+                                                {libelleMoyenPaiement(order.payment_method) || '—'}
                                             </span>
                                         </div>
 

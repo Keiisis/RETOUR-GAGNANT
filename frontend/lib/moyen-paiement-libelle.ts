@@ -22,7 +22,8 @@ const PRESTATAIRES: Record<string, string> = {
 }
 
 /** Codes internes sans valeur pour le client : rien n'est affiché. */
-const MUETS = new Set(['', 'manuel', 'manual', 'en ligne', 'online', 'autre', 'null', 'undefined'])
+// « pending » : statut écrit par erreur dans le champ moyen (commande test du 29/09).
+const MUETS = new Set(['', 'manuel', 'manual', 'en ligne', 'online', 'autre', 'null', 'undefined', 'pending', 'en_attente'])
 
 /**
  * Libellé lisible d'un moyen de paiement enregistré.

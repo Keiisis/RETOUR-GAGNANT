@@ -8,6 +8,7 @@
 // ══════════════════════════════════════════════════════════════
 const ADRESSES: Record<string, string> = {
     'nationalite-vip': '/services/nationalite-beninoise',
+    'nationalite': '/services/nationalite-beninoise',   // slug des leads (Oracle, formulaire)
 }
 
 export function lienService(slug: string): string {
