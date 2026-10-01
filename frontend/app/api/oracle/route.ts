@@ -21,7 +21,8 @@ interface OracleAnswers {
 }
 
 const serviceMapping: Record<string, { service: string, slug: string }> = {
-    'nationalite': { service: 'Passeport & Documents', slug: 'passeport' },
+    // Même libellé que /api/nationality/lead : un projet de nationalité n'est pas un passeport.
+    'nationalite': { service: 'Reconnaissance de Nationalité', slug: 'nationalite' },
     'investir': { service: 'Investissement', slug: 'investissement' },
     'construire': { service: 'Construction', slug: 'construction' },
     'business': { service: "Création d'Entreprise", slug: 'business' },

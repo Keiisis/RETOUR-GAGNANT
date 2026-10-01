@@ -10,6 +10,7 @@ import { dateEncaissementFacture } from '@/lib/compta-export'
 import { toXOF, loadExchangeRates, rateOf } from '@/lib/currency-convert'
 import { DOC_FIN_STATUTS, DOC_FIN_EN_ATTENTE, DOC_FIN_CLOS, COMMANDE_PAIEMENT_STATUTS } from '@/lib/constants/statuts'
 import ComptaLockPanel, { type ClotureRow } from '@/components/comptabilite/ComptaLockPanel'
+import { libelleMoyenPaiement } from '@/lib/moyen-paiement-libelle'
 import {
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     AreaChart, Area, BarChart, Bar, Cell,
@@ -2037,7 +2038,7 @@ export default function AdminComptabilitePage() {
                                             <td className="p-4 pl-5"><p className="text-xs text-white">{o.customer_name || '-'}</p><p className="text-[9px] text-gray-600 truncate max-w-[140px]">{o.customer_email || '-'}</p></td>
                                             <td className="p-4 text-[10px] text-gray-400 truncate max-w-[180px]">{o.product_title || '-'}</td>
                                             <td className="p-4 text-right font-mono text-sm text-white font-bold">{fmt(o.amount, o.currency)}</td>
-                                            <td className="p-4 text-[10px] text-gray-500 uppercase">{o.payment_method || '-'}</td>
+                                            <td className="p-4 text-[10px] text-gray-500 uppercase">{libelleMoyenPaiement(o.payment_method) || '-'}</td>
                                             <td className="p-4 text-center"><span className={cn('text-[9px] font-bold px-2 py-0.5 rounded-full', st.cls)}>{st.label}</span></td>
                                             <td className="p-4 pr-5 text-right text-[10px] text-gray-500 font-mono">{fmtDate(o.created_at)}</td>
                                         </tr>
