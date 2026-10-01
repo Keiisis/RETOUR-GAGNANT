@@ -305,14 +305,14 @@ export default function AdminNationalitePage() {
     // ── Réinitialisation des pièces (efface les fichiers, garde le dossier) ──
     const [resettingId, setResettingId] = useState<string | null>(null)
     const resetDocs = async (a: Application) => {
-        if (!confirm(`Effacer TOUTES les pièces jointes de ${a.prenom} ${a.nom} (${a.application_ref}) ?\nLe dossier et le paiement sont conservés. Le client pourra re-déposer via une nouvelle relance. Action irréversible.`)) return
+        if (!confirm(`Effacer TOUTES les pièces jointes de ${a.prenom} ${a.nom} (${a.application_ref}) ?\nLe dossier et le paiement sont conservés. Le client pourra re-déposer via une nouvelle relance. Les fichiers partent en corbeille (récupérables).`)) return
         setResettingId(a.id)
         try {
             const res = await fetch(`/api/admin/nationalite/${a.id}/reset-documents`, { method: 'POST' })
             const j = await res.json().catch(() => ({}))
             if (res.ok && j.success) {
                 setApps(prev => prev.map(x => x.id === a.id ? { ...x, documents_uploaded: [] } : x))
-                alert(`Pièces effacées (${j.filesRemoved} fichier(s) supprimé(s)). Vous pouvez maintenant relancer le client.`)
+                alert(`Pièces retirées (${j.filesRemoved} fichier(s) placé(s) en corbeille, récupérables). Vous pouvez maintenant relancer le client.`)
             } else {
                 alert(j.error || 'Réinitialisation impossible.')
             }

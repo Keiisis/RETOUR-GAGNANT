@@ -1,6 +1,7 @@
 // ══════════════════════════════════════════════════════════════
 //  RÉINITIALISATION DES PIÈCES D'UN DOSSIER NATIONALITÉ
-//  Supprime les fichiers du bucket + vide documents_uploaded, SANS toucher
+//  Met les fichiers en CORBEILLE (récupérables, cf. lib/nationality-corbeille)
+//  + vide documents_uploaded + trace dans agent_notes, SANS toucher
 //  au dossier ni au paiement. Permet d'envoyer une nouvelle relance
 //  « documents » propre (tous les slots réapparaissent au client).
 // ══════════════════════════════════════════════════════════════
@@ -9,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
 import { lireLigneDocument } from '@/lib/nationality-docs'
+import { mettreALaCorbeille, traceCorbeille } from '@/lib/nationality-corbeille'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { data: app, error: fetchErr } = await supabase
         .from('nationality_applications')
-        .select('documents_uploaded')
+        .select('documents_uploaded, agent_notes')
         .eq('id', id)
         .maybeSingle()
     if (fetchErr || !app) return NextResponse.json({ error: 'Dossier introuvable' }, { status: 404 })
@@ -37,15 +39,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
     // Base d'abord : en cas d'échec, les fichiers restent et le dossier aussi.
     // L'ordre inverse laissait des lignes pointant vers des fichiers effacés.
+    const trace = traceCorbeille('Réinitialisation des pièces', garde.userId, paths.length)
     const { error: updErr } = await supabase
         .from('nationality_applications')
-        .update({ documents_uploaded: [] })
+        .update({ documents_uploaded: [], agent_notes: [app.agent_notes, trace].filter(Boolean).join('\n') })
         .eq('id', id)
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 })
 
-    if (paths.length) {
-        await supabase.storage.from('nationality_documents').remove(paths).catch(() => {})
-    }
+    // Jamais de suppression définitive : les fichiers restent récupérables.
+    const deplaces = paths.length ? await mettreALaCorbeille(supabase, paths) : 0
 
-    return NextResponse.json({ success: true, filesRemoved: paths.length })
+    return NextResponse.json({ success: true, filesRemoved: deplaces })
 }

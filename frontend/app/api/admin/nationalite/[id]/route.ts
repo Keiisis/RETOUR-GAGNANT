@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
 import { lireLigneDocument } from '@/lib/nationality-docs'
+import { mettreALaCorbeille } from '@/lib/nationality-corbeille'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -80,8 +81,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const { error } = await supabase.from('nationality_applications').delete().eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    if (paths.length) {
-        await supabase.storage.from('nationality_documents').remove(paths).catch(() => {})
-    }
-    return NextResponse.json({ success: true, filesRemoved: paths.length })
+    // Pièces en corbeille (récupérables) plutôt qu'effacées : cf. incident 30/09.
+    const deplaces = paths.length ? await mettreALaCorbeille(supabase, paths) : 0
+    return NextResponse.json({ success: true, filesRemoved: deplaces })
 }
