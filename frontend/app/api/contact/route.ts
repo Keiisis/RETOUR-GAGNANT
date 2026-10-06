@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, getEmailTemplates, getEmailConfig } from '@/lib/email';
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL_FAST } from '@/lib/groq';
 import { rateLimit, getClientIp, rateLimitHeaders, CONTACT_LIMIT } from '@/lib/rate-limit';
 import { withWafGuard } from '@/lib/waf';
 import { sendWhatsAppNotification } from '@/lib/whatsapp';
@@ -18,7 +18,7 @@ async function generateAutoReply(clientName: string, subject: string, message: s
         if (GROQ_KEYS.length === 0) return 'Votre demande est entre de bonnes mains. Notre équipe d\'experts travaille dessus.';
 
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.1-8b-instant',
+            model: GROQ_MODEL_FAST,
             messages: [
                 {
                     role: 'system',

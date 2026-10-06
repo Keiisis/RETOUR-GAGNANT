@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
-import { getGroqApiKey } from '@/lib/groq'
+import { getGroqApiKey, customGroqFetch, GROQ_MODEL } from '@/lib/groq'
 import { guardPublic, AI_LIMIT, flowKey } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -10,7 +10,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 const apiKey = getGroqApiKey()
-const groq = apiKey ? new Groq({ apiKey }) : null
+const groq = apiKey ? new Groq({ apiKey, fetch: customGroqFetch /* rotation : clé refusée → suivante */ }) : null
 
 interface SlotInfo {
     key: string
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
                             content: `Demandeur : ${prenom} ${nom} : Référence : ${ref} : Deadline : ${deadlineStr}. Pièces manquantes : ${missingSlots.map(s => s.label).join(', ')}. ${needsRechercheAncestrale ? 'Des documents ancestraux sont manquants. Mentionne brièvement notre service Recherche Ancestrale.' : ''} Rédige le corps de l'email.`
                         }
                     ],
-                    model: 'mixtral-8x7b-32768',
+                    model: GROQ_MODEL,
                     temperature: 0.3,
                 })
                 emailBody = completion.choices[0]?.message?.content || ''

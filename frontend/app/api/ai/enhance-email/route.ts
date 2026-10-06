@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL_FAST } from '@/lib/groq';
 import { requireStaff } from '@/lib/api-guard'
 
 const SYSTEM_PROMPT = `Tu es un expert en communication et copywriting pour "Retour Gagnant Bénin" (une agence qui facilite les retours, investissements, nationalité béninoise, immobilier, etc.).
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         const instruction = `Brouillon à améliorer :\n\n${text}`;
 
         const response = await fetchWithGroqRotation({
-            model: "llama-3.1-8b-instant",
+            model: GROQ_MODEL_FAST,
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: instruction },

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail, getEmailTemplates } from '@/lib/email';
 import { getStaffToLine } from '@/lib/staff-recipients';
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL_FAST } from '@/lib/groq';
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
 
 const supabase = createClient(
@@ -15,7 +15,7 @@ async function generateAutoReply(clientName: string, service: string): Promise<s
         if (GROQ_KEYS.length === 0) return 'Votre demande de rendez-vous est bien enregistrée. Notre équipe la traite avec soin.';
 
         const res = await fetchWithGroqRotation({
-            model: 'llama-3.1-8b-instant',
+            model: GROQ_MODEL_FAST,
             messages: [
                 {
                     role: 'system',

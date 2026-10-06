@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
-import { getGroqApiKey } from '@/lib/groq'
+import { getGroqApiKey, customGroqFetch, GROQ_MODEL } from '@/lib/groq'
 import { scanRequestBody } from '@/lib/waf'
 import { notifyStaffNationalityPayment, sendNationalityPaymentReceipt } from '@/lib/nationality-payment-emails'
 import { recordNationalityIncome } from '@/lib/nationality-income'
@@ -122,7 +122,7 @@ async function controleUnicite(tx: string, email: string): Promise<NextResponse 
 }
 
 const apiKey = getGroqApiKey()
-const groq = apiKey ? new Groq({ apiKey }) : null
+const groq = apiKey ? new Groq({ apiKey, fetch: customGroqFetch /* rotation : clé refusée → suivante */ }) : null
 
 const sendConfirmationEmail = async (data: {
     nom: string
@@ -154,7 +154,7 @@ RÈGLES ABSOLUES :
                             content: `Voici les informations du demandeur :\n- Nom complet : M/Mme ${data.prenom} ${data.nom}\n- Nationalité d'origine : ${data.nationalite}\n- Numéro de Référence : ${data.refId}\nRédige le corps de l'email de confirmation.`
                         }
                     ],
-                    model: 'mixtral-8x7b-32768',
+                    model: GROQ_MODEL,
                     temperature: 0.3,
                 })
                 emailContent = completion.choices[0]?.message?.content || ''
