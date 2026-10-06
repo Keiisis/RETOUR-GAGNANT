@@ -12,7 +12,7 @@ export const maxDuration = 60
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const BATCH_SIZE = 30          // texts per Groq call (llama-3.3-70b handles 30 comfortably)
+const BATCH_SIZE = 30          // texts per Groq call (gpt-oss-120b handles 30 comfortably)
 const TIME_BUDGET_MS = 52_000  // leave 8s buffer before Vercel 60s limit
 
 // ─── Robust JSON array parser ──────────────────────────────────────────────────

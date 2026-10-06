@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL, GROQ_MODEL_FAST } from '@/lib/groq';
 import { requireStaff } from '@/lib/api-guard'
 
 // Modèle puissant pour détection de langue précise
 const DETECT_MODEL = GROQ_MODEL;
 // Modèle rapide pour traduction simple
-const TRANSLATE_MODEL = "llama-3.1-8b-instant";
+const TRANSLATE_MODEL = GROQ_MODEL_FAST;
 
 const DETECT_SYSTEM = `Tu es un expert en détection de langue et traduction pour Retour Gagnant Bénin (service basé au Bénin, Afrique de l'Ouest).
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import Groq from 'groq-sdk'
-import { getGroqApiKey } from '@/lib/groq'
+import { getGroqApiKey, customGroqFetch, GROQ_MODEL } from '@/lib/groq'
 import { executerCron } from '@/lib/cron-journal'
 import { requireCron } from '@/lib/api-guard'
 
@@ -12,7 +12,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.retourgagnantb
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 const apiKey = getGroqApiKey()
-const groq = apiKey ? new Groq({ apiKey }) : null
+const groq = apiKey ? new Groq({ apiKey, fetch: customGroqFetch /* rotation : clé refusée → suivante */ }) : null
 
 // ─── Seuils de rappels (jours depuis la soumission) ────────────────────────────
 // Semaine 3 = 21j, Semaine 5 = 35j, Semaine 7 = 49j (deadline)
@@ -100,7 +100,7 @@ async function generateReminderBody(
                         content: `Demandeur : ${prenom} ${nom} : Référence : ${ref} : Deadline : ${deadline}. Pièces encore manquantes : ${missingDocs.map(d => d.label).join(', ')}. ${needsRechercheAncestrale ? 'Des documents ancestraux sont toujours manquants : mentionne brièvement notre service Recherche Ancestrale (250 €).' : ''} Rédige le corps de l'email de rappel.`
                     }
                 ],
-                model: 'mixtral-8x7b-32768',
+                model: GROQ_MODEL,
                 temperature: 0.3,
             })
             return completion.choices[0]?.message?.content || ''

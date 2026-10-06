@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchWithGroqRotation, GROQ_KEYS } from '@/lib/groq';
+import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL_FAST } from '@/lib/groq';
 import { requireStaff } from '@/lib/api-guard'
 
 const SYSTEM_PROMPT = `Tu es un assistant polyglotte et traducteur assermenté pour Retour Gagnant Bénin.
@@ -30,7 +30,7 @@ Brouillon actuel (à traduire dans la bonne langue pour ce client) :
 ${text}`;
 
         const response = await fetchWithGroqRotation({
-            model: "llama-3.1-8b-instant",
+            model: GROQ_MODEL_FAST,
             messages: [
                 { role: "system", content: SYSTEM_PROMPT },
                 { role: "user", content: instruction },
