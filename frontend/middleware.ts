@@ -293,6 +293,8 @@ export async function middleware(request: NextRequest) {
         pathname.startsWith('/portail/') ||
         pathname.startsWith('/p/') ||
         pathname.startsWith('/api/documents/confirm-payment') ||
+        // traduction d'un devis/facture du portail : l'id du document EST le secret
+        pathname.startsWith('/api/documents/traduction') ||
         // /contrat/[token] + /api/contracts : signature en ligne — l'URL EST le
         // secret (token hex), signature re-vérifiée côté serveur
         pathname.startsWith('/contrat/') ||

@@ -28,6 +28,7 @@ import { fetchWithTimeout } from '../lib/fetch'
 import { authHeaders } from '../config/api'
 import { telechargerDocument } from '../lib/documents'
 import { toast } from '../lib/feedback'
+import { langueActuelle } from '../lib/dates'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 
@@ -96,7 +97,7 @@ export default function BoutonFacture({ tx, variant = 'contour', enAttente = nul
         setEnCours(true)
         try {
             const r = await telechargerDocument(
-                `${API_BASE}/api/mobile/facture/pdf?tx=${encodeURIComponent(tx)}`,
+                `${API_BASE}/api/mobile/facture/pdf?tx=${encodeURIComponent(tx)}&lang=${langueActuelle()}`,
                 `Facture-${numero || 'RGB'}`,
             )
             if (!r.ok) toast(t('Téléchargement impossible'), r.erreur, 'danger')

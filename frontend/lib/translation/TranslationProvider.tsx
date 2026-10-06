@@ -6,46 +6,12 @@
 // provides t() function for all components.
 // ═══════════════════════════════════════════════════════
 
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { usePathname } from 'next/navigation'
 import { type LangCode, DEFAULT_LANG, LANG_COOKIE_NAME, DASHBOARD_LANG_COOKIE, SUPPORTED_LANGUAGES, isValidLang } from './constants'
 import { hashText } from './hash'
-
-// Extract brand names to prevent them from being translated, EXCEPT "VOTRE RETOUR GAGNANT"
-const extractBrands = (text: string) => {
-    let masked = text || '';
-    const extractedVars: Record<string, string> = {};
-
-    const vrgMatch = masked.match(/VOTRE RETOUR GAGNANT/gi);
-    if (vrgMatch) {
-        masked = masked.replace(/VOTRE RETOUR GAGNANT/ig, '___VRG___');
-    }
-
-    const rgbMatch1 = masked.match(/RETOUR GAGNANT BÉNIN/i);
-    if (rgbMatch1) {
-        extractedVars['RGB1'] = rgbMatch1[0];
-        masked = masked.replace(/RETOUR GAGNANT BÉNIN/ig, '{RGB1}');
-    }
-
-    const rgbMatch2 = masked.match(/RETOUR GAGNANT BENIN/i);
-    if (rgbMatch2) {
-        extractedVars['RGB2'] = rgbMatch2[0];
-        masked = masked.replace(/RETOUR GAGNANT BENIN/ig, '{RGB2}');
-    }
-
-    const rgMatch = masked.match(/RETOUR GAGNANT/i);
-    if (rgMatch) {
-        extractedVars['RG'] = rgMatch[0];
-        masked = masked.replace(/RETOUR GAGNANT/ig, '{RG}');
-    }
-
-    if (vrgMatch) {
-        masked = masked.replace(/___VRG___/g, vrgMatch[0]);
-    }
-
-    return { maskedText: masked, extractedVars };
-};
+import { extractBrands } from './brands'
 
 interface TranslationContextType {
     lang: LangCode
@@ -74,6 +40,9 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
     const [lang, setLangState] = useState<LangCode>(DEFAULT_LANG)
     const [cache, setCache] = useState<Map<string, string>>(new Map())
     const [isLoading, setIsLoading] = useState(false)
+    // Pas de demande à l'IA avant la fin du chargement (dictionnaire + base) : sinon chaque texte de la page
+    // partait à /api/translate au premier rendu, la limite par IP tombait et des pans entiers restaient en français.
+    const charge = useRef(false)
     const pathname = usePathname()
 
     // Read language from cookie on mount
@@ -112,7 +81,12 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
         }
 
         const loadTranslations = async () => {
+            charge.current = false
             setIsLoading(true)
+            // 1. Dictionnaire statique versionné (lib/translation/dict/<lang>.json) : toute l'interface,
+            //    disponible sans réseau ni IA. Chaque langue est un fichier séparé, chargé seulement si choisie.
+            const statique: Record<string, string> = await import(`./dict/${lang}.json`).then(m => m.default).catch(() => ({}))
+            setCache(new Map(Object.entries(statique)))
             try {
                 const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -139,7 +113,8 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
                     }
                 }
 
-                const newCache = new Map<string, string>()
+                // 2. La base (corrections faites dans l'admin, contenus du CMS) complète et prime sur le dictionnaire
+                const newCache = new Map<string, string>(Object.entries(statique))
                 for (const row of allRows) {
                     newCache.set(row.source_hash, row.translated_text)
                 }
@@ -157,12 +132,13 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
                     const stored = localStorage.getItem(`rg_tl_${lang}`)
                     if (stored) {
                         const parsed = JSON.parse(stored) as Record<string, string>
-                        const fallbackCache = new Map<string, string>()
+                        const fallbackCache = new Map<string, string>(Object.entries(statique))
                         Object.entries(parsed).forEach(([k, v]) => fallbackCache.set(k, v))
                         setCache(fallbackCache)
                     }
                 } catch { /* no fallback available */ }
             } finally {
+                charge.current = true
                 setIsLoading(false)
             }
         }
@@ -186,7 +162,7 @@ export function TranslationProvider({ children }: { children: React.ReactNode })
 
     // Request translation for missing text (batched)
     const requestTranslation = useCallback((text: string) => {
-        if (lang === 'fr' || !text.trim()) return
+        if (lang === 'fr' || !text.trim() || !charge.current) return
 
         pendingTexts.add(text)
 

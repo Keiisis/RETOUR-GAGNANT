@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase'
 import { Download, FileText, ShoppingBag, CircleNotch as Loader2, CheckCircle as CheckCircle2, Clock } from '@phosphor-icons/react';
 import { EmptyState, RowSkeleton } from '@/components/panel/PanelStates'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
+import ChoixLangueDocument, { useLangueDocument } from '@/components/shared/ChoixLangueDocument'
 
 interface Doc {
     id: string
@@ -34,6 +35,8 @@ export default function TelechargementsPage() {
     const [token, setToken] = useState('')
     const [busy, setBusy] = useState<string | null>(null)
     const [toutEnCours, setToutEnCours] = useState(false)
+    // Langue des factures téléchargées (les commandes boutique gardent leur format)
+    const [langue, setLangue] = useLangueDocument()
 
     useEffect(() => {
         const load = async () => {
@@ -83,7 +86,8 @@ export default function TelechargementsPage() {
     // (Un simple <a href> ne porterait pas le jeton pour les routes /api/client/*.)
     const telecharger = async (doc: Doc): Promise<boolean> => {
         try {
-            const res = await fetch(doc.url, {
+            const url = doc.type === 'facture' ? `${doc.url}?lang=${langue}` : doc.url
+            const res = await fetch(url, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {},
             })
             if (!res.ok) return false
@@ -91,7 +95,7 @@ export default function TelechargementsPage() {
             const href = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = href
-            a.download = `${doc.libelle.replace(/[^a-zA-Z0-9-]/g, '_')}-${doc.ref}.pdf`
+            a.download = `${doc.libelle.replace(/[^a-zA-Z0-9-]/g, '_')}-${doc.ref}${doc.type === 'facture' && langue !== 'fr' ? '_' + langue : ''}.pdf`
             document.body.appendChild(a)
             a.click()
             a.remove()
@@ -133,13 +137,16 @@ export default function TelechargementsPage() {
                         <p className="text-sm text-gray-400">Toutes vos factures et commandes, au même endroit</p>
                     </div>
                 </div>
-                {docs.length > 0 && (
-                    <button onClick={surTout} disabled={toutEnCours}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 transition disabled:opacity-50">
-                        {toutEnCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        Tout télécharger ({docs.length})
-                    </button>
-                )}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <ChoixLangueDocument value={langue} onChange={setLangue} className="text-gray-300" titre="Langue des factures" />
+                    {docs.length > 0 && (
+                        <button onClick={surTout} disabled={toutEnCours}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 transition disabled:opacity-50">
+                            {toutEnCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Tout télécharger ({docs.length})
+                        </button>
+                    )}
+                </div>
             </header>
 
             {loading ? (

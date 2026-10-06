@@ -75,7 +75,7 @@ export default function Footer() {
                                 { name: 'Contact', href: '/contact' },
                                 { name: 'Rendez-vous', href: '/rendez-vous' }
                             ].map((item) => (
-                                <li key={t(item.name)}>
+                                <li key={item.name}>
                                     <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#FCD116] opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {t(item.name)}
@@ -96,7 +96,7 @@ export default function Footer() {
                                 { name: 'Tourisme & Culture', href: '/services/culture' },
                                 { name: 'Suivi de Chantier', href: '/services/construction' }
                             ].map((item) => (
-                                <li key={t(item.name)}>
+                                <li key={item.name}>
                                     <Link prefetch={false} href={item.href} className="hover:text-[#FCD116] transition-all duration-300 hover:translate-x-1 flex items-center gap-2 group">
                                         <span className="w-1.5 h-1.5 rounded-full bg-[#008751] opacity-0 group-hover:opacity-100 transition-opacity" />
                                         {t(item.name)}

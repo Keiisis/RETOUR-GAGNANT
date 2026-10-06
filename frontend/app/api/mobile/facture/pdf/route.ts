@@ -11,16 +11,9 @@
 // ══════════════════════════════════════════════════════════════
 import { NextRequest, NextResponse } from 'next/server'
 import { resoudreFactureDuClient, parapheDuClient } from '@/lib/mobile-facture'
-import { generateInvoicePdf, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { generateInvoicePdfLangue, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { langueDoc } from '@/lib/document-langues'
 import { TVA_RATE } from '@/lib/tax'
-
-const dateFr = (iso?: string | null) => {
-    if (!iso) return ''
-    const mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-    const d = new Date(iso)
-    return `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`
-}
 
 export async function GET(req: NextRequest) {
     const r = await resoudreFactureDuClient(req)
@@ -58,10 +51,12 @@ export async function GET(req: NextRequest) {
     const paraphe = await parapheDuClient(r.clientId!)
     const acquittee = f.status === 'paye' || !!f.paid_at
 
-    const base64 = generateInvoicePdf({
+    // Langue choisie dans l'application (?lang=) ; dates en ISO, mises en forme par le modèle.
+    const langue = langueDoc(req.nextUrl.searchParams.get('lang'))
+    const base64 = await generateInvoicePdfLangue({
         invoiceRef: String(f.numero || f.id.slice(0, 8).toUpperCase()),
-        date: dateFr(f.created_at),
-        paidAt: f.paid_at ? dateFr(f.paid_at) : undefined,
+        date: f.created_at || '',
+        paidAt: f.paid_at || undefined,
         isPaid: acquittee,
         clientName: `${f.client_prenom || ''} ${f.client_nom || ''}`.trim() || 'Client',
         clientEmail: f.client_email || undefined,
@@ -82,9 +77,9 @@ export async function GET(req: NextRequest) {
            paiement. Le paraphe, lui, rouvre le « Bon pour accord » à gauche. */
         isManual: acquittee,
         clientSignatureDataUrl: paraphe,
-    })
+    }, langue)
 
-    const nom = `FACTURE-${String(f.numero || f.id).replace(/[^\w-]/g, '-')}.pdf`
+    const nom = `FACTURE-${String(f.numero || f.id).replace(/[^\w-]/g, '-')}${langue === 'fr' ? '' : '_' + langue}.pdf`
 
     return new NextResponse(new Uint8Array(Buffer.from(base64, 'base64')), {
         headers: {

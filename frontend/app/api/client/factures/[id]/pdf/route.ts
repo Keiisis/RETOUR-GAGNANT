@@ -11,7 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getClientUser } from '@/lib/client-auth'
-import { generateInvoicePdf, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { generateInvoicePdfLangue, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { langueDoc } from '@/lib/document-langues'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,15 +21,8 @@ const db = () => createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
 
-/* La date était passée BRUTE (« 2026-08-21T11:52:35.626706+00:00 ») : c'est
-   l'horodatage de la base qui s'imprimait sur le document du client. */
-const dateFr = (iso?: string | null) => {
-    if (!iso) return ''
-    const mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-    const d = new Date(iso)
-    return Number.isNaN(d.getTime()) ? String(iso) : `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`
-}
+/* Dates passées en ISO : le modèle (lib/document-pdf.ts) les met en forme
+   dans la langue du document (un « 21 Août » figé restait en français). */
 
 export async function GET(
     request: NextRequest,
@@ -78,10 +72,11 @@ export async function GET(
         if (sig?.signature_data && sig.auto_sign !== 'never') paraphe = sig.signature_data
     }
 
-    const base64 = generateInvoicePdf({
+    const langue = langueDoc(request.nextUrl.searchParams.get('lang'))
+    const base64 = await generateInvoicePdfLangue({
         invoiceRef: doc.numero || doc.id,
-        date: dateFr(doc.created_at),
-        paidAt: doc.paid_at ? dateFr(doc.paid_at) : undefined,
+        date: doc.created_at,
+        paidAt: doc.paid_at || undefined,
         isPaid: doc.status === 'paye',
         clientName: `${doc.client_prenom || ''} ${doc.client_nom || ''}`.trim() || doc.client_email || 'Client',
         clientEmail: doc.client_email || undefined,
@@ -101,10 +96,12 @@ export async function GET(
         statut: doc.status || undefined,
         signedAt: doc.signed_at || undefined,
         clientSignatureDataUrl: paraphe,
-    })
+        dueDate: doc.due_date || undefined,
+        paymentMethod: doc.payment_method || doc.payment_provider || undefined,
+    }, langue)
 
     const pdf = Buffer.from(base64, 'base64')
-    const nom = `${estDevis ? 'Devis' : 'Facture'}-${(doc.numero || doc.id).replace(/[^a-zA-Z0-9-]/g, '_')}.pdf`
+    const nom = `${estDevis ? 'Devis' : 'Facture'}-${(doc.numero || doc.id).replace(/[^a-zA-Z0-9-]/g, '_')}${langue === 'fr' ? '' : '_' + langue}.pdf`
 
     return new NextResponse(new Uint8Array(pdf), {
         status: 200,

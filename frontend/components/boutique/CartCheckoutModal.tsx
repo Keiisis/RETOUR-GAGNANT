@@ -383,7 +383,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                     onApprove: async (data: { orderID: string }) => {
                         setStep('processing')
                         const oid = paypalOrderIdRef.current
-                        if (!oid) { setErrorMessage('Référence commande perdue'); setStep('error'); return }
+                        if (!oid) { setErrorMessage(t('Référence commande perdue')); setStep('error'); return }
 
                         const res = await fetch('/api/checkout/paypal/capture', {
                             method: 'POST',
@@ -402,14 +402,14 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                             setStep('success')
                         } else {
                             cancelOrder(oid)
-                            setErrorMessage(result.error || 'Capture PayPal échouée')
+                            setErrorMessage(result.error || t('Capture PayPal échouée'))
                             setStep('error')
                         }
                     },
                     onError: () => {
                         const pOid = paypalOrderIdRef.current
                         if (pOid) cancelOrder(pOid)
-                        setErrorMessage('Une erreur PayPal est survenue.')
+                        setErrorMessage(t('Une erreur PayPal est survenue.'))
                         setStep('error')
                     },
                     onCancel: () => {
@@ -418,7 +418,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 })
                 .render('#cart-paypal-button-container')
                 .catch(() => {
-                    setErrorMessage("Impossible d'initialiser PayPal")
+                    setErrorMessage(t("Impossible d'initialiser PayPal"))
                     setStep('error')
                 })
         }
@@ -444,7 +444,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${curr}&locale=fr_FR&intent=capture`
                 script.onload = initPayPalButtons
                 script.onerror = () => {
-                    setErrorMessage('Impossible de charger PayPal')
+                    setErrorMessage(t('Impossible de charger PayPal'))
                     setStep('error')
                 }
                 document.head.appendChild(script)
@@ -454,10 +454,10 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
     }, [step, settings.paypal_client_id, settings.paypal_currency])
 
     const validateInfo = () => {
-        if (!customerName.trim()) return 'Veuillez saisir votre nom'
-        if (!customerPhone.trim()) return 'Veuillez saisir votre numéro de téléphone'
-        if (!shippingCountry) return 'Veuillez sélectionner votre pays de livraison'
-        if (shippingZone !== 'digital' && !shippingAddress.trim()) return 'Veuillez saisir votre adresse de livraison'
+        if (!customerName.trim()) return t('Veuillez saisir votre nom')
+        if (!customerPhone.trim()) return t('Veuillez saisir votre numéro de téléphone')
+        if (!shippingCountry) return t('Veuillez sélectionner votre pays de livraison')
+        if (shippingZone !== 'digital' && !shippingAddress.trim()) return t('Veuillez saisir votre adresse de livraison')
         return null
     }
 
@@ -503,13 +503,13 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 setOrderId(data.order_id)
                 return data.order_id
             }
-            throw new Error(data.error || 'Erreur lors de la création de la commande')
+            throw new Error(data.error || t('Erreur lors de la création de la commande'))
         } catch (err) {
-            setErrorMessage(err instanceof Error ? err.message : 'Erreur lors de la création de la commande')
+            setErrorMessage(err instanceof Error ? err.message : t('Erreur lors de la création de la commande'))
             setStep('error')
             return null
         }
-    }, [items, currency, customerName, customerEmail, customerPhone, appliedCoupon, shippingCountry, shippingAddress, shippingZone, shippingFee, finalTotal])
+    }, [items, currency, customerName, customerEmail, customerPhone, appliedCoupon, shippingCountry, shippingAddress, shippingZone, shippingFee, finalTotal, t])
 
     const cancelOrder = useCallback(async (oid: string) => {
         try {
@@ -540,12 +540,12 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 setStep('success')
             } else {
                 await cancelOrder(oid)
-                setErrorMessage(data.error || 'La vérification du paiement a échoué.')
+                setErrorMessage(data.error || t('La vérification du paiement a échoué.'))
                 setStep('error')
             }
         } catch {
             await cancelOrder(oid)
-            setErrorMessage('Erreur de vérification')
+            setErrorMessage(t('Erreur de vérification'))
             setStep('error')
         }
     }
@@ -561,11 +561,11 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         const publicKey = sandbox
             ? (settings.kkiapay_sandbox_public_key || settings.kkiapay_public_key)
             : settings.kkiapay_public_key
-        if (!publicKey) { cancelOrder(oid); setErrorMessage('Kkiapay non configurée.'); setStep('error'); return }
+        if (!publicKey) { cancelOrder(oid); setErrorMessage(t('Kkiapay non configurée.')); setStep('error'); return }
         try {
             await ensureKkiapaySDK()
         } catch {
-            cancelOrder(oid); setErrorMessage("SDK Kkiapay non chargé. Rechargez la page."); setStep('error'); return
+            cancelOrder(oid); setErrorMessage(t("SDK Kkiapay non chargé. Rechargez la page.")); setStep('error'); return
         }
         const kkAmount = Math.max(1, Math.round(finalTotal * (1 + CONVERSION_MARGIN)))
         console.log('[Kkiapay] amount XOF:', kkAmount, 'finalTotal:', finalTotal, 'sandbox:', sandbox)
@@ -623,7 +623,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             }
             surveillerAbandonKkiapay(() => {
                 if (orderId) cancelOrder(orderId)
-                setErrorMessage('Paiement annulé. Rien n’a été débité.')
+                setErrorMessage(t('Paiement annulé. Rien n’a été débité.'))
                 setStep('error')
             })
             window.openKkiapayWidget({
@@ -644,7 +644,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 await verifyPayment(oid, r.transactionId as string)
             })
             window.addKkiapayListener('failed', () => {
-                cancelOrder(oid); setErrorMessage('Paiement échoué ou annulé.'); setStep('error')
+                cancelOrder(oid); setErrorMessage(t('Paiement échoué ou annulé.')); setStep('error')
             })
             // 'close' : l'utilisateur a fermé le widget sans payer
             window.addKkiapayListener('close' as Parameters<typeof window.addKkiapayListener>[0], () => {
@@ -652,7 +652,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             })
         } catch (err) {
             console.error('[Kkiapay] Erreur widget:', err)
-            cancelOrder(oid); setErrorMessage(`Erreur Kkiapay: ${err instanceof Error ? err.message : String(err)}`); setStep('error')
+            cancelOrder(oid); setErrorMessage(t('Erreur Kkiapay: {msg}', { msg: err instanceof Error ? err.message : String(err) })); setStep('error')
         }
     }
 
@@ -663,16 +663,16 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         if (!oid) return
         const publicKey = settings.fedapay_public_key
         const sandbox = settings.fedapay_sandbox === 'true'
-        if (!publicKey) { cancelOrder(oid); setErrorMessage('FedaPay non configurée.'); setStep('error'); return }
+        if (!publicKey) { cancelOrder(oid); setErrorMessage(t('FedaPay non configurée.')); setStep('error'); return }
 
         // Charger le SDK FedaPay dynamiquement si nécessaire
         const ensureFedaPay = (): Promise<void> => new Promise((resolve, reject) => {
             if (window.FedaPay) { resolve(); return }
             const poll = (ms: number) => {
                 let elapsed = 0
-                const t = setInterval(() => {
-                    if (window.FedaPay) { clearInterval(t); resolve() }
-                    else if (elapsed >= ms) { clearInterval(t); reject(new Error("SDK FedaPay indisponible après chargement")) }
+                const timer = setInterval(() => {
+                    if (window.FedaPay) { clearInterval(timer); resolve() }
+                    else if (elapsed >= ms) { clearInterval(timer); reject(new Error(t("SDK FedaPay indisponible après chargement"))) }
                     elapsed += 200
                 }, 200)
             }
@@ -681,7 +681,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             const s = document.createElement('script')
             s.src = 'https://cdn.fedapay.com/checkout.js?v=1.1.7'
             s.onload = () => poll(4000)
-            s.onerror = () => reject(new Error("Impossible de charger le SDK FedaPay. Vérifiez votre connexion."))
+            s.onerror = () => reject(new Error(t("Impossible de charger le SDK FedaPay. Vérifiez votre connexion.")))
             document.head.appendChild(s)
         })
 
@@ -689,7 +689,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             await ensureFedaPay()
         } catch (err) {
             cancelOrder(oid)
-            setErrorMessage(err instanceof Error ? err.message : "SDK FedaPay non disponible")
+            setErrorMessage(err instanceof Error ? err.message : t("SDK FedaPay non disponible"))
             setStep('error')
             return
         }
@@ -711,14 +711,14 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             const createData = await createRes.json()
             if (!createRes.ok || !createData.fedapay_transaction_id) {
                 cancelOrder(oid)
-                setErrorMessage(createData.error || 'Impossible de créer la transaction FedaPay')
+                setErrorMessage(createData.error || t('Impossible de créer la transaction FedaPay'))
                 setStep('error')
                 return
             }
             fedapayTxId = createData.fedapay_transaction_id
         } catch {
             cancelOrder(oid)
-            setErrorMessage('Erreur de connexion à FedaPay')
+            setErrorMessage(t('Erreur de connexion à FedaPay'))
             setStep('error')
             return
         }
@@ -734,16 +734,16 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         // L'ID serveur est fiable : plus besoin d'extraire du callback
                         await verifyPayment(oid, String(fedapayTxId))
                     } else {
-                        cancelOrder(oid); setErrorMessage('Paiement non approuvé.'); setStep('error')
+                        cancelOrder(oid); setErrorMessage(t('Paiement non approuvé.')); setStep('error')
                     }
                 },
             })
             // Déclencher l'ouverture du modal FedaPay
             setTimeout(() => { document.getElementById('cart-fedapay-btn')?.click() }, 100)
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+            const msg = err instanceof Error ? err.message : t('Erreur inconnue')
             cancelOrder(oid)
-            setErrorMessage(`Impossible d'initialiser FedaPay: ${msg}`)
+            setErrorMessage(t("Impossible d'initialiser FedaPay: {msg}", { msg }))
             setStep('error')
         }
     }
@@ -754,7 +754,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         const oid = await createOrder('zeyow')
         if (!oid) return
         const url = settings.zeyow_redirect_url
-        if (!url) { setErrorMessage('Zeyow non configurée.'); setStep('error'); return }
+        if (!url) { setErrorMessage(t('Zeyow non configurée.')); setStep('error'); return }
 
         const returnUrl = `${window.location.origin}/boutique/payment/return`
         const cancelUrl = `${window.location.origin}/boutique`
@@ -776,7 +776,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         if (!oid) return
 
         const publicKey = settings.stripe_public_key
-        if (!publicKey) { cancelOrder(oid); setErrorMessage("Stripe n'est pas configuré."); setStep('error'); return }
+        if (!publicKey) { cancelOrder(oid); setErrorMessage(t("Stripe n'est pas configuré.")); setStep('error'); return }
 
         try {
             const stripeCurrency = selectedCurrencyRef.current
@@ -793,7 +793,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             const data = await res.json()
             if (!data.client_secret) {
                 cancelOrder(oid)
-                setErrorMessage(data.error || 'Erreur Stripe')
+                setErrorMessage(data.error || t('Erreur Stripe'))
                 setStep('error')
                 return
             }
@@ -801,7 +801,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
             setStep('stripe-form')
         } catch {
             cancelOrder(oid)
-            setErrorMessage('Impossible de contacter Stripe')
+            setErrorMessage(t('Impossible de contacter Stripe'))
             setStep('error')
         }
     }
@@ -816,16 +816,16 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 },
             })
             if (result.error) {
-                setErrorMessage(result.error.message || 'Paiement refusé')
+                setErrorMessage(result.error.message || t('Paiement refusé'))
                 setStep('stripe-form')
             } else if (result.paymentIntent?.status === 'succeeded') {
                 await verifyPayment(orderId, result.paymentIntent.id)
             } else {
-                setErrorMessage('Paiement incomplet. Veuillez réessayer ou contacter votre banque.')
+                setErrorMessage(t('Paiement incomplet. Veuillez réessayer ou contacter votre banque.'))
                 setStep('stripe-form')
             }
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Erreur de paiement Stripe'
+            const msg = err instanceof Error ? err.message : t('Erreur de paiement Stripe')
             await cancelOrder(orderId)
             setErrorMessage(msg)
             setStep('error')
@@ -856,7 +856,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                 setCouponError(data.error)
             }
         } catch {
-            setCouponError('Erreur de validation')
+            setCouponError(t('Erreur de validation'))
         } finally {
             setCouponLoading(false)
         }
@@ -866,7 +866,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         {
             id: 'kkiapay' as PaymentProvider,
             name: 'Kkiapay',
-            subtitle: 'Mobile Money (MTN, Moov) / Carte',
+            subtitle: t('Mobile Money (MTN, Moov) / Carte'),
             classes: 'bg-[#4A90D9]/10 border-[#4A90D9]/30',
             logo: '/assets/icones moyens de paiement/kkiapay.png',
             handler: handleKkiapay,
@@ -875,7 +875,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         {
             id: 'fedapay' as PaymentProvider,
             name: 'FedaPay',
-            subtitle: 'Mobile Money / Carte bancaire',
+            subtitle: t('Mobile Money / Carte bancaire'),
             classes: 'bg-[#2ECC71]/10 border-[#2ECC71]/30',
             logo: '/assets/icones moyens de paiement/fedapay.png',
             handler: handleFedapay,
@@ -884,7 +884,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         {
             id: 'zeyow' as PaymentProvider,
             name: 'Zeyow',
-            subtitle: 'Carte Virtuelle',
+            subtitle: t('Carte Virtuelle'),
             classes: 'bg-[#FF6B35]/10 border-[#FF6B35]/30',
             logo: '/assets/icones moyens de paiement/zeyow.jpg',
             handler: handleZeyow,
@@ -893,7 +893,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         {
             id: 'stripe' as PaymentProvider,
             name: 'Stripe',
-            subtitle: 'Carte bancaire internationale',
+            subtitle: t('Carte bancaire internationale'),
             classes: 'bg-[#635BFF]/10 border-[#635BFF]/30',
             logo: '/assets/icones moyens de paiement/Stripe.png',
             handler: handleStripe,
@@ -902,7 +902,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
         {
             id: 'paypal' as PaymentProvider,
             name: 'PayPal',
-            subtitle: 'Compte PayPal Business',
+            subtitle: t('Compte PayPal Business'),
             classes: 'bg-[#009CDE]/10 border-[#009CDE]/30',
             logo: '/assets/icones moyens de paiement/paypal.png',
             handler: handlePayPal,
@@ -937,7 +937,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                             <div>
                                 <h3 className="text-base font-black text-white font-heading"><T>Checkout Panier</T></h3>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                    {step === 'success' ? snapshotCount : items.length} article{(step === 'success' ? snapshotCount : items.length) > 1 ? 's' : ''}
+                                    {(step === 'success' ? snapshotCount : items.length) > 1 ? t('{count} articles', { count: step === 'success' ? snapshotCount : items.length }) : t('{count} article', { count: step === 'success' ? snapshotCount : items.length })}
                                 </p>
                             </div>
                         </div>
@@ -966,7 +966,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {appliedCoupon && (
                             <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5 text-xs text-[#008751]">
                                 <span className="flex items-center gap-1 font-bold">
-                                    <Tag size={12} /> Coupon ({appliedCoupon.code})
+                                    <Tag size={12} /> <T>Coupon</T> ({appliedCoupon.code})
                                 </span>
                                 <span className="font-bold">-<Price amount={appliedCoupon.discount_amount} currency="XOF" noConvert /></span>
                             </div>
@@ -979,7 +979,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                             <span className="font-bold text-white"><Price amount={htMarchandises} currency="XOF" noConvert /></span>
                         </div>
                         <div className="flex justify-between items-center mt-1 text-xs text-gray-400">
-                            <span className="font-bold">TVA 18 %</span>
+                            <span className="font-bold"><T>TVA 18 %</T></span>
                             <span className="font-bold text-white">+<Price amount={tvaMarchandises} currency="XOF" noConvert /></span>
                         </div>
                         </>
@@ -987,7 +987,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {shippingFee > 0 && (
                             <div className="flex justify-between items-center mt-2 text-xs text-gray-400">
                                 <span className="flex items-center gap-1 font-bold">
-                                    <MapPin size={12} /> Livraison ({shippingCountry || shippingZone})
+                                    <MapPin size={12} /> <T>Livraison</T> ({shippingCountry ? t(shippingCountry) : shippingZone})
                                 </span>
                                 <span className="font-bold text-white">+<Price amount={shippingFee} currency="XOF" noConvert /></span>
                             </div>
@@ -1004,7 +1004,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 {selectedCurrency !== 'XOF' && (
                                     <div className="text-right">
                                         <p className="text-[10px] text-gray-500">= <Price amount={finalTotal} currency="XOF" noConvert /></p>
-                                        <p className="text-[9px] text-gray-600 mt-0.5">Débité en XOF par votre banque</p>
+                                        <p className="text-[9px] text-gray-600 mt-0.5"><T>Débité en XOF par votre banque</T></p>
                                     </div>
                                 )}
                                 <CurrencySelector
@@ -1038,7 +1038,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 </div>
                                 <div>
                                     <label htmlFor="cart-email" className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">
-                                        Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>-pour recevoir votre facture</T></span>
+                                        <T>Email</T> <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>-pour recevoir votre facture</T></span>
                                     </label>
                                     <div className="relative">
                                         <Envelope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
@@ -1049,7 +1049,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 {/* Livraison : pays + adresse */}
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block flex items-center gap-1">
-                                        <MapPin size={12} /> Pays de livraison *
+                                        <MapPin size={12} /> <T>Pays de livraison *</T>
                                     </label>
                                     <select
                                         title={t("Pays de livraison")}
@@ -1066,13 +1066,13 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                         <option value="digital"><T>Service digital (pas de livraison physique)</T></option>
                                         <optgroup label="──────────">
                                             {ALL_COUNTRIES.map(c => (
-                                                <option key={c} value={c} className="bg-[#0a0f18]">{c}</option>
+                                                <option key={c} value={c} className="bg-[#0a0f18]">{t(c)}</option>
                                             ))}
                                         </optgroup>
                                     </select>
                                     {shippingCountry && (
                                         <p className={`text-[10px] mt-1 font-bold ${shippingFee === 0 ? 'text-[#008751]' : 'text-[#FCD116]'}`}>
-                                            {ZONE_LABELS[shippingZone]}
+                                            {t(ZONE_LABELS[shippingZone])}
                                         </p>
                                     )}
                                 </div>
@@ -1109,7 +1109,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                                 disabled={couponLoading || !couponCode}
                                                 className="h-full px-6 bg-white/10 hover:bg-white/20 text-white rounded-xl"
                                             >
-                                                {couponLoading ? <CircleNotch size={16} className="animate-spin" /> : 'Appliquer'}
+                                                {couponLoading ? <CircleNotch size={16} className="animate-spin" /> : t('Appliquer')}
                                             </Button>
                                         </div>
                                         {couponError && <p className="text-[10px] text-[#E8112D] font-bold mt-1.5 ml-1">{couponError}</p>}
@@ -1126,7 +1126,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     onClick={handleSubmitInfo}
                                     className="w-full h-14 rounded-xl bg-[#FCD116] text-[#0f141e] font-black text-sm hover:bg-[#008751] hover:text-white transition-all"
                                 >
-                                    Choisir le mode de paiement <CaretRight size={18} className="ml-2" />
+                                    <T>Choisir le mode de paiement</T> <CaretRight size={18} className="ml-2" />
                                 </Button>
                             </motion.div>
                         )}
@@ -1135,7 +1135,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                         {step === 'payment' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-3">
-                                    Sélectionnez votre moyen de paiement
+                                    <T>Sélectionnez votre moyen de paiement</T>
                                 </p>
                                 {providers.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-8 space-y-3">
@@ -1175,7 +1175,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     onClick={() => setStep('info')}
                                     className="text-xs text-gray-500 hover:text-white underline transition-colors block mx-auto"
                                 >
-                                    Retour
+                                    <T>Retour</T>
                                 </button>
                             </motion.div>
                         )}
@@ -1194,7 +1194,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">
-                                        Informations de carte
+                                        <T>Informations de carte</T>
                                     </label>
                                     <div
                                         id="cart-stripe-card-element"
@@ -1203,7 +1203,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 </div>
                                 <div className="text-xs text-gray-500 flex items-center gap-1.5">
                                     <Shield size={12} className="text-[#008751]" />
-                                    Vos données de carte ne transitent jamais par nos serveurs.
+                                    <T>Vos données de carte ne transitent jamais par nos serveurs.</T>
                                 </div>
                                 <Button
                                     type="button"
@@ -1222,7 +1222,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     onClick={() => setStep('payment')}
                                     className="text-xs text-gray-500 hover:text-white underline transition-colors block mx-auto"
                                 >
-                                    Changer de méthode
+                                    <T>Changer de méthode</T>
                                 </button>
                             </motion.div>
                         )}
@@ -1245,14 +1245,14 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                     </div>
                                 </div>
                                 <p className="text-[10px] text-gray-600 text-center">
-                                    Montant: <span className="text-white font-bold">{selectedCurrency === 'XOF' ? <Price amount={finalTotal} currency="XOF" noConvert /> : <span>{formatPrice(displayAmount, selectedCurrency)}</span>}</span>
+                                    <T>Montant:</T> <span className="text-white font-bold">{selectedCurrency === 'XOF' ? <Price amount={finalTotal} currency="XOF" noConvert /> : <span>{formatPrice(displayAmount, selectedCurrency)}</span>}</span>
                                 </p>
                                 <button
                                     type="button"
                                     onClick={() => setStep('payment')}
                                     className="text-xs text-gray-500 hover:text-white underline transition-colors block mx-auto"
                                 >
-                                    Changer de méthode
+                                    <T>Changer de méthode</T>
                                 </button>
                             </motion.div>
                         )}
@@ -1277,14 +1277,14 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Paiement reçu</T></h4>
                                     <p className="text-sm text-gray-400 mt-2 max-w-xs"><T>Votre commande a été confirmée.</T></p>
-                                    {orderId && <p className="text-[10px] text-gray-600 font-mono mt-4">Réf: {orderId.slice(0, 8).toUpperCase()}</p>}
+                                    {orderId && <p className="text-[10px] text-gray-600 font-mono mt-4"><T>Réf:</T> {orderId.slice(0, 8).toUpperCase()}</p>}
                                 </div>
                                 <Button
                                     type="button"
                                     onClick={onClose}
                                     className="h-12 px-8 rounded-xl bg-[#008751] text-white font-bold hover:bg-[#008751]/80 transition-all"
                                 >
-                                    Fermer
+                                    <T>Fermer</T>
                                 </Button>
                             </motion.div>
                         )}
@@ -1297,7 +1297,7 @@ export function CartCheckoutModal({ isOpen, onClose }: CartCheckoutModalProps) {
                                 </div>
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Erreur</T></h4>
-                                    <p className="text-sm text-gray-400 mt-2 max-w-xs">{errorMessage || 'Une erreur est survenue.'}</p>
+                                    <p className="text-sm text-gray-400 mt-2 max-w-xs">{errorMessage || t('Une erreur est survenue.')}</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <Button type="button" onClick={() => setStep('payment')} variant="outline" className="h-12 px-6 rounded-xl border-white/10 text-white"><T>Réessayer</T></Button>

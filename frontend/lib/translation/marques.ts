@@ -89,3 +89,13 @@ export const CONSIGNE_MARQUES =
     'Some words are replaced by tokens like {{M0}}, {{M1}}. These are brand names. '
     + 'Copy every token EXACTLY as it appears, in the same place in the sentence. '
     + 'Never translate, never reorder, never remove, never add a token.'
+
+/**
+ * Le modèle a-t-il simplement recopié le français ? Pour une phrase (plusieurs mots), une « traduction »
+ * identique à la source n'en est pas une : l'enregistrer figerait le français pour toujours dans la langue cible.
+ * Un mot isolé identique peut être légitime (Portugal, Email, PDF) : il est accepté.
+ */
+export function copieDuSource(source: string, traduit: string): boolean {
+    const s = source.trim()
+    return traduit.trim() === s && /\s/.test(s)
+}

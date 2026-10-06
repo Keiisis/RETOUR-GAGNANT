@@ -12,6 +12,8 @@ import { DOC_FIN_STATUTS, DOC_FIN_CLOS, type DocFinStatut } from '@/lib/constant
 import DescriptionLignes from '@/components/shared/DescriptionLignes'
 import { descriptionEnLigne } from '@/lib/description-lignes'
 import { telechargerDocumentPdf, type DocumentSource } from '@/lib/document-pdf-navigateur'
+import TraductionDocument from '@/components/shared/TraductionDocument'
+import { langueDoc, type LangueDoc } from '@/lib/document-langues'
 import { agentHasComptaAccess } from '@/lib/constants/compta'
 
 // Libellé de devise du DOCUMENT : ne JAMAIS forcer XOF sur un devis/facture EUR/USD
@@ -65,6 +67,7 @@ export default function AgentDevisPage() {
     const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture' | 'impayees'>('all')
     const [sendingRelance, setSendingRelance] = useState<string | null>(null)
     const [showPreview, setShowPreview] = useState<DocumentFinancier | null>(null)
+    const [langueOuverture, setLangueOuverture] = useState<LangueDoc | undefined>(undefined)
     const [generating, setGenerating] = useState(false)
     const [sendingEmail, setSendingEmail] = useState<string | null>(null)
 
@@ -120,6 +123,11 @@ export default function AgentDevisPage() {
         })
 
         setDocuments(allDocs)
+
+        // Retour du formulaire d'émission (?ouvrir=<id>&langue=en) : le document s'ouvre sur sa traduction à relire.
+        const q = new URLSearchParams(window.location.search)
+        const aOuvrir = q.get('ouvrir') && allDocs.find(d => d.id === q.get('ouvrir'))
+        if (aOuvrir) { setLangueOuverture(langueDoc(q.get('langue'))); setShowPreview(aOuvrir) }
 
         // Fetch paiements manuels pour ces documents
         const docIds = allDocs.map(d => d.id)
@@ -665,6 +673,10 @@ export default function AgentDevisPage() {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Version du document dans la langue du client (relue avant envoi) */}
+                                <TraductionDocument key={showPreview.id} doc={showPreview as unknown as DocumentSource & { id: string }} langueInitiale={langueOuverture}
+                                    onEnvoye={() => { if (showPreview.status === 'brouillon') void handleUpdateStatus(showPreview.id, 'envoye') }} />
 
                                 <div className="border-t border-white/5 pt-4">
                                     <p className="text-xs text-info-400 mb-2 flex items-center gap-2">

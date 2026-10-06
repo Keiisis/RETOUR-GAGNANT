@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Cookie, X, Check } from '@phosphor-icons/react'
 import Link from 'next/link'
+import { T, useTranslation } from '@/lib/translation'
 
 export default function CookieConsent() {
+    const { t } = useTranslation()
     const [visible, setVisible] = useState(false)
 
     useEffect(() => {
@@ -43,7 +45,7 @@ export default function CookieConsent() {
                         <button
                             onClick={refuse}
                             className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                            aria-label="Fermer"
+                            aria-label={t('Fermer')}
                         >
                             <X size={14} className="text-gray-500" />
                         </button>
@@ -54,12 +56,12 @@ export default function CookieConsent() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="font-bold text-[#1a2332] text-sm mb-1">
-                                    Ce site utilise des cookies
+                                    <T>Ce site utilise des cookies</T>
                                 </h3>
                                 <p className="text-gray-500 text-xs leading-relaxed mb-4">
-                                    Nous utilisons des cookies pour améliorer votre expérience et analyser le trafic.{' '}
+                                    <T>Nous utilisons des cookies pour améliorer votre expérience et analyser le trafic.</T>{' '}
                                     <Link href="/confidentialite" className="text-[#008751] hover:underline font-medium">
-                                        En savoir plus
+                                        <T>En savoir plus</T>
                                     </Link>
                                 </p>
 
@@ -69,13 +71,13 @@ export default function CookieConsent() {
                                         className="flex-1 bg-[#008751] hover:bg-[#006B40] text-white text-xs font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5"
                                     >
                                         <Check size={14} />
-                                        Accepter
+                                        <T>Accepter</T>
                                     </button>
                                     <button
                                         onClick={refuse}
                                         className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold py-2.5 px-4 rounded-xl transition-colors"
                                     >
-                                        Refuser
+                                        <T>Refuser</T>
                                     </button>
                                 </div>
                             </div>

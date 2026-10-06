@@ -160,7 +160,7 @@ function SubmissionForm() {
             setIsSubmitted(true);
         } catch (error) {
             console.error("Submission failed", error);
-            alert("Erreur lors de l'envoi. Veuillez réessayer.");
+            alert(t("Erreur lors de l'envoi. Veuillez réessayer."));
         } finally {
             setIsLoading(false);
         }

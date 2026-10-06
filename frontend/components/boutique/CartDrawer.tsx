@@ -49,7 +49,7 @@ export function CartDrawer() {
                                     <div>
                                         <h3 className="text-base font-black text-white font-heading"><T>Panier</T></h3>
                                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                                            {itemCount} article{itemCount > 1 ? 's' : ''}
+                                            {itemCount > 1 ? t('{count} articles', { count: itemCount }) : t('{count} article', { count: itemCount })}
                                         </p>
                                     </div>
                                 </div>
@@ -149,14 +149,14 @@ export function CartDrawer() {
                                         onClick={() => { closeCart(); setShowCheckout(true) }}
                                         className="w-full h-14 rounded-xl bg-[#FCD116] text-[#0f141e] font-black text-sm hover:bg-[#008751] hover:text-white transition-all gap-2"
                                     >
-                                        Commander <ArrowRight size={18} />
+                                        <T>Commander</T> <ArrowRight size={18} />
                                     </Button>
 
                                     <button
                                         onClick={clearCart}
                                         className="text-xs text-gray-600 hover:text-[#E8112D] transition-colors block mx-auto underline"
                                     >
-                                        Vider le panier
+                                        <T>Vider le panier</T>
                                     </button>
                                 </div>
                             )}

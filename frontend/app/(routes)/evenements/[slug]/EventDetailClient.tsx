@@ -356,7 +356,7 @@ export default function EventDetailPage() {
                                             {event.location_map_url && (
                                                 <a href={event.location_map_url} target="_blank" rel="noopener noreferrer"
                                                     className="text-[10px] text-[#E8112D] hover:underline flex items-center gap-0.5">
-                                                    Voir sur Maps <ExternalLink size={9} />
+                                                    <T>Voir sur Maps</T> <ExternalLink size={9} />
                                                 </a>
                                             )}
                                         </div>
@@ -370,7 +370,7 @@ export default function EventDetailPage() {
                                         </div>
                                         <div>
                                             <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wide"><T>Capacité</T></div>
-                                            <div className="text-xs font-bold text-[#1a2332]">{event.max_capacity} places</div>
+                                            <div className="text-xs font-bold text-[#1a2332]">{event.max_capacity} {t('places')}</div>
                                         </div>
                                     </div>
                                 )}
@@ -420,7 +420,7 @@ export default function EventDetailPage() {
                                 <div className="p-6 space-y-5">
                                     <div className="flex items-start justify-between gap-2">
                                         <div>
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1"><T>Rejoignez l'événement</T></div>
+                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1"><T>Rejoignez l&apos;événement</T></div>
                                             <h3 className="text-lg font-black text-[#1a2332] leading-tight">{t(event.title)}</h3>
                                         </div>
                                         <CurrencySelector
@@ -683,7 +683,7 @@ export default function EventDetailPage() {
                                                         </span>
                                                         {selectedCurrency !== 'XOF' && (
                                                             <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                                                encaissé en XOF
+                                                                <T>encaissé en XOF</T>
                                                             </span>
                                                         )}
                                                     </div>
@@ -701,9 +701,9 @@ export default function EventDetailPage() {
                                                                 }`}>
                                                             <div className="flex items-center gap-1.5 mb-0.5">
                                                                 <div className="w-2 h-2 rounded-full" style={{ background: pm.color }} />
-                                                                <div className="text-xs font-bold text-[#1a2332]">{pm.label}</div>
+                                                                <div className="text-xs font-bold text-[#1a2332]">{t(pm.label)}</div>
                                                             </div>
-                                                            <div className="text-[10px] text-gray-400">{pm.sub}</div>
+                                                            <div className="text-[10px] text-gray-400">{t(pm.sub)}</div>
                                                         </button>
                                                     ))}
                                                 </div>
@@ -732,7 +732,7 @@ export default function EventDetailPage() {
 
                                         {error && (
                                             <p className="text-xs text-[#E8112D] text-center bg-[#E8112D]/5 p-3 rounded-xl border border-[#E8112D]/15">
-                                                {error}
+                                                {t(error)}
                                             </p>
                                         )}
 

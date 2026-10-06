@@ -186,8 +186,8 @@ export default function SuiviDossierPage() {
                                             </div>
 
                                             <p className="text-[11px] leading-relaxed text-gray-500">
-                                                Les informations saisies servent uniquement à retrouver votre dossier, conformément à la{' '}
-                                                <a href="/confidentialite" target="_blank" rel="noopener noreferrer" className="text-[#008751] underline">politique de confidentialité</a>.
+                                                <T>Les informations saisies servent uniquement à retrouver votre dossier, conformément à la</T>{' '}
+                                                <a href="/confidentialite" target="_blank" rel="noopener noreferrer" className="text-[#008751] underline"><T>politique de confidentialité</T></a>.
                                             </p>
 
                                             <button
@@ -295,10 +295,10 @@ export default function SuiviDossierPage() {
                                             </div>
                                             <div>
                                                 <h3 className="text-xl font-black text-red-600 flex items-center gap-2">
-                                                    Action Requise
+                                                    <T>Action Requise</T>
                                                 </h3>
                                                 <p className="text-red-800 text-sm mt-1">
-                                                    Afin de poursuivre le traitement de votre dossier, veuillez nous fournir les documents suivants de toute urgence.
+                                                    <T>Afin de poursuivre le traitement de votre dossier, veuillez nous fournir les documents suivants de toute urgence.</T>
                                                 </p>
                                             </div>
                                         </div>
@@ -328,9 +328,9 @@ export default function SuiviDossierPage() {
                                                             }`}
                                                         >
                                                             {uploadingDoc === doc ? (
-                                                                <><Loader2 size={16} className="animate-spin" /> Envoi...</>
+                                                                <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></>
                                                             ) : (
-                                                                <><Upload size={16} /> Envoyer ce document</>
+                                                                <><Upload size={16} /> <T>Envoyer ce document</T></>
                                                             )}
                                                         </label>
                                                     </div>

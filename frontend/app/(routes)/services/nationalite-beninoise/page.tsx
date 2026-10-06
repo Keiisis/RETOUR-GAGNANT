@@ -83,7 +83,7 @@ export default function NationaliteVipPage() {
                             transition={reduce ? undefined : { duration: 5.5, ease: 'easeInOut', repeat: Infinity }}
                             className="relative h-56 w-56 md:h-72 md:w-72"
                         >
-                            <Image src="/assets/icones/icone_Nationalite_Beninoise.png" alt="Nationalité Béninoise" fill sizes="288px" className="object-contain drop-shadow-[0_24px_45px_rgba(0,0,0,0.25)]" priority />
+                            <Image src="/assets/icones/icone_Nationalite_Beninoise.png" alt={t('Nationalité Béninoise')} fill sizes="288px" className="object-contain drop-shadow-[0_24px_45px_rgba(0,0,0,0.25)]" priority />
                         </motion.div>
                     </div>
                 </div>

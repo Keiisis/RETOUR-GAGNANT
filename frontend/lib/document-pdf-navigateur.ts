@@ -6,9 +6,12 @@
 // ══════════════════════════════════════════════════════════════
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { dessinerDocumentPdf, modeleDepuisContenu, nomFichierDocument, type DocumentPdfDonnees, type ModeleDocument } from './document-pdf'
+import { appliquerTraductions } from './document-traduction'
+import type { LangueDoc } from './document-langues'
 
 /** Ligne `documents_financiers` (champs utiles au rendu). */
 export interface DocumentSource {
+    id?: string
     type?: string | null
     numero: string
     status?: string | null
@@ -110,8 +113,34 @@ export async function donneesDepuisDocument(doc: DocumentSource, client?: Supaba
     }
 }
 
-/** Génère et télécharge le PDF du document. */
-export async function telechargerDocumentPdf(doc: DocumentSource, client?: SupabaseClient): Promise<void> {
-    const donnees = await donneesDepuisDocument(doc, client)
-    dessinerDocumentPdf(donnees).save(nomFichierDocument(donnees.docType, doc.numero))
+/** Traductions des textes saisis du document (segment français → traduction). Vide si indisponible. */
+export async function traductionsDocument(id: string, langue: LangueDoc): Promise<Record<string, string>> {
+    if (langue === 'fr' || !id) return {}
+    try {
+        const r = await fetch(`/api/documents/traduction?id=${encodeURIComponent(id)}&lang=${langue}`, { cache: 'no-store' })
+        return r.ok ? ((await r.json()).traductions || {}) : {}
+    } catch { return {} }
+}
+
+/** PDF du document dans la langue demandée, avec son nom de fichier. */
+async function pdfDocument(doc: DocumentSource, client: SupabaseClient | undefined, langue: LangueDoc) {
+    const [donnees, tr] = await Promise.all([
+        donneesDepuisDocument(doc, client),
+        doc.id ? traductionsDocument(doc.id, langue) : Promise.resolve({}),
+    ])
+    const final = langue === 'fr' ? donnees : appliquerTraductions(donnees, langue, tr)
+    const nom = nomFichierDocument(donnees.docType, doc.numero).replace(/\.pdf$/, langue === 'fr' ? '.pdf' : `_${langue}.pdf`)
+    return { pdf: dessinerDocumentPdf(final), nom }
+}
+
+/** Génère et télécharge le PDF du document, dans la langue demandée (français par défaut). */
+export async function telechargerDocumentPdf(doc: DocumentSource, client?: SupabaseClient, langue: LangueDoc = 'fr'): Promise<void> {
+    const { pdf, nom } = await pdfDocument(doc, client, langue)
+    pdf.save(nom)
+}
+
+/** Même PDF, en base64 (pièce jointe d'un email). */
+export async function documentPdfBase64(doc: DocumentSource, client?: SupabaseClient, langue: LangueDoc = 'fr'): Promise<{ nom: string; base64: string }> {
+    const { pdf, nom } = await pdfDocument(doc, client, langue)
+    return { nom, base64: pdf.output('datauristring').split(',')[1] }
 }

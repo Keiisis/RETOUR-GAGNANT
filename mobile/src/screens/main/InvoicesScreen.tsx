@@ -30,7 +30,7 @@ import { avecMemoire, cleDuClient, etatMemorise, aEnMemoire } from '../../lib/me
 import { authHeaders } from '../../config/api'
 import { RootStackParamList } from '../../navigation/AppNavigator'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
-import { localeActuelle } from '../../lib/dates'
+import { localeActuelle, langueActuelle } from '../../lib/dates'
 
 /* ═══════════════════════════════════════════════════════════
    InvoicesScreen : THEME "CORPORATE PREMIUM 2026"
@@ -459,7 +459,7 @@ export default function InvoicesScreen({ navigation }: { navigation: Nav }) {
         setTelechargement(true)
         try {
             const r = await telechargerDocument(
-                `${API_BASE}/api/mobile/invoices/${inv.id}/pdf`,
+                `${API_BASE}/api/mobile/invoices/${inv.id}/pdf?lang=${langueActuelle()}`,
                 `${devisCi ? 'Devis' : 'Facture'}-${inv.invoice_ref || inv.id}`,
             )
             if (!r.ok) {

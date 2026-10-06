@@ -17,7 +17,7 @@ export default function NewsletterCapture({ compact = false }: { compact?: boole
 
     const submit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!email.includes('@')) { setStatus('error'); setMsg('Adresse email invalide.'); return }
+        if (!email.includes('@')) { setStatus('error'); setMsg(t('Adresse email invalide.')); return }
         setStatus('loading'); setMsg('')
         try {
             const res = await fetch('/api/newsletter', {
@@ -25,11 +25,11 @@ export default function NewsletterCapture({ compact = false }: { compact?: boole
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
             })
-            if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || 'Inscription impossible.') }
+            if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || t('Inscription impossible.')) }
             setStatus('done'); setEmail('')
             trackEvent('newsletter_subscribe')
         } catch (err) {
-            setStatus('error'); setMsg(err instanceof Error ? err.message : 'Une erreur est survenue.')
+            setStatus('error'); setMsg(err instanceof Error ? err.message : t('Une erreur est survenue.'))
         }
     }
 

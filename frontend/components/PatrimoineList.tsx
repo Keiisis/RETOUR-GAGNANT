@@ -70,7 +70,7 @@ export default function PatrimoineList() {
                     <div className="relative h-64 w-full overflow-hidden">
                         <Image
                             src={`/assets/patrimoine/${item.imagename}`}
-                            alt={item.title}
+                            alt={t(item.title)}
                             fill
                             className="object-cover transition-transform duration-500 group-hover:scale-110"
                             onError={(e) => {

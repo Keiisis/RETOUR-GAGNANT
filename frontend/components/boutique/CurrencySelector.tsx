@@ -24,7 +24,7 @@ interface CurrencySelectorProps {
 export default function CurrencySelector({ value, onChange, baseAmountXOF, className = '', theme = 'dark' }: CurrencySelectorProps) {
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
-    const { lang } = useTranslation()
+    const { lang, t } = useTranslation()
     const allowedCodes = getAllowedCurrencies(lang)
     const filteredOptions = CURRENCY_OPTIONS.filter(o => allowedCodes.includes(o.code))
     const current = filteredOptions.find(o => o.code === value) || filteredOptions[0]
@@ -94,7 +94,7 @@ export default function CurrencySelector({ value, onChange, baseAmountXOF, class
                         )
                     })}
                     <div className={`px-3 py-2 border-t ${dark ? 'border-white/5' : 'border-gray-100'}`}>
-                        <p className={`text-[9px] text-center ${dark ? 'text-gray-600' : 'text-gray-400'}`}>Taux de change en temps réel</p>
+                        <p className={`text-[9px] text-center ${dark ? 'text-gray-600' : 'text-gray-400'}`}>{t('Taux de change en temps réel')}</p>
                     </div>
                 </div>
             )}

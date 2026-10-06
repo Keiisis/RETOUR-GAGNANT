@@ -6,6 +6,7 @@ import ServiceLanding from '@/components/services/ServiceLanding'
 import FaConsultationBooking from '@/components/services/FaConsultationBooking'
 import FaPriestsDirectory from '@/components/services/FaPriestsDirectory'
 import { DEFAULT_FA } from '@/lib/content/fa'
+import { T } from '@/lib/translation'
 import { mergeServiceLanding, type ServiceLandingContent } from '@/lib/content/serviceLanding'
 
 // Tarifs de repli (décision : 550 € présentiel / 780 € visio affichés directement).
@@ -37,8 +38,8 @@ export default function ConsultationFaPage() {
             slotBeforeFinal={
                 <section id="reserver" className="max-w-6xl mx-auto px-5 md:px-8 py-8 scroll-mt-16">
                     <div className="mb-6">
-                        <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2">Réservation</p>
-                        <h2 className="font-display text-3xl md:text-4xl font-bold">Réserver votre consultation</h2>
+                        <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2"><T>Réservation</T></p>
+                        <h2 className="font-display text-3xl md:text-4xl font-bold"><T>Réserver votre consultation</T></h2>
                     </div>
                     <FaConsultationBooking options={options} />
                 </section>

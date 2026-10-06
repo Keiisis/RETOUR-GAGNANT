@@ -189,7 +189,7 @@ export default function ProductDetailPage() {
                                                 ? 'border-[#008751] shadow-lg shadow-[#008751]/15'
                                                 : 'border-gray-200 opacity-60 hover:opacity-100'
                                         }`}
-                                        title={t(`Afficher image ${i + 1}`)}
+                                        title={t('Afficher image {n}', { n: i + 1 })}
                                     >
                                         <Image src={img} alt="" fill className="object-cover" />
                                     </motion.button>
@@ -265,7 +265,7 @@ export default function ProductDetailPage() {
                                     <button
                                         onClick={() => setQuantitéy(q => Math.min(product.stock, q + 1))}
                                         className="w-12 h-12 flex items-center justify-center text-gray-500 hover:text-[#008751] hover:bg-gray-100 transition-colors"
-                                        title="Augmenter la quantité"
+                                        title={t("Augmenter la quantité")}
                                     >
                                         <Plus size={16} />
                                     </button>

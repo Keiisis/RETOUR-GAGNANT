@@ -93,7 +93,7 @@ export default function CalendarBooking() {
 
             setBooked(true)
         } catch {
-            alert('Erreur lors de la réservation.')
+            alert(t('Erreur lors de la réservation.'))
         }
         setLoading(false)
     }
@@ -162,7 +162,7 @@ export default function CalendarBooking() {
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${step > i + 1 ? 'bg-emerald-500 text-white' : step === i + 1 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500' : 'bg-white/5 text-gray-600'}`}>
                             {step > i + 1 ? <CheckCircle2 size={16} /> : i + 1}
                         </div>
-                        <span className={`text-xs font-bold hidden sm:block ${step >= i + 1 ? 'text-white' : 'text-gray-600'}`}>{s}</span>
+                        <span className={`text-xs font-bold hidden sm:block ${step >= i + 1 ? 'text-white' : 'text-gray-600'}`}>{t(s)}</span>
                         {i < 2 && <div className={`flex-1 h-px transition-all ${step > i + 1 ? 'bg-emerald-500' : 'bg-white/10'}`} />}
                     </div>
                 ))}
@@ -178,7 +178,7 @@ export default function CalendarBooking() {
                             onClick={() => { setSelectedService(s); setStep(2); }}
                             className={`w-full text-left p-4 rounded-xl border transition-all text-sm font-medium ${selectedService === s ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-white/[0.03] border-white/5 text-gray-300 hover:border-white/20'}`}
                         >
-                            {s}
+                            {t(s)}
                         </button>
                     ))}
                 </motion.div>
@@ -192,11 +192,11 @@ export default function CalendarBooking() {
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} className="text-gray-400 hover:text-white p-1"><ChevronLeft size={20} /></button>
-                                <h3 className="text-sm font-bold text-white">{MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+                                <h3 className="text-sm font-bold text-white">{t(MONTHS[currentMonth.getMonth()])} {currentMonth.getFullYear()}</h3>
                                 <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} className="text-gray-400 hover:text-white p-1"><ChevronRight size={20} /></button>
                             </div>
                             <div className="grid grid-cols-7 gap-1 mb-2">
-                                {DAYS.map(d => <div key={d} className="text-center text-[10px] font-bold text-gray-600 py-1">{d}</div>)}
+                                {DAYS.map(d => <div key={d} className="text-center text-[10px] font-bold text-gray-600 py-1">{t(d)}</div>)}
                             </div>
                             <div className="grid grid-cols-7 gap-1">
                                 {renderCalendar()}
@@ -207,7 +207,7 @@ export default function CalendarBooking() {
                         <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
                             <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                                 <Clock size={14} className="text-emerald-400" />
-                                {selectedDate ? `Créneaux : ${selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}` : 'Sélectionnez une date'}
+                                {selectedDate ? t('Créneaux : {date}', { date: selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) }) : t('Sélectionnez une date')}
                             </h3>
                             {selectedDate ? (
                                 <div className="space-y-2">
@@ -225,7 +225,7 @@ export default function CalendarBooking() {
                                                         : 'bg-white/5 text-gray-300 hover:bg-white/10 border border-white/5'
                                                     }`}
                                             >
-                                                {slot} {isBooked && '(Réservé)'}
+                                                {slot} {isBooked && t('(Réservé)')}
                                             </button>
                                         )
                                     })}
@@ -245,7 +245,7 @@ export default function CalendarBooking() {
                     <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-6 max-w-lg mx-auto">
                         <h2 className="text-lg font-bold text-white mb-1"><T>Vos coordonnées</T></h2>
                         <p className="text-xs text-gray-500 mb-6">
-                            {selectedService} : {selectedDate?.toLocaleDateString('fr-FR')} : {selectedTime}
+                            {t(selectedService)} : {selectedDate?.toLocaleDateString('fr-FR')} : {selectedTime}
                         </p>
 
                         <div className="space-y-4">
@@ -280,7 +280,7 @@ export default function CalendarBooking() {
                         </div>
 
                         <ConsentCheckbox id="booking-consent" checked={consent} onChange={setConsent}
-                            purpose="afin de planifier mon rendez-vous et de me recontacter" className="mt-5 !text-gray-400" />
+                            purpose={t('afin de planifier mon rendez-vous et de me recontacter')} className="mt-5 !text-gray-400" />
 
                         <button
                             onClick={handleSubmit}
@@ -288,7 +288,7 @@ export default function CalendarBooking() {
                             className="w-full mt-6 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-sm"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <CalendarDays size={16} />}
-                            Confirmer le rendez-vous
+                            <T>Confirmer le rendez-vous</T>
                         </button>
                         <button onClick={() => setStep(2)} className="text-xs text-gray-500 hover:text-white mt-3 flex items-center gap-1 mx-auto"><ChevronLeft size={12} /> <T>Modifier la date</T></button>
                     </div>

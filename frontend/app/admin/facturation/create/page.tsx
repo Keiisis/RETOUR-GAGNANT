@@ -10,6 +10,8 @@ import { convertFromBaseSync, getCurrentRates, formatCurrencySync, refreshRates 
 import { TVA_RATE } from '@/lib/tax'
 import DescriptionEditeur from '@/components/shared/DescriptionEditeur'
 import { normaliserDescription } from '@/lib/description-lignes'
+import ChoixLangueDocument from '@/components/shared/ChoixLangueDocument'
+import type { LangueDoc } from '@/lib/document-langues'
 
 interface DevisItem {
     description: string
@@ -28,6 +30,7 @@ const defaultConditions = `• Validité : 30 jours à compter de la date d'émi
 export default function CreateDocumentPage() {
     const router = useRouter()
     const [saving, setSaving] = useState(false)
+    const [langueClient, setLangueClient] = useState<LangueDoc>('fr')
     const [formType, setFormType] = useState<'devis' | 'facture'>('devis')
     const [currency, setCurrency] = useState<'XOF' | 'EUR' | 'USD'>('XOF')
 
@@ -120,7 +123,7 @@ export default function CreateDocumentPage() {
         // Numéro séquentiel officiel (compteur atomique en base)
         const numero = await nextDocumentNumber(supabase, formType)
 
-        const { error } = await supabase.from('documents_financiers').insert({
+        const { data: cree, error } = await supabase.from('documents_financiers').insert({
             agent_id: user.id,
             type: formType,
             numero,
@@ -143,14 +146,15 @@ export default function CreateDocumentPage() {
             notes,
             conditions,
             validite,
-        })
+        }).select('id').single()
 
         if (error) {
             console.error('Erreur SQL:', error)
             alert('Erreur lors de la sauvegarde du document.')
             setSaving(false)
         } else {
-            router.push('/admin/facturation')
+            // Client non francophone : le document s'ouvre sur sa traduction, à relire avant envoi.
+            router.push(langueClient !== 'fr' && cree?.id ? `/admin/facturation?ouvrir=${cree.id}&langue=${langueClient}` : '/admin/facturation')
         }
     }
 
@@ -320,6 +324,8 @@ export default function CreateDocumentPage() {
                 {/* Submits */}
                 <div className="mt-8 pt-8 border-t border-white/5 flex flex-wrap items-center justify-end gap-3">
                     <Link href="/admin/facturation" className="px-6 py-3.5 text-sm font-bold text-gray-400 hover:text-white mr-auto">Annuler</Link>
+
+                    <ChoixLangueDocument value={langueClient} onChange={setLangueClient} className="text-gray-300" titre="Langue du client (le document s'ouvre ensuite pour relire la traduction)" />
 
                     <button type="button" onClick={() => handleSave('brouillon')} disabled={saving} className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 font-bold text-sm transition-colors border border-white/5">
                         <Save size={16} /> Enregistrer Brouillon

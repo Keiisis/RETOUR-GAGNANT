@@ -6,10 +6,12 @@ import { motion } from 'framer-motion'
 import { CheckCircle as CheckCircle2, WarningCircle as AlertCircle, CircleNotch as Loader2, ShoppingBag } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { useTranslation, T } from '@/lib/translation'
 
 function ZeyowReturnContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
+    const { t } = useTranslation()
 
     const orderId = searchParams.get('order_id')
     const status = searchParams.get('status')
@@ -90,8 +92,8 @@ function ZeyowReturnContent() {
             <div className="flex flex-col items-center justify-center py-24 space-y-6">
                 <Loader2 size={56} className="animate-spin text-[#FCD116]" />
                 <div className="text-center">
-                    <p className="text-white font-bold text-lg">Vérification du paiement...</p>
-                    <p className="text-gray-500 text-sm mt-1">Ne fermez pas cette page</p>
+                    <p className="text-white font-bold text-lg"><T>Vérification du paiement...</T></p>
+                    <p className="text-gray-500 text-sm mt-1"><T>Ne fermez pas cette page</T></p>
                 </div>
             </div>
         )
@@ -108,13 +110,13 @@ function ZeyowReturnContent() {
                     <CheckCircle2 size={56} className="text-[#008751]" />
                 </div>
                 <div className="text-center space-y-3">
-                    <h1 className="text-4xl font-black text-white font-display">Paiement confirmé !</h1>
+                    <h1 className="text-4xl font-black text-white font-display"><T>Paiement confirmé !</T></h1>
                     <p className="text-gray-400 text-base max-w-md">
-                        Votre commande a été validée avec succès. Vous recevrez les détails par téléphone ou email.
+                        <T>Votre commande a été validée avec succès. Vous recevrez les détails par téléphone ou email.</T>
                     </p>
                     {ref && (
                         <p className="text-xs text-gray-600 font-mono mt-2">
-                            Référence : <span className="text-[#FCD116]">{ref}</span>
+                            <T>Référence :</T> <span className="text-[#FCD116]">{ref}</span>
                         </p>
                     )}
                 </div>
@@ -122,12 +124,12 @@ function ZeyowReturnContent() {
                     <Link href="/boutique">
                         <Button className="h-14 px-8 rounded-2xl bg-[#FCD116] text-[#0f141e] font-black hover:bg-[#008751] hover:text-white transition-all">
                             <ShoppingBag size={18} className="mr-2" />
-                            Continuer les achats
+                            <T>Continuer les achats</T>
                         </Button>
                     </Link>
                     <Link href="/mon-compte">
                         <Button variant="outline" className="h-14 px-8 rounded-2xl border-white/10 text-white font-bold">
-                            Mes commandes
+                            <T>Mes commandes</T>
                         </Button>
                     </Link>
                 </div>
@@ -145,20 +147,20 @@ function ZeyowReturnContent() {
                 <AlertCircle size={56} className="text-[#E8112D]" />
             </div>
             <div className="text-center space-y-3">
-                <h1 className="text-4xl font-black text-white font-display">Paiement échoué</h1>
+                <h1 className="text-4xl font-black text-white font-display"><T>Paiement échoué</T></h1>
                 <p className="text-gray-400 text-base max-w-md">
-                    {errorMsg || 'Une erreur est survenue lors du traitement de votre paiement.'}
+                    {errorMsg ? t(errorMsg) : t('Une erreur est survenue lors du traitement de votre paiement.')}
                 </p>
             </div>
             <div className="flex gap-4">
                 <Link href="/boutique">
                     <Button className="h-14 px-8 rounded-2xl bg-white/10 text-white font-bold hover:bg-white/20 transition-all">
-                        Retour à la boutique
+                        <T>Retour à la boutique</T>
                     </Button>
                 </Link>
                 <Link href="/contact">
                     <Button variant="outline" className="h-14 px-8 rounded-2xl border-white/10 text-white font-bold">
-                        Contacter le support
+                        <T>Contacter le support</T>
                     </Button>
                 </Link>
             </div>

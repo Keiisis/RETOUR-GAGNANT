@@ -241,7 +241,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                 }),
             })
             const data = await res.json()
-            if (!res.ok || !data.success) throw new Error(data.error || 'Erreur lors de la réservation.')
+            if (!res.ok || !data.success) throw new Error(data.error || t('Erreur lors de la réservation.'))
             orderIdRef.current = String(data.order_id)
             serverAmountRef.current = Number(data.amount_xof) || 0
             setStep('paying')
@@ -423,7 +423,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                         ))}
                     </div>
                 ) : faFerme ? (
-                    <p className="text-xs text-amber-600 font-medium">{faFerme} : <T>choisissez une autre date.</T></p>
+                    <p className="text-xs text-amber-600 font-medium">{t(faFerme)} : <T>choisissez une autre date.</T></p>
                 ) : (
                     <p className="text-xs text-gray-400 italic"><T>Aucun creneau publie : notre equipe vous contactera pour convenir de la date.</T></p>
                 )}
@@ -467,7 +467,7 @@ export default function FaConsultationBooking({ options }: { options?: Array<{ l
                             </div>
                         ) : providers.map(p => (
                             <button key={p.id} type="button" onClick={() => startPayment(p.id)} disabled={!clauseAccepted || !priceReady}
-                                title={p.label}
+                                title={t(p.label)}
                                 className={`w-full flex items-center justify-between gap-3 p-4 rounded-2xl border transition-all text-left ${clauseAccepted && priceReady
                                     ? 'bg-[#7C5CCA] border-[#7C5CCA] text-white hover:bg-[#6b4db8] shadow-[0_10px_30px_rgba(124,92,202,0.25)]'
                                     : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'}`}>

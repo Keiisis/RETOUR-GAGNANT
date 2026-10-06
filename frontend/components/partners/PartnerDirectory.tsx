@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { MagnifyingGlass as Search, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import { Input } from '@/components/ui/input'
 import { supabase } from '@/lib/supabase'
+import { T, useTranslation } from '@/lib/translation'
 
 const CATEGORIES = [
     'Tous', 'Immobilier', 'Agro-Business', 'Art & Culture', 'Services & Tech',
@@ -14,6 +15,7 @@ const CATEGORIES = [
 ]
 
 export default function PartnerDirectory() {
+    const { t } = useTranslation()
     const [partners, setPartners] = useState<Partner[]>([])
     const [selectedCategory, setSelectedCategory] = useState('Tous')
     const [searchQuery, setSearchQuery] = useState('')
@@ -91,14 +93,14 @@ export default function PartnerDirectory() {
                                         : 'border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751]'
                                     }`}
                                 >
-                                    {cat}
+                                    {t(cat)}
                                 </Button>
                             ))}
                         </div>
                         <div className="relative w-full md:w-72 flex-shrink-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                             <Input
-                                placeholder="Rechercher un partenaire..."
+                                placeholder={t('Rechercher un partenaire...')}
                                 className="pl-10 bg-white border-gray-200 rounded-full shadow-sm"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -113,13 +115,13 @@ export default function PartnerDirectory() {
                         </div>
                     ) : filteredPartners.length === 0 ? (
                         <div className="text-center py-20 opacity-50">
-                            <p className="text-xl font-medium text-[#1a2332]">Aucun partenaire trouvé.</p>
+                            <p className="text-xl font-medium text-[#1a2332]"><T>Aucun partenaire trouvé.</T></p>
                             <Button
                                 variant="link"
                                 className="text-[#008751]"
                                 onClick={() => { setSelectedCategory('Tous'); setSearchQuery('') }}
                             >
-                                Réinitialiser les filtres
+                                <T>Réinitialiser les filtres</T>
                             </Button>
                         </div>
                     ) : (

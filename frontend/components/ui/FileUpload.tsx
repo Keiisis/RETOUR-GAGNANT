@@ -41,17 +41,17 @@ export default function FileUpload({ value, onChange, type, label, required, hin
             })
 
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Erreur lors de l\'upload')
+            if (!res.ok) throw new Error(data.error || t('Erreur lors de l\'upload'))
 
             onChange(data.url)
             setJustUploaded(true)
             setTimeout(() => setJustUploaded(false), 2500)
         } catch (e) {
-            setError(e instanceof Error ? e.message : 'Erreur lors de l\'upload')
+            setError(e instanceof Error ? e.message : t('Erreur lors de l\'upload'))
         } finally {
             setUploading(false)
         }
-    }, [type, onChange])
+    }, [type, onChange, t])
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -126,7 +126,7 @@ export default function FileUpload({ value, onChange, type, label, required, hin
                         {justUploaded && (
                             <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-[#008751] text-white text-[10px] font-bold shadow">
                                 <CheckCircle2 size={10} />
-                                Enregistré
+                                <T>Enregistré</T>
                             </div>
                         )}
                     </>
@@ -149,13 +149,13 @@ export default function FileUpload({ value, onChange, type, label, required, hin
                         <ImageIcon size={isLogo ? 22 : 28} strokeWidth={1.5} />
                         <div className="text-center">
                             <p className="text-[11px] font-bold leading-tight">
-                                {drag ? 'Déposez ici' : isLogo ? 'Logo' : isGallery ? 'Photo' : 'Couverture'}
+                                {drag ? t('Déposez ici') : isLogo ? t('Logo') : isGallery ? t('Photo') : t('Couverture')}
                             </p>
                             {!isLogo && (
                                 <p className="text-[9px] mt-0.5 leading-tight">
-                                    Cliquez ou glissez-déposez
+                                    <T>Cliquez ou glissez-déposez</T>
                                     <br />
-                                    JPG, PNG, WebP : max 5MB
+                                    <T>JPG, PNG, WebP : max 5MB</T>
                                 </p>
                             )}
                         </div>

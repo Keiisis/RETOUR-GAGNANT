@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, ArrowRight, CheckCircle, Loader2 } from 'lucide-react'
+import { T, useTranslation } from '@/lib/translation'
 
 export default function NewsletterSection() {
+    const { t } = useTranslation()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
@@ -48,10 +50,10 @@ export default function NewsletterSection() {
                         </div>
 
                         <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-                            Restez informé de nos actualités
+                            <T>Restez informé de nos actualités</T>
                         </h2>
                         <p className="text-white/70 text-sm md:text-base mb-8 max-w-lg mx-auto">
-                            Recevez nos guides, conseils et opportunités d&apos;investissement directement dans votre boîte mail. Pas de spam, que du contenu utile.
+                            <T>Recevez nos guides, conseils et opportunités d&apos;investissement directement dans votre boîte mail. Pas de spam, que du contenu utile.</T>
                         </p>
 
                         <AnimatePresence mode="wait">
@@ -63,7 +65,7 @@ export default function NewsletterSection() {
                                     className="flex items-center justify-center gap-3 text-white bg-white/15 rounded-2xl py-4 px-6 backdrop-blur-sm border border-white/20"
                                 >
                                     <CheckCircle className="text-[#FCD116]" size={22} />
-                                    <span className="font-semibold text-sm">Merci ! Vous êtes inscrit à notre newsletter.</span>
+                                    <span className="font-semibold text-sm"><T>Merci ! Vous êtes inscrit à notre newsletter.</T></span>
                                 </motion.div>
                             ) : (
                                 <motion.form
@@ -78,7 +80,7 @@ export default function NewsletterSection() {
                                             required
                                             value={email}
                                             onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="Votre adresse email"
+                                            placeholder={t('Votre adresse email')}
                                             className="w-full bg-white rounded-xl py-3.5 pl-11 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FCD116] shadow-lg"
                                         />
                                     </div>
@@ -91,7 +93,7 @@ export default function NewsletterSection() {
                                             <Loader2 size={16} className="animate-spin" />
                                         ) : (
                                             <>
-                                                S&apos;inscrire
+                                                <T>S&apos;inscrire</T>
                                                 <ArrowRight size={16} />
                                             </>
                                         )}
@@ -102,13 +104,13 @@ export default function NewsletterSection() {
 
                         {status === 'error' && (
                             <p className="text-[#FCD116] text-xs mt-3">
-                                Une erreur est survenue. Réessayez.
+                                <T>Une erreur est survenue. Réessayez.</T>
                             </p>
                         )}
 
                         <p className="text-white/40 text-xs mt-4">
-                            En vous inscrivant, vous acceptez notre{' '}
-                            <a href="/confidentialite" className="underline hover:text-white/60">politique de confidentialité</a>.
+                            <T>En vous inscrivant, vous acceptez notre</T>{' '}
+                            <a href="/confidentialite" className="underline hover:text-white/60"><T>politique de confidentialité</T></a>.
                         </p>
                     </motion.div>
                 </div>

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { X, CheckCircle as CheckCircle2, CircleNotch as Loader2, ArrowRight, Phone, ChatText as MessageSquare, PaperPlaneTilt as Send, WarningCircle as AlertCircle, Star, CaretRight as ChevronRight, Sparkle as Sparkles } from '@phosphor-icons/react';
 import PricingCalculator3D from '@/components/services/PricingCalculator3D'
+import { T, useTranslation } from '@/lib/translation'
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -67,6 +68,7 @@ function twToHex(colorClass: string): string {
 // ── Composant ────────────────────────────────────────────────────
 
 export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrderDrawerProps) {
+    const { t } = useTranslation()
     const [description, setDescription] = useState('')
     const [phone, setPhone] = useState('')
     const [submitting, setSubmitting] = useState(false)
@@ -113,7 +115,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
         e?.preventDefault()
         if (!service) return
         if (!description.trim()) {
-            setError('Veuillez décrire votre besoin.')
+            setError(t('Veuillez décrire votre besoin.'))
             return
         }
 
@@ -141,13 +143,13 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
             })
 
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Erreur lors de la soumission')
+            if (!res.ok) throw new Error(data.error || t('Erreur lors de la soumission'))
 
             setCreatedRef(data.dossier?.num_dossier || '')
             setSuccess(true)
             onSuccess?.(data.dossier?.id || '')
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Une erreur est survenue')
+            setError(err instanceof Error ? err.message : t('Une erreur est survenue'))
         } finally {
             setSubmitting(false)
         }
@@ -188,16 +190,16 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                 <div className="flex items-start justify-between gap-3 mb-3">
                                     <div className="flex-1 min-w-0">
                                         {service.badge && (
-                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 block">{service.badge}</span>
+                                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 mb-1 block">{t(service.badge)}</span>
                                         )}
-                                        <h2 className="text-xl font-black text-white leading-tight">{service.title}</h2>
+                                        <h2 className="text-xl font-black text-white leading-tight">{t(service.title)}</h2>
                                         {dbService?.subtitle ? (
                                             <p className="text-blue-300/80 text-[11px] font-semibold mt-0.5 italic">{dbService.subtitle}</p>
                                         ) : (
-                                            <p className="text-gray-400 text-sm mt-1 leading-relaxed">{service.description}</p>
+                                            <p className="text-gray-400 text-sm mt-1 leading-relaxed">{t(service.description)}</p>
                                         )}
                                     </div>
-                                    <button type="button" onClick={onClose} title="Fermer"
+                                    <button type="button" onClick={onClose} title={t('Fermer')}
                                         className="p-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-gray-400 hover:text-white transition-colors flex-shrink-0">
                                         <X size={16} />
                                     </button>
@@ -208,7 +210,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                     <div className="flex flex-wrap gap-1.5">
                                         {service.features.map((feat, i) => (
                                             <span key={i} className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-gray-300">
-                                                {feat}
+                                                {t(feat)}
                                             </span>
                                         ))}
                                     </div>
@@ -226,22 +228,22 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                         <CheckCircle2 size={32} className="text-emerald-400" />
                                     </div>
                                     <div>
-                                        <h3 className="text-white font-black text-lg mb-2">Demande envoyée !</h3>
+                                        <h3 className="text-white font-black text-lg mb-2"><T>Demande envoyée !</T></h3>
                                         <p className="text-gray-400 text-sm leading-relaxed">
-                                            Votre demande a bien été reçue. Notre équipe vous contactera sous 24-48h.
+                                            <T>Votre demande a bien été reçue. Notre équipe vous contactera sous 24-48h.</T>
                                         </p>
                                         {createdRef && (
-                                            <p className="mt-2 text-[11px] font-mono text-gray-500">Référence : <span className="text-blue-400">{createdRef}</span></p>
+                                            <p className="mt-2 text-[11px] font-mono text-gray-500"><T>Référence :</T> <span className="text-blue-400">{createdRef}</span></p>
                                         )}
                                     </div>
                                     <div className="flex flex-col gap-2 w-full max-w-xs">
                                         <Link href="/client/dossier"
                                             className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-sm font-bold transition-all border border-blue-500/20">
-                                            Voir dans mon dossier <ArrowRight size={14} />
+                                            <T>Voir dans mon dossier</T> <ArrowRight size={14} />
                                         </Link>
                                         <button type="button" onClick={onClose}
                                             className="px-5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] text-gray-400 text-sm font-bold transition-all border border-white/[0.06]">
-                                            Fermer
+                                            <T>Fermer</T>
                                         </button>
                                     </div>
                                 </motion.div>
@@ -262,7 +264,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             {dbService.description && dbService.description !== service.description && (
                                                 <div className="space-y-2">
                                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 flex items-center gap-1.5">
-                                                        <Sparkles size={9} />À propos de ce service
+                                                        <Sparkles size={9} /><T>À propos de ce service</T>
                                                     </p>
                                                     <p className="text-gray-300 text-[12.5px] leading-relaxed">
                                                         {dbService.description}
@@ -274,7 +276,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             {dbService.features && dbService.features.length > 0 && (
                                                 <div className="space-y-2">
                                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 flex items-center gap-1.5">
-                                                        <Star size={9} />Ce qui est inclus
+                                                        <Star size={9} /><T>Ce qui est inclus</T>
                                                     </p>
                                                     <div className="space-y-1.5">
                                                         {dbService.features.map((feat, i) => (
@@ -294,7 +296,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             {dbService.pricing_options && dbService.pricing_options.length > 0 ? (
                                                 <div className="space-y-2">
                                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 flex items-center gap-1.5">
-                                                        <span></span>Tarifs & Options
+                                                        <span></span><T>Tarifs & Options</T>
                                                     </p>
                                                     <PricingCalculator3D
                                                         options={dbService.pricing_options}
@@ -304,7 +306,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                                 </div>
                                             ) : dbService.price_display ? (
                                                 <div className="rounded-xl p-4 border" style={{ backgroundColor: `${baseColor}10`, borderColor: `${baseColor}30` }}>
-                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: baseColor }}>Tarif</p>
+                                                    <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-1" style={{ color: baseColor }}><T>Tarif</T></p>
                                                     <p className="text-white font-black text-lg">{dbService.price_display}</p>
                                                 </div>
                                             ) : null}
@@ -312,7 +314,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             {/* Séparateur vers formulaire */}
                                             <div className="relative flex items-center gap-3 py-1">
                                                 <div className="flex-1 h-px bg-white/[0.06]" />
-                                                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600">Commander ce service</span>
+                                                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600"><T>Commander ce service</T></span>
                                                 <div className="flex-1 h-px bg-white/[0.06]" />
                                             </div>
                                         </motion.div>
@@ -337,7 +339,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                         <div>
                                             {!dbService && (
                                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">
-                                                    Décrivez votre besoin
+                                                    <T>Décrivez votre besoin</T>
                                                 </p>
                                             )}
 
@@ -345,12 +347,12 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             <div className="space-y-1.5">
                                                 <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
                                                     <MessageSquare size={11} />
-                                                    Votre demande <span className="text-red-400">*</span>
+                                                    <T>Votre demande</T> <span className="text-red-400">*</span>
                                                 </label>
                                                 <textarea
                                                     value={description}
                                                     onChange={e => { setDescription(e.target.value); setError('') }}
-                                                    placeholder={`Décrivez votre besoin pour ${service.title}...`}
+                                                    placeholder={t('Décrivez votre besoin pour {title}...', { title: t(service.title) })}
                                                     rows={4}
                                                     className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-blue-500/40 focus:bg-white/[0.06] resize-none transition-all"
                                                 />
@@ -361,7 +363,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             <div className="space-y-1.5 mt-3">
                                                 <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400">
                                                     <Phone size={11} />
-                                                    Téléphone / WhatsApp <span className="text-gray-600">(optionnel)</span>
+                                                    <T>Téléphone / WhatsApp</T> <span className="text-gray-600"><T>(optionnel)</T></span>
                                                 </label>
                                                 <input
                                                     type="tel"
@@ -378,7 +380,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-blue-500/8 border border-blue-500/15">
                                                 <CheckCircle2 size={12} className="text-blue-400 flex-shrink-0" />
                                                 <p className="text-[11px] text-blue-300/80">
-                                                    Demande liée à : <span className="font-bold">{clientEmail}</span>
+                                                    <T>Demande liée à :</T> <span className="font-bold">{clientEmail}</span>
                                                 </p>
                                             </div>
                                         )}
@@ -393,7 +395,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
 
                                         {/* Info délai */}
                                         <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.05] text-[11px] text-gray-500 leading-relaxed">
-                                            Notre équipe traitera votre demande sous <span className="text-gray-300 font-bold">24 à 48h</span> ouvrables. Vous recevrez une confirmation par email et un suivi dans votre espace client.
+                                            <T>Notre équipe traitera votre demande sous</T> <span className="text-gray-300 font-bold"><T>24 à 48h</T></span> <T>ouvrables. Vous recevrez une confirmation par email et un suivi dans votre espace client.</T>
                                         </div>
                                     </form>
                                     )}
@@ -410,7 +412,7 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                 {/* Ce qui se passe après l'envoi : dit explicitement s'il y aura
                                     paiement, devis ou prise de rendez-vous. */}
                                 <p className="text-[11px] leading-relaxed mb-3" style={{ color: 'var(--panel-text-muted)' }}>
-                                    {modeCopy.note}
+                                    {t(modeCopy.note)}
                                 </p>
                                 <button type="button" onClick={handleSubmit} disabled={submitting || !description.trim()}
                                     className={`w-full flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-sm font-black transition-all ${
@@ -419,9 +421,9 @@ export function ServiceOrderDrawer({ service, onClose, onSuccess }: ServiceOrder
                                             : `bg-gradient-to-r ${service.color} text-white hover:opacity-90 shadow-lg`
                                     }`}>
                                     {submitting ? (
-                                        <><Loader2 size={15} className="animate-spin" /> Envoi en cours...</>
+                                        <><Loader2 size={15} className="animate-spin" /> <T>Envoi en cours...</T></>
                                     ) : (
-                                        <><Send size={15} /> {modeCopy.cta}</>
+                                        <><Send size={15} /> {t(modeCopy.cta)}</>
                                     )}
                                 </button>
                             </div>

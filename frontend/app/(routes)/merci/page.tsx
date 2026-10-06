@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { T } from '@/lib/translation'
 import { CheckCircle, ArrowRight, BookOpen, Calendar } from '@phosphor-icons/react/dist/ssr';
 
 export const metadata: Metadata = {
@@ -21,10 +22,10 @@ export default function MerciPage() {
                     </div>
 
                     <h1 className="font-display text-3xl md:text-4xl font-bold text-[#1a2332] mb-3">
-                        Merci pour votre message !
+                        <T>Merci pour votre message !</T>
                     </h1>
                     <p className="text-gray-500 mb-8 leading-relaxed">
-                        Nous avons bien reçu votre demande. Un membre de notre équipe vous contactera sous <strong className="text-[#1a2332]">24 heures</strong>.
+                        <T>Nous avons bien reçu votre demande. Un membre de notre équipe vous contactera sous</T> <strong className="text-[#1a2332]"><T>24 heures</T></strong>.
                     </p>
 
                     <div className="flex justify-center gap-0 mb-8">
@@ -34,7 +35,7 @@ export default function MerciPage() {
                     </div>
 
                     <h3 className="text-sm font-bold text-gray-800 mb-4 uppercase tracking-wider">
-                        En attendant, découvrez :
+                        <T>En attendant, découvrez :</T>
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -44,8 +45,8 @@ export default function MerciPage() {
                         >
                             <ArrowRight className="text-[#008751] shrink-0 group-hover:translate-x-1 transition-transform" size={18} />
                             <div>
-                                <p className="text-sm font-semibold text-[#1a2332]">Nos services</p>
-                                <p className="text-xs text-gray-500">9 solutions clés en main</p>
+                                <p className="text-sm font-semibold text-[#1a2332]"><T>Nos services</T></p>
+                                <p className="text-xs text-gray-500"><T>9 solutions clés en main</T></p>
                             </div>
                         </Link>
                         <Link
@@ -54,8 +55,8 @@ export default function MerciPage() {
                         >
                             <BookOpen className="text-[#c9a800] shrink-0" size={18} />
                             <div>
-                                <p className="text-sm font-semibold text-[#1a2332]">Notre blog</p>
-                                <p className="text-xs text-gray-500">Guides et conseils</p>
+                                <p className="text-sm font-semibold text-[#1a2332]"><T>Notre blog</T></p>
+                                <p className="text-xs text-gray-500"><T>Guides et conseils</T></p>
                             </div>
                         </Link>
                         <Link
@@ -64,8 +65,8 @@ export default function MerciPage() {
                         >
                             <Calendar className="text-[#E8112D] shrink-0" size={18} />
                             <div>
-                                <p className="text-sm font-semibold text-[#1a2332]">Prendre rendez-vous</p>
-                                <p className="text-xs text-gray-500">Premier appel de 15 min gratuit</p>
+                                <p className="text-sm font-semibold text-[#1a2332]"><T>Prendre rendez-vous</T></p>
+                                <p className="text-xs text-gray-500"><T>Premier appel de 15 min gratuit</T></p>
                             </div>
                         </Link>
                     </div>
