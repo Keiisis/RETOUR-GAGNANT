@@ -1,5 +1,5 @@
 import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq';
-import { masquerMarques, demasquerMarques, jetonsIntacts, CONSIGNE_MARQUES } from '@/lib/translation/marques'
+import { masquerMarques, demasquerMarques, jetonsIntacts, CONSIGNE_MARQUES, copieDuSource } from '@/lib/translation/marques'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
@@ -161,6 +161,7 @@ ${JSON.stringify(textsToTranslate)}`
                                     continue
                                 }
                                 const translated = demasquerMarques(brut, remplacements)
+                                if (copieDuSource(original, translated)) continue   // français recopié : pas une traduction
                                 if (looksEnglish(translated)) {
                                     console.warn(`[translate] Rejected English translation for ${lang}: "${translated.substring(0, 50)}..."`)
                                     continue
@@ -198,6 +199,7 @@ ${JSON.stringify(textsToTranslate)}`
                                     continue
                                 }
                                 const translated = demasquerMarques(brut, remplacements)
+                                if (copieDuSource(original, translated)) continue   // français recopié : pas une traduction
                                 translations[original] = translated
                                 recordsToInsert.push({
                                     source_text: original,

@@ -18,12 +18,28 @@ export const GROQ_MODEL = 'openai/gpt-oss-120b'
  *  même famille, plus rapide et moins coûteuse. */
 export const GROQ_MODEL_FAST = 'openai/gpt-oss-20b'
 
+/* Toutes les clés GROQ_API_KEY_<n> présentes (puis GROQ_API_KEY). La liste
+   figée _1.._3 ignorait les clés ajoutées ensuite (_4.._6). */
 export const GROQ_KEYS = [
-    process.env.GROQ_API_KEY_1,
-    process.env.GROQ_API_KEY_2,
-    process.env.GROQ_API_KEY_3,
-    process.env.GROQ_API_KEY
-].filter(Boolean) as string[];
+    // références explicites : présentes même là où process.env ne s'énumère pas (edge)
+    process.env.GROQ_API_KEY_1, process.env.GROQ_API_KEY_2, process.env.GROQ_API_KEY_3,
+    process.env.GROQ_API_KEY_4, process.env.GROQ_API_KEY_5, process.env.GROQ_API_KEY_6,
+    ...Object.keys(process.env).filter(k => /^GROQ_API_KEY_\d+$/.test(k))
+        .sort((a, b) => Number(a.split('_').pop()) - Number(b.split('_').pop()))
+        .map(k => process.env[k]),
+    process.env.GROQ_API_KEY,
+].filter((k, i, t): k is string => !!k && t.indexOf(k) === i);
+
+/* Refus propre À LA CLÉ (et non à la requête) : on passe à la suivante.
+   Constat du 06/10/2026 : la clé n°1 répondait 400 « Organization has been
+   restricted » ; seule l'erreur 429 faisait tourner les clés, donc TOUTE
+   l'IA du site (traductions comprises) échouait sur cette première clé. */
+async function refusDeLaCle(res: Response): Promise<boolean> {
+    if ([401, 403, 429].includes(res.status) || res.status >= 500) return true
+    if (res.status !== 400) return false
+    const corps = await res.clone().text().catch(() => '')
+    return /restricted|organization|invalid_api_key|api key/i.test(corps)
+}
 
 let currentKeyIndex = 0;
 
@@ -69,18 +85,17 @@ export async function fetchWithGroqRotation(payload: Record<string, unknown>, cu
                 body: JSON.stringify(payload)
             });
 
-            if (res.status === 429) {
-                console.warn(`[Groq] 429 Rate Limit hit using key ending with ...${apiKey.slice(-5)}.`);
+            if (attempts < maxRetries - 1 && await refusDeLaCle(res)) {
+                console.warn(`[Groq] ${res.status} avec la clé ...${apiKey.slice(-5)} : clé suivante.`);
 
                 if (usedCustomKey && attempts === 0) {
-                    console.warn(`[Groq] Custom API key from DB was rate limited. Falling back to system pool.`);
+                    console.warn(`[Groq] Custom API key from DB was refused. Falling back to system pool.`);
                 } else {
-                    console.warn(`[Groq] Rotating system key...`);
                     rotateGroqApiKey();
                 }
 
-                // backoff for 1s just to be safe before hitting the new key
-                await new Promise(r => setTimeout(r, 1000));
+                // backoff court (plus long sur limite de débit) avant la clé suivante
+                await new Promise(r => setTimeout(r, res.status === 429 ? 1000 : 150));
                 continue;
             }
 
@@ -112,10 +127,10 @@ export async function customGroqFetch(input: RequestInfo | URL, init?: RequestIn
         try {
             const res = await fetch(input, currentInit);
 
-            if (res.status === 429) {
-                console.warn(`[Groq AI SDK] 429 Rate Limit hit using key ending with ...${apiKey.slice(-5)}.`);
+            if (attempts < maxRetries - 1 && await refusDeLaCle(res)) {
+                console.warn(`[Groq AI SDK] ${res.status} avec la clé ...${apiKey.slice(-5)} : clé suivante.`);
                 rotateGroqApiKey();
-                await new Promise(r => setTimeout(r, 1000));
+                await new Promise(r => setTimeout(r, res.status === 429 ? 1000 : 150));
                 continue;
             }
 

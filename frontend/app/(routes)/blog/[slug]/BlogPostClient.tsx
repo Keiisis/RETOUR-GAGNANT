@@ -240,7 +240,7 @@ export default function BlogPostClient({ slug }: { slug: string }) {
                     <div className="flex items-center gap-4 text-xs text-slate-500 mb-8 pb-6 border-b border-slate-100 flex-wrap">
                         <span className="flex items-center gap-1"><Clock size={12} /> {formatDate(post.created_at)}</span>
                         <span className="flex items-center gap-1"><Eye size={12} /> {post.views} {t("vues")}</span>
-                        <span className="flex items-center gap-1"><Clock size={12} /> {readingTime} min {t("de lecture")}</span>
+                        <span className="flex items-center gap-1"><Clock size={12} /> {t('{n} min de lecture', { n: readingTime })}</span>
                         <span>{t("Par")} {post.author || 'Retour Gagnant'}</span>
                     </div>
 

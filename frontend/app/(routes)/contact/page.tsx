@@ -108,7 +108,7 @@ export default function ContactPage() {
                                                 <span className="text-sm font-medium text-gray-700 group-hover:text-[#008751] transition-colors">{COMPANY_INFO.phone2Display}</span>
                                             </a>
                                         </div>
-                                        <p className="text-gray-400 text-xs mt-2 leading-snug">{COMPANY_INFO.hours.split('\n').map((line, i) => <span key={i} className="block">{line}</span>)}</p>
+                                        <p className="text-gray-400 text-xs mt-2 leading-snug">{COMPANY_INFO.hours.split('\n').map((line, i) => <span key={i} className="block">{t(line)}</span>)}</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -211,7 +211,7 @@ export default function ContactPage() {
                                                 <p className="text-[#E8112D] text-sm"><T>Une erreur est survenue. Réessayez.</T></p>
                                             )}
 
-                                            <ConsentCheckbox id="contact-consent" purpose="afin de répondre à votre demande de contact" />
+                                            <ConsentCheckbox id="contact-consent" purpose={t('afin de répondre à votre demande de contact')} />
 
                                             <Button
                                                 type="submit"

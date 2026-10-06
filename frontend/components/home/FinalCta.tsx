@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { CalendarBlank, ArrowRight, EnvelopeSimple, CheckCircle, CircleNotch } from "@phosphor-icons/react";
-import { T } from "@/lib/translation";
+import { T, useTranslation } from "@/lib/translation";
 
 /**
  * Section finale : fusion RDV (intention primaire, même libellé que le hero) +
@@ -12,6 +12,7 @@ import { T } from "@/lib/translation";
  * fois sur la page). Palette claire autour, jamais de fond noir.
  */
 export default function FinalCta() {
+    const { t } = useTranslation();
     const reduce = useReducedMotion();
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -84,7 +85,7 @@ export default function FinalCta() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Votre adresse email"
+                                placeholder={t("Votre adresse email")}
                                 className="w-full rounded-xl bg-white px-4 py-3 font-geist text-sm text-[#0d1a12] placeholder:text-[#9aa39c] focus:outline-none focus:ring-2 focus:ring-[#FCD116]"
                             />
                             <button

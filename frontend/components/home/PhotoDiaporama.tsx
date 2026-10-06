@@ -150,9 +150,9 @@ function ScrolledDiaporama({ images, containerRef }: { images: GalleryImage[], c
                             </motion.div>
 
                             <h2 className="text-4xl sm:text-6xl md:text-8xl lg:text-[12rem] font-bold font-heading text-white leading-[0.8] mb-8 sm:mb-12 tracking-tighter">
-                                L&apos;ÂME <br />
+                                <T>L&apos;ÂME</T> <br />
                                 <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D] filter drop-shadow-[0_20px_60px_rgba(252,209,22,0.5)]">
-                                    ÉTERNELLE
+                                    <T>ÉTERNELLE</T>
                                 </span>
                             </h2>
 
@@ -163,7 +163,7 @@ function ScrolledDiaporama({ images, containerRef }: { images: GalleryImage[], c
                                     className="px-6 py-4 sm:px-10 sm:py-5 md:px-14 md:py-7 bg-white text-black rounded-full text-sm font-black tracking-[0.3em] flex items-center gap-5 group transition-all"
                                 >
                                     <Sparkles className="group-hover:rotate-180 transition-transform duration-1000" size={20} />
-                                    IMMERSION TOTALE
+                                    <T>IMMERSION TOTALE</T>
                                 </motion.button>
                                 <p className="text-white/30 text-2xl font-extralight leading-relaxed max-w-xl border-l-[3px] border-[#E8112D] pl-12 font-serif italic">
                                     {t('Une traversée onirique à travers {{count}} fragments de notre patrie. Laissez-vous porter par le flux du temps.', { count: images.length || 238 })}

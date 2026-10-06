@@ -15,10 +15,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Phone, PhoneSlash as PhoneOff, Microphone as Mic, MicrophoneSlash as MicOff } from '@phosphor-icons/react';
 import { supabase } from '@/lib/supabase'
 import { CallEngine, formatDuree } from '@/lib/webrtc-call'
+import { T, useTranslation } from '@/lib/translation'
 
 type Etat = 'idle' | 'ringing' | 'active' | 'ending'
 
 export function ClientCallButton({ sujet }: { sujet?: string }) {
+    const { t } = useTranslation()
     const [etat, setEtat] = useState<Etat>('idle')
     const [muet, setMuet] = useState(false)
     const [secondes, setSecondes] = useState(0)
@@ -64,7 +66,7 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
         try {
             const { data: auth } = await supabase.auth.getUser()
             const user = auth.user
-            if (!user) { setMessage('Connectez-vous pour appeler un conseiller.'); return }
+            if (!user) { setMessage(t('Connectez-vous pour appeler un conseiller.')); return }
 
             const { data: prof } = await supabase
                 .from('client_profiles')
@@ -103,10 +105,10 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
                         setAgentNom(row.agent_nom)
                         setEtat('active')
                     } else if (row.statut === 'declined') {
-                        setMessage('Aucun conseiller disponible pour le moment.')
+                        setMessage(t('Aucun conseiller disponible pour le moment.'))
                         nettoyer()
                     } else if (row.statut === 'missed') {
-                        setMessage('Personne n’a décroché. Réessayez ou écrivez-nous.')
+                        setMessage(t('Personne n’a décroché. Réessayez ou écrivez-nous.'))
                         nettoyer()
                     } else if (row.statut === 'ended') {
                         nettoyer()
@@ -124,15 +126,15 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
             engine.current = moteur
             await moteur.start()
         } catch (e) {
-            const msg = e instanceof Error ? e.message : 'Appel impossible.'
+            const msg = e instanceof Error ? e.message : t('Appel impossible.')
             setMessage(
                 msg.includes('Permission') || msg.includes('NotAllowed')
-                    ? 'Autorisez le micro dans votre navigateur pour appeler.'
+                    ? t('Autorisez le micro dans votre navigateur pour appeler.')
                     : msg,
             )
             nettoyer()
         }
-    }, [sujet, nettoyer, raccrocher])
+    }, [sujet, nettoyer, raccrocher, t])
 
     const basculerMicro = () => {
         const suivant = !muet
@@ -149,7 +151,7 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
                     onClick={appeler}
                     className="w-full h-12 rounded-xl bg-[#008751] text-white font-bold text-sm flex items-center justify-center gap-2 hover:bg-[#00643C] transition-colors"
                 >
-                    <Phone size={17} /> Appeler un conseiller
+                    <Phone size={17} /> <T>Appeler un conseiller</T>
                 </button>
             ) : (
                 <div className="rounded-xl border border-[#008751]/25 bg-white overflow-hidden">
@@ -160,12 +162,12 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
                     </div>
                     <div className="p-4">
                         <p className="text-[11px] font-bold tracking-widest text-[#8A8A8A] uppercase">
-                            {etat === 'ringing' ? 'Appel en cours…' : 'En communication'}
+                            {etat === 'ringing' ? t('Appel en cours…') : t('En communication')}
                         </p>
                         <p className="text-[15px] font-bold text-[#3C3C3C] mt-0.5">
                             {etat === 'ringing'
-                                ? 'Nous cherchons un conseiller disponible'
-                                : (agentNom || 'Conseiller RGB')}
+                                ? t('Nous cherchons un conseiller disponible')
+                                : (agentNom || t('Conseiller RGB'))}
                         </p>
                         {etat === 'active' && (
                             <p className="text-[13px] font-bold text-[#008751] tabular-nums mt-1">
@@ -177,7 +179,7 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
                             {etat === 'active' && (
                                 <button
                                     onClick={basculerMicro}
-                                    aria-label={muet ? 'Réactiver le micro' : 'Couper le micro'}
+                                    aria-label={muet ? t('Réactiver le micro') : t('Couper le micro')}
                                     className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors ${
                                         muet ? 'bg-[#FDECEA] text-[#E8112D]' : 'bg-[#F5F5F5] text-[#3C3C3C]'
                                     }`}
@@ -189,7 +191,7 @@ export function ClientCallButton({ sujet }: { sujet?: string }) {
                                 onClick={raccrocher}
                                 className="flex-1 h-11 rounded-full bg-[#E8112D] text-white font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
                             >
-                                <PhoneOff size={17} /> Raccrocher
+                                <PhoneOff size={17} /> <T>Raccrocher</T>
                             </button>
                         </div>
                     </div>

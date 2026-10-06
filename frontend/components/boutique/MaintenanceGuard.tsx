@@ -43,7 +43,7 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
 
                     <div>
                         <h1 className="text-4xl font-black text-white font-heading mb-4">
-                            Boutique en <span className="text-[#FCD116]"><T>Maintenance</T></span>
+                            <T>Boutique en</T> <span className="text-[#FCD116]"><T>Maintenance</T></span>
                         </h1>
                         <p className="text-gray-400 text-sm leading-relaxed">
                             {message}
@@ -53,13 +53,13 @@ export function MaintenanceGuard({ children }: MaintenanceGuardProps) {
                     <div className="flex items-center justify-center gap-2 text-gray-600">
                         <Clock size={14} />
                         <span className="text-[10px] font-bold uppercase tracking-widest">
-                            Nous revenons tres bientot
+                            <T>Nous revenons tres bientot</T>
                         </span>
                     </div>
 
                     <Link href="/">
                         <Button className="h-14 px-8 rounded-2xl bg-white/5 border border-white/10 text-white font-bold hover:bg-white/10 gap-2">
-                            <ArrowLeft size={18} /> Retour a l'accueil
+                            <ArrowLeft size={18} /> <T>Retour a l&apos;accueil</T>
                         </Button>
                     </Link>
                 </motion.div>

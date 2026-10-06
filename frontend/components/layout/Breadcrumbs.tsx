@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { CaretRight, House } from '@phosphor-icons/react'
+import { T, useTranslation } from '@/lib/translation'
 
 const ROUTE_LABELS: Record<string, string> = {
     'services': 'Services',
@@ -29,6 +30,7 @@ const ROUTE_LABELS: Record<string, string> = {
 
 export default function Breadcrumbs() {
     const pathname = usePathname()
+    const { t } = useTranslation()
 
     // Don't show on homepage or admin routes
     if (pathname === '/' || pathname.startsWith('/admin') || pathname.startsWith('/agent') || pathname.startsWith('/client') || pathname.startsWith('/ceo')) {
@@ -40,14 +42,14 @@ export default function Breadcrumbs() {
 
     return (
         <nav
-            aria-label="Fil d'Ariane"
+            aria-label={t("Fil d'Ariane")}
             className="container mx-auto px-4 py-3"
         >
             <ol className="flex items-center gap-1.5 text-xs text-gray-500 flex-wrap" itemScope itemType="https://schema.org/BreadcrumbList">
                 <li className="flex items-center gap-1.5" itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">
                     <Link href="/" className="hover:text-[#008751] transition-colors flex items-center gap-1" itemProp="item">
                         <House size={12} />
-                        <span itemProp="name">Accueil</span>
+                        <span itemProp="name"><T>Accueil</T></span>
                     </Link>
                     <meta itemProp="position" content="1" />
                 </li>
@@ -68,11 +70,11 @@ export default function Breadcrumbs() {
                             <CaretRight size={10} className="text-gray-300" />
                             {isLast ? (
                                 <span className="font-semibold text-gray-800 truncate max-w-[200px]" itemProp="name">
-                                    {label}
+                                    {t(label)}
                                 </span>
                             ) : (
                                 <Link href={path} className="hover:text-[#008751] transition-colors truncate max-w-[200px]" itemProp="item">
-                                    <span itemProp="name">{label}</span>
+                                    <span itemProp="name">{t(label)}</span>
                                 </Link>
                             )}
                             <meta itemProp="position" content={String(index + 2)} />

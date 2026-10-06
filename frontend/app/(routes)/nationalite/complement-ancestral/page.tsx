@@ -153,7 +153,7 @@ function ComplementAncestralContent() {
     const payHandlers: Record<PaymentProvider, () => void> = { kkiapay: handleKkiapay, fedapay: handleFedapay, zeyow: handleZeyow }
 
     const handleSubmit = async () => {
-        if (!paymentDone) { setError(t('Veuillez effectuer le paiement')); return }
+        if (!paymentDone) { setError('Veuillez effectuer le paiement'); return }
         setSubmitting(true); setError('')
         try {
             const res = await natFetch('/api/nationality/recherche-ancestrale', {
@@ -176,7 +176,7 @@ function ComplementAncestralContent() {
         } catch {
             // Échec APRÈS paiement : réarmer pour permettre un nouvel essai
             autoSubmitRef.current = false
-            setError(t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Réessayez avec le bouton de confirmation : votre paiement est conservé.'))
+            setError('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Réessayez avec le bouton de confirmation : votre paiement est conservé.')
         }
         setSubmitting(false)
     }
@@ -204,13 +204,13 @@ function ComplementAncestralContent() {
                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#008751]/30 to-[#FCD116]/20 border-2 border-[#008751]/40 flex items-center justify-center">
                     <CheckCircle2 size={36} className="text-[#008751]" />
                 </div>
-                <h1 className="text-3xl font-black text-gray-900 mb-3">Demande confirmée</h1>
+                <h1 className="text-3xl font-black text-gray-900 mb-3"><T>Demande confirmée</T></h1>
                 <p className="text-gray-500 text-sm mb-6">
-                    Votre paiement a été reçu. Notre équipe va débuter la recherche de vos documents ancestraux dans les plus brefs délais. Vous recevrez une confirmation par email.
+                    <T>Votre paiement a été reçu. Notre équipe va débuter la recherche de vos documents ancestraux dans les plus brefs délais. Vous recevrez une confirmation par email.</T>
                 </p>
-                <p className="text-xs text-gray-400 mb-6 font-mono">Dossier : {ref}</p>
+                <p className="text-xs text-gray-400 mb-6 font-mono">{t('Dossier : {ref}', { ref })}</p>
                 <Link href="/suivi-dossier" className="bg-[#008751] hover:bg-[#00a36b] text-white font-black text-sm px-6 py-3 rounded-xl transition-all">
-                    Suivre mon dossier
+                    <T>Suivre mon dossier</T>
                 </Link>
             </motion.div>
         </div>
@@ -245,7 +245,7 @@ function ComplementAncestralContent() {
                             <div className="w-28 h-28 md:w-36 md:h-36 relative">
                                 <Image
                                     src="/assets/icones/Recherche Ancestrale.png"
-                                    alt="Recherche Ancestrale"
+                                    alt={t('Recherche Ancestrale')}
                                     fill
                                     className="object-contain"
                                     sizes="144px"
@@ -254,16 +254,16 @@ function ComplementAncestralContent() {
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-3">
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#FCD116]/70">Complément de dossier</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[#FCD116]/70"><T>Complément de dossier</T></span>
                             </div>
                             <h1 className="text-3xl md:text-4xl font-bold font-display mb-3">
-                                Déléguer ma{' '}
+                                <T>Déléguer ma</T>{' '}
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FCD116] to-[#008751]">
-                                    Recherche Ancestrale
+                                    <T>Recherche Ancestrale</T>
                                 </span>
                             </h1>
                             <p className="text-slate-600 leading-relaxed max-w-xl">
-                                Notre équipe mobilise archives officielles, bases de données spécialisées et associations expertes pour retrouver les actes manquants à votre dossier.
+                                <T>Notre équipe mobilise archives officielles, bases de données spécialisées et associations expertes pour retrouver les actes manquants à votre dossier.</T>
                             </p>
                         </div>
                     </motion.div>
@@ -280,7 +280,7 @@ function ComplementAncestralContent() {
                         className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between"
                     >
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Dossier rattaché</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500"><T>Dossier rattaché</T></p>
                             <p className="text-lg font-black text-[#1a2332] font-mono">{ref}</p>
                             {applicantName && <p className="text-sm text-gray-500">{applicantName}</p>}
                         </div>
@@ -298,7 +298,7 @@ function ComplementAncestralContent() {
                         transition={{ delay: 0.1 }}
                         className="bg-amber-50 border border-amber-200 rounded-2xl p-6"
                     >
-                        <p className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-4">Documents ancestraux manquants dans votre dossier</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-4"><T>Documents ancestraux manquants dans votre dossier</T></p>
                         <div className="space-y-2">
                             {missingDocs.map((doc, i) => (
                                 <div key={i} className="flex items-center gap-3 bg-white/60 rounded-xl p-3">
@@ -308,7 +308,7 @@ function ComplementAncestralContent() {
                             ))}
                         </div>
                         <p className="text-xs text-amber-600 mt-4 leading-relaxed">
-                            Ces documents peuvent être difficiles à obtenir : surtout pour des ancêtres victimes de la traite transatlantique. Notre service prend en charge intégralement cette recherche.
+                            <T>Ces documents peuvent être difficiles à obtenir : surtout pour des ancêtres victimes de la traite transatlantique. Notre service prend en charge intégralement cette recherche.</T>
                         </p>
                     </motion.div>
                 )}
@@ -323,9 +323,9 @@ function ComplementAncestralContent() {
                 >
                     <div className="flex items-center gap-2 mb-1">
                         <FileText size={16} className="text-[#008751]" />
-                        <p className="text-xs font-bold uppercase tracking-widest text-[#008751]">Pièces à fournir pour la recherche</p>
+                        <p className="text-xs font-bold uppercase tracking-widest text-[#008751]"><T>Pièces à fournir pour la recherche</T></p>
                     </div>
-                    <p className="text-xs text-gray-500 mb-4">Documents nécessaires au démarrage de la recherche généalogique (distincts de ceux de la demande de nationalité).</p>
+                    <p className="text-xs text-gray-500 mb-4"><T>Documents nécessaires au démarrage de la recherche généalogique (distincts de ceux de la demande de nationalité).</T></p>
                     <div className="space-y-2">
                         {[
                             "Extrait de naissance de vos deux parents (père et mère)",
@@ -334,7 +334,7 @@ function ComplementAncestralContent() {
                         ].map((piece, i) => (
                             <div key={i} className="flex items-start gap-3 bg-[#008751]/5 border border-[#008751]/15 rounded-xl p-3">
                                 <span className="w-5 h-5 rounded-full bg-[#008751] text-white text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                                <span className="text-sm text-[#1a2332]">{piece}</span>
+                                <span className="text-sm text-[#1a2332]">{t(piece)}</span>
                             </div>
                         ))}
                     </div>
@@ -356,8 +356,8 @@ function ComplementAncestralContent() {
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: m.color + '18', border: `1px solid ${m.color}35` }}>
                                 <m.icon size={18} style={{ color: m.color }} />
                             </div>
-                            <h3 className="font-bold text-[#1a2332] mb-1 text-sm">{m.title}</h3>
-                            <p className="text-xs text-gray-500 leading-relaxed">{m.desc}</p>
+                            <h3 className="font-bold text-[#1a2332] mb-1 text-sm">{t(m.title)}</h3>
+                            <p className="text-xs text-gray-500 leading-relaxed">{t(m.desc)}</p>
                         </div>
                     ))}
                 </motion.div>
@@ -372,23 +372,23 @@ function ComplementAncestralContent() {
                     <div className="h-1 w-full bg-gradient-to-r from-[#FCD116] to-[#008751]" />
                     <div className="p-6 space-y-6">
                         <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#008751] mb-1">Investissement</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#008751] mb-1"><T>Investissement</T></p>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-5xl font-black text-[#1a2332]">{researchPrice} €</span>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Recherche complète : archives, bases de données & associations spécialisées · <span className="font-semibold">TVA incluse</span></p>
+                            <p className="text-xs text-gray-500 mt-1"><T>Recherche complète : archives, bases de données & associations spécialisées ·</T>{' '}<span className="font-semibold"><T>TVA incluse</T></span></p>
                         </div>
 
                         {paymentDone ? (
                             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
                                 <CheckCircle2 size={28} className="text-emerald-500 mx-auto mb-2" />
-                                <p className="text-sm font-bold text-emerald-700">Paiement effectué via {paymentProvider}</p>
+                                <p className="text-sm font-bold text-emerald-700">{t('Paiement effectué via {provider}', { provider: paymentProvider ?? '' })}</p>
                                 {paymentTxId && <p className="text-[10px] text-gray-500 mt-1 font-mono">TX: {paymentTxId}</p>}
                             </div>
                         ) : paymentProcessing ? (
                             <div className="flex flex-col items-center py-6">
                                 <Loader2 size={28} className="animate-spin text-[#FCD116]" />
-                                <p className="text-sm text-gray-500 mt-3">Traitement en cours...</p>
+                                <p className="text-sm text-gray-500 mt-3"><T>Traitement en cours...</T></p>
                                 <p className="text-xs text-gray-400 mt-2 text-center max-w-xs">{t('Finalisez le paiement dans la fenêtre sécurisée. Avec une carte bancaire hors zone UEMOA (Canada, Europe…), privilégiez le Mobile Money.')}</p>
                                 <button
                                     type="button"
@@ -400,11 +400,11 @@ function ComplementAncestralContent() {
                             </div>
                         ) : (
                             <div className="space-y-3">
-                                <p className="text-xs text-gray-500 font-bold">Sélectionnez votre moyen de paiement :</p>
+                                <p className="text-xs text-gray-500 font-bold"><T>Sélectionnez votre moyen de paiement :</T></p>
                                 {providers.length === 0 ? (
                                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
                                         <CreditCard size={20} className="text-gray-500 mx-auto mb-2" />
-                                        <p className="text-xs text-amber-600">Aucune passerelle active. Contactez-nous directement.</p>
+                                        <p className="text-xs text-amber-600"><T>Aucune passerelle active. Contactez-nous directement.</T></p>
                                     </div>
                                 ) : providers.map(p => (
                                     <button
@@ -432,7 +432,7 @@ function ComplementAncestralContent() {
 
                         {error && (
                             <p className="text-xs text-red-500 flex items-center gap-2">
-                                <AlertCircle size={12} /> {error}
+                                <AlertCircle size={12} /> {t(error)}
                             </p>
                         )}
 
@@ -442,12 +442,12 @@ function ComplementAncestralContent() {
                             disabled={submitting || !paymentDone}
                             className="w-full bg-[#008751] hover:bg-[#00a36b] disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm py-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#008751]/20"
                         >
-                            {submitting ? <><Loader2 size={16} className="animate-spin" /> Confirmation...</> : !paymentDone ? 'Payez d\'abord' : 'Confirmer ma Recherche Ancestrale'}
+                            {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Confirmation...</T></> : !paymentDone ? t('Payez d\'abord') : t('Confirmer ma Recherche Ancestrale')}
                         </button>
 
                         <div className="flex items-center justify-center gap-2 text-gray-500">
                             <Shield size={12} />
-                            <span className="text-[10px] font-bold uppercase tracking-widest">Transaction 100% sécurisée</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest"><T>Transaction 100% sécurisée</T></span>
                         </div>
                     </div>
                 </motion.div>
@@ -455,7 +455,7 @@ function ComplementAncestralContent() {
                 {/* Retour */}
                 <div className="text-center">
                     <Link href="/nationalite" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-400 transition-colors">
-                        <ArrowLeft size={14} /> Retour à la page Nationalité
+                        <ArrowLeft size={14} /> <T>Retour à la page Nationalité</T>
                     </Link>
                 </div>
             </div>

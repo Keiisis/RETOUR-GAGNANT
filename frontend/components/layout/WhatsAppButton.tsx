@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WhatsappLogo, X } from '@phosphor-icons/react'
 import { COMPANY_INFO } from '@/lib/constants/company-info'
+import { T, useTranslation } from '@/lib/translation'
 
 export default function WhatsAppButton() {
+    const { t } = useTranslation()
     const [tooltip, setTooltip] = useState(false)
 
     return (
@@ -26,10 +28,10 @@ export default function WhatsAppButton() {
                             <X size={12} className="text-gray-400" />
                         </button>
                         <p className="text-sm font-semibold text-[#1a2332] mb-1">
-                            Besoin d&apos;aide ? 
+                            <T>Besoin d&apos;aide ?</T> 
                         </p>
                         <p className="text-xs text-gray-500 mb-3">
-                            Discutez directement avec notre équipe sur WhatsApp.
+                            <T>Discutez directement avec notre équipe sur WhatsApp.</T>
                         </p>
                         <div className="flex flex-col gap-2">
                             <a
@@ -59,7 +61,7 @@ export default function WhatsAppButton() {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 className="w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20BD5A] text-white shadow-[0_4px_20px_rgba(37,211,102,0.4)] flex items-center justify-center transition-colors relative"
-                aria-label="Contacter sur WhatsApp"
+                aria-label={t('Contacter sur WhatsApp')}
             >
                 {/* Pulse ring */}
                 <span className="absolute inset-0 rounded-full bg-[#25D366] animate-ping opacity-30" />

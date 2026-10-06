@@ -156,10 +156,10 @@ export default function SimulateurPage() {
                         <span className="text-[11px] uppercase tracking-[4px] font-bold text-[#FCD116]"><T>L&apos;Oracle</T></span>
                     </div>
                     <h1 className="text-3xl md:text-5xl font-black font-display mb-4 tracking-tight">
-                        Trouvez votre <span className="bg-gradient-to-r from-[#FCD116] to-[#E8112D] bg-clip-text text-transparent"><T>voie</T></span>
+                        <T>Trouvez votre</T> <span className="bg-gradient-to-r from-[#FCD116] to-[#E8112D] bg-clip-text text-transparent"><T>voie</T></span>
                     </h1>
                     <p className="text-gray-500 max-w-xl mx-auto">
-                        En 5 questions, découvrez le service Retour Gagnant fait pour vous.
+                        <T>En 5 questions, découvrez le service Retour Gagnant fait pour vous.</T>
                     </p>
                 </motion.div>
 
@@ -174,7 +174,7 @@ export default function SimulateurPage() {
                             />
                         </div>
                         <p className="text-gray-500 text-[11px] mt-2 text-center uppercase tracking-widest font-bold">
-                            Étape {currentStep + 1} / {totalSteps}
+                            {t('Étape {current} / {total}', { current: currentStep + 1, total: totalSteps })}
                         </p>
                     </div>
                 )}
@@ -264,7 +264,7 @@ export default function SimulateurPage() {
                                     </div>
 
                                     <ConsentCheckbox id="simulateur-consent" checked={consent} onChange={setConsent}
-                                        purpose="afin d'analyser mon profil et de me recontacter au sujet de mes besoins" className="mt-4" />
+                                        purpose={t("afin d'analyser mon profil et de me recontacter au sujet de mes besoins")} className="mt-4" />
 
                                     <button
                                         onClick={handleSubmit}
@@ -274,12 +274,12 @@ export default function SimulateurPage() {
                                         {isSubmitting ? (
                                             <>
                                                 <Loader2 size={18} className="animate-spin" />
-                                                Analyse en cours...
+                                                <T>Analyse en cours...</T>
                                             </>
                                         ) : (
                                             <>
                                                 <Sparkles size={18} />
-                                                Révéler ma recommandation
+                                                <T>Révéler ma recommandation</T>
                                             </>
                                         )}
                                     </button>
@@ -318,7 +318,7 @@ export default function SimulateurPage() {
                                 </div>
 
                                 <h2 className="text-3xl font-black font-display mb-4">
-                                    Votre recommandation
+                                    <T>Votre recommandation</T>
                                 </h2>
 
                                 {/* Recommendation Card */}
@@ -338,14 +338,14 @@ export default function SimulateurPage() {
                                         href={lienService(result.slug)}
                                         className="flex-1 py-4 px-6 rounded-2xl bg-[#008751] text-white font-black uppercase tracking-widest text-[12px] hover:bg-[#006a41] transition-all flex items-center justify-center gap-2"
                                     >
-                                        Découvrir ce service
+                                        <T>Découvrir ce service</T>
                                         <ArrowRight size={16} />
                                     </Link>
                                     <Link
                                         href="/rendez-vous"
                                         className="flex-1 py-4 px-6 rounded-2xl bg-[#FCD116] text-black font-black uppercase tracking-widest text-[12px] hover:bg-[#E5BD14] transition-all flex items-center justify-center gap-2"
                                     >
-                                        Prendre rendez-vous
+                                        <T>Prendre rendez-vous</T>
                                         <Sparkles size={16} />
                                     </Link>
                                 </div>

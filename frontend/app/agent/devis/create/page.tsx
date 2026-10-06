@@ -12,6 +12,8 @@ import { TVA_RATE } from '@/lib/tax'
 import DescriptionEditeur from '@/components/shared/DescriptionEditeur'
 import DescriptionLignes from '@/components/shared/DescriptionLignes'
 import { normaliserDescription } from '@/lib/description-lignes'
+import ChoixLangueDocument from '@/components/shared/ChoixLangueDocument'
+import type { LangueDoc } from '@/lib/document-langues'
 
 interface DevisItem {
     description: string
@@ -29,6 +31,7 @@ const defaultConditions = `• Validité : 30 jours à compter de la date d'émi
 export default function AgentCreateDocumentPage() {
     const router = useRouter()
     const [saving, setSaving] = useState(false)
+    const [langueClient, setLangueClient] = useState<LangueDoc>('fr')
     const [showPreview, setShowPreview] = useState(false)
     const [formType, setFormType] = useState<'devis' | 'facture'>('devis')
     const [currency, setCurrency] = useState<'XOF' | 'EUR' | 'USD'>('XOF')
@@ -160,7 +163,8 @@ export default function AgentCreateDocumentPage() {
             alert(`Erreur (${result.code || res.status}) : ${result.error}\n\nDetails: ${result.details ?? null}`)
             setSaving(false)
         } else {
-            router.push('/agent/devis')
+            // Client non francophone : le document s'ouvre sur sa traduction, à relire avant envoi.
+            router.push(langueClient !== 'fr' && result.id ? `/agent/devis?ouvrir=${result.id}&langue=${langueClient}` : '/agent/devis')
         }
     }
 
@@ -327,6 +331,8 @@ export default function AgentCreateDocumentPage() {
                     <button type="button" onClick={() => setShowPreview(true)} className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/20 font-bold text-sm transition-colors">
                         <Eye size={16} /> Aperçu avant sauvegarde
                     </button>
+
+                    <ChoixLangueDocument value={langueClient} onChange={setLangueClient} className="text-gray-300" titre="Langue du client (le document s'ouvre ensuite pour relire la traduction)" />
 
                     <button type="button" onClick={() => handleSave('brouillon')} disabled={saving} className="flex items-center gap-2 px-6 py-3.5 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 font-bold text-sm transition-colors border border-white/5">
                         <Save size={16} /> Enregistrer Brouillon

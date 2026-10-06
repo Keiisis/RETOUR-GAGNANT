@@ -77,3 +77,11 @@ frontend/public/models/51782cae-*.glb
 #  provoquer un conflit a chaque fusion, pour un fichier que personne ne relit.
 #  Le SKILL, lui, est versionne (.claude/) : c'est lui qui compte pour l'equipe.
 graphify-out/
+# Jonctions locales vers .claude/skills (skills du projet exposés à Codex, non dupliqués)
+/.agents/skills/caveman
+/.agents/skills/frontend-design
+/.agents/skills/graphify
+/.agents/skills/shadcn
+/.agents/skills/strix
+/.agents/skills/vercel-react-best-practices
+/.agents/skills/vercel-react-native-skills

@@ -8,6 +8,7 @@ import ChatAssistant from '@/components/chat/ChatAssistant'
 import CookieConsent from '@/components/layout/CookieConsent'
 import WhatsAppButton from '@/components/layout/WhatsAppButton'
 import Breadcrumbs from '@/components/layout/Breadcrumbs'
+import { T } from '@/lib/translation'
 import { CartDrawer } from '@/components/boutique/CartDrawer'
 import { VisitorTracker } from '@/components/analytics/VisitorTracker'
 
@@ -30,7 +31,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         <>
             {/* A11y : lien d'évitement (visible au focus clavier) */}
             <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-xl focus:bg-[#008751] focus:text-white focus:font-bold focus:shadow-lg">
-                Aller au contenu
+                <T>Aller au contenu</T>
             </a>
             <VisitorTracker />
             <Header />

@@ -17,6 +17,7 @@ import { jsPDF, GState } from 'jspdf'
 import { LOGO_BASE64, STAMP_BASE64 } from './logoBase64'
 import { descriptionPourPdf, elementsDescription } from '@/lib/description-lignes'
 import { libelleMoyenPaiement } from '@/lib/moyen-paiement-libelle'
+import { libellesDoc, montantEnLettresLangue, type LangueDoc, type LibellesDoc } from '@/lib/document-langues'
 
 export interface DocumentPdfLigne {
     description: string
@@ -64,6 +65,10 @@ export interface DocumentPdfDonnees {
     paymentMethod?: string
     mecef?: { code?: string; nim?: string; compteurs?: string; dateHeure?: string; qrDataUrl?: string }
     modele?: ModeleDocument
+    /** Langue du document (défaut : français). Textes saisis déjà traduits par lib/document-traduction.ts. */
+    langue?: LangueDoc
+    /** Débours détectés sur les lignes ORIGINALES (une fois traduites, « TVA » n'y figure plus). */
+    debours?: boolean
 }
 
 // ── Valeurs par défaut (identiques au modèle en base au 29/09/2026) ─────────
@@ -100,21 +105,23 @@ const LIBELLE_DEVISE: Record<string, string> = { XOF: 'FCFA', FCFA: 'FCFA', XAF:
 const devise = (c: string) => LIBELLE_DEVISE[(c || 'XOF').toUpperCase()] || (c || '').toUpperCase()
 const sansDecimales = (c: string) => ['XOF', 'FCFA', 'XAF'].includes((c || 'XOF').toUpperCase())
 
-export function montant(val: number, cur: string): string {
+export function montant(val: number, cur: string, locale = 'fr-FR'): string {
     const v = Number(val) || 0
     const n = sansDecimales(cur) ? Math.round(v) : Math.round(v * 100) / 100
-    const txt = new Intl.NumberFormat('fr-FR', sansDecimales(cur) ? {} : { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })
+    const txt = new Intl.NumberFormat(locale, sansDecimales(cur) ? {} : { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })
         .format(n).replace(ESPACES_FINES, ' ')
     return `${txt} ${devise(cur)}`
 }
 
-/** Date lisible : ISO → JJ/MM/AAAA (fuseau Bénin) ; déjà formatée → inchangée. */
-export function dateLisible(v?: string | null): string {
+/** Date lisible : ISO → JJ/MM/AAAA (fuseau Bénin) ; déjà formatée → inchangée.
+ *  Hors français (L.dates = 'mois') : « 6 Oct 2026 » — un lecteur américain lirait 06/10 comme le 10 juin. */
+export function dateLisible(v?: string | null, L?: LibellesDoc): string {
     if (!v) return ''
     const s = String(v).trim()
     if (!/^\d{4}-\d{2}-\d{2}/.test(s)) return s
     const d = new Date(s.length === 10 ? s + 'T12:00:00Z' : s)
     if (isNaN(d.getTime())) return s
+    if (L?.dates === 'mois') return d.toLocaleDateString(L.locale, { timeZone: 'Africa/Porto-Novo', day: 'numeric', month: 'short', year: 'numeric' })
     return d.toLocaleDateString('fr-FR', { timeZone: 'Africa/Porto-Novo', day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
@@ -161,21 +168,36 @@ function montantEnLettres(v: number, cur: string): string {
 }
 
 /** Libellé et couleur du badge : ce que le CLIENT doit comprendre (jamais le statut interne brut). */
-function badge(d: DocumentPdfDonnees): { texte: string; couleur: RGB } {
-    const s = (d.statut || '').toLowerCase()
-    if (d.docType === 'avoir') return { texte: 'AVOIR', couleur: C.nuit }
+function badge(d: DocumentPdfDonnees, L: LibellesDoc): { texte: string; couleur: RGB } {
+    const s = (d.statut || '').toLowerCase(), B = L.badge
+    if (d.docType === 'avoir') return { texte: B.avoir, couleur: C.nuit }
     if (d.docType === 'devis') {
-        if (s === 'accepte' || d.signedAt || d.clientSignatureDataUrl) return { texte: 'ACCEPTÉ', couleur: C.vert }
-        if (s === 'refuse') return { texte: 'REFUSÉ', couleur: C.griseClair }
-        if (s === 'annule') return { texte: 'ANNULÉ', couleur: C.griseClair }
-        if (s === 'paye') return { texte: 'RÉGLÉ', couleur: C.vert }
-        return { texte: d.validite ? `VALABLE ${String(d.validite).toUpperCase()}` : 'PROPOSITION', couleur: C.vert }
+        if (s === 'accepte' || d.signedAt || d.clientSignatureDataUrl) return { texte: B.accepte, couleur: C.vert }
+        if (s === 'refuse') return { texte: B.refuse, couleur: C.griseClair }
+        if (s === 'annule') return { texte: B.annule, couleur: C.griseClair }
+        if (s === 'paye') return { texte: B.regle, couleur: C.vert }
+        return { texte: d.validite ? `${B.valable} ${String(d.validite).toUpperCase()}` : B.proposition, couleur: C.vert }
     }
-    if (d.isPaid || s === 'paye') return { texte: 'ACQUITTÉE', couleur: C.vert }
-    if (s === 'annule') return { texte: 'ANNULÉE', couleur: C.griseClair }
-    if (s === 'en_retard') return { texte: 'EN RETARD', couleur: C.rouge }
-    return { texte: 'À RÉGLER', couleur: C.ambre }
+    if (d.isPaid || s === 'paye') return { texte: B.acquittee, couleur: C.vert }
+    if (s === 'annule') return { texte: B.annulee, couleur: C.griseClair }
+    if (s === 'en_retard') return { texte: B.enRetard, couleur: C.rouge }
+    return { texte: B.aRegler, couleur: C.ambre }
 }
+
+/** Notes visibles par le client : les lignes techniques internes sont retirées
+ *  (« Méthode : » répétait le moyen déjà affiché en en-tête, en code brut). */
+export const notesPourClient = (notes?: string | null) => String(notes || '').split('\n').map(l => l.trim())
+    .filter(l => l && !/auto-?g[ée]n[ée]r|^\[|^paiement en ligne via|^m[ée]thode\s*:/i.test(l)).join('\n')
+
+/** Conditions techniques des documents automatiques : rien d'utile au client. */
+export const conditionsPourClient = (c?: string | null) => {
+    const t = String(c || '').trim()
+    return /g[ée]n[ée]r[ée] automatiquement|paiement effectu[ée] en ligne/i.test(t) ? '' : t
+}
+
+/** Débours : lignes « TVA … » refacturées à l'identique (ex. TVA du notaire) alors que RGB, exonérée, ne collecte aucune TVA. */
+export const aDesDebours = (d: Pick<DocumentPdfDonnees, 'total_tva' | 'items'>) =>
+    d.total_tva === 0 && d.items.some(i => /\bT\.?V\.?A\b/i.test(elementsDescription(i.description).join(' ')))
 
 // ── Dessin ───────────────────────────────────────────────────────────────────
 /* Mise en page ÉPURÉE (30/09/2026, demande de Kevin) : chaque information
@@ -190,8 +212,11 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     const BAS = PH - PIED_H - 4          // limite utile avant le pied de page
     const modele = { ...MODELE_PAR_DEFAUT, ...Object.fromEntries(Object.entries(d.modele || {}).filter(([, v]) => v)) }
     const type = d.docType || 'facture'
-    const titre = type === 'devis' ? 'DEVIS' : type === 'avoir' ? 'AVOIR' : 'FACTURE'
+    const L = libellesDoc(d.langue)
+    const titre = L.titre[type]
     const cur = d.currency || 'XOF'
+    const mt = (v: number) => montant(v, cur, L.locale)
+    const dt = (v?: string | null) => dateLisible(v, L)
     const couleur = (c: RGB, mode: 'text' | 'fill' | 'draw' = 'text') =>
         mode === 'text' ? pdf.setTextColor(c[0], c[1], c[2]) : mode === 'fill' ? pdf.setFillColor(c[0], c[1], c[2]) : pdf.setDrawColor(c[0], c[1], c[2])
     const police = (style: 'normal' | 'bold' | 'italic' | 'bolditalic', taille: number, c: RGB = C.texte) => {
@@ -217,9 +242,7 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
 
     const tauxTva = Math.max(0, ...d.items.map(i => Number(i.tva) || 0))
     const colonneTva = d.items.some(i => (Number(i.tva) || 0) > 0)
-    // Débours : lignes « TVA … » refacturées à l'identique (ex. TVA du notaire)
-    // alors que RGB, exonérée, ne collecte aucune TVA.
-    const debours = d.total_tva === 0 && d.items.some(i => /\bT\.?V\.?A\b/i.test(elementsDescription(i.description).join(' ')))
+    const debours = d.debours ?? aDesDebours(d)
 
     // Modèle administrable : les lignes légales (RCCM/IFU) vont au pied, le
     // reste (adresse, téléphones, email) sous le logotype — une seule fois.
@@ -253,13 +276,13 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     // prestataire noté « Méthode : … ». Jamais deviné (« kkiapay » ≠ Mobile
     // Money : Kkiapay encaisse aussi les cartes bancaires).
     const moyen = libelleMoyenPaiement(d.paymentMethod) || libelleMoyenPaiement(/M[ée]thode\s*:\s*([^\n]+)/i.exec(d.notes || '')?.[1])
-    const meta: string[] = [`N° ${d.invoiceRef}`, `Date : ${dateLisible(d.date)}`]
-    if (type === 'devis' && d.validite) meta.push(`Validité : ${d.validite}`)
-    if (type === 'facture' && d.dueDate && !d.isPaid) meta.push(`Échéance : ${dateLisible(d.dueDate)}`)
-    if (type === 'facture' && d.isPaid) meta.push(`Réglée le ${dateLisible(d.paidAt || d.date)}${moyen ? ` · ${moyen}` : ''}`)
+    const meta: string[] = [`${L.numero} ${d.invoiceRef}`, `${L.date}${L.dp}${dt(d.date)}`]
+    if (type === 'devis' && d.validite) meta.push(`${L.validite}${L.dp}${d.validite}`)
+    if (type === 'facture' && d.dueDate && !d.isPaid) meta.push(`${L.echeance}${L.dp}${dt(d.dueDate)}`)
+    if (type === 'facture' && d.isPaid) meta.push(`${L.regleeLe} ${dt(d.paidAt || d.date)}${moyen ? ` · ${moyen}` : ''}`)
     police('normal', 7.8, C.gris)
     pdf.text(meta, PW - MR, y + 12.5, { align: 'right', lineHeightFactor: 1.4 })
-    const b = badge(d)
+    const b = badge(d, L)
     police('bold', 7, [255, 255, 255])
     const bW = Math.max(22, pdf.getTextWidth(b.texte) + 9)
     const bY = y + 13 + meta.length * 3.85
@@ -272,8 +295,8 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     y += 7
 
     // ── CLIENT ────────────────────────────────────────────────────────────────
-    const client = nomPropre(d.clientName) || 'Client'
-    etiquette(type === 'devis' ? 'DEVIS ÉTABLI POUR' : type === 'avoir' ? 'AVOIR EN FAVEUR DE' : 'FACTURÉ À', ML, y)
+    const client = nomPropre(d.clientName) || L.client
+    etiquette(L.pour[type], ML, y)
     police('bold', 10.5, C.texte)
     ajuster(client, CW, 10.5)
     pdf.text(client, ML, y + 5.5)
@@ -286,11 +309,11 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     // ── TABLEAU ──────────────────────────────────────────────────────────────
     const wQte = 14, wPu = 32, wTva = colonneTva ? 15 : 0, wTot = 34
     const cols = [
-        { label: 'DÉSIGNATION', w: CW - wQte - wPu - wTva - wTot, align: 'left' as const },
-        { label: 'QTÉ', w: wQte, align: 'center' as const },
-        { label: 'P.U. HT', w: wPu, align: 'right' as const },
-        ...(colonneTva ? [{ label: 'TVA', w: wTva, align: 'center' as const }] : []),
-        { label: 'TOTAL HT', w: wTot, align: 'right' as const },
+        { label: L.cols.designation, w: CW - wQte - wPu - wTva - wTot, align: 'left' as const },
+        { label: L.cols.qte, w: wQte, align: 'center' as const },
+        { label: L.cols.pu, w: wPu, align: 'right' as const },
+        ...(colonneTva ? [{ label: L.cols.tva, w: wTva, align: 'center' as const }] : []),
+        { label: L.cols.totalHt, w: wTot, align: 'right' as const },
     ]
     const xCol = (i: number) => ML + cols.slice(0, i).reduce((a, c) => a + c.w, 0)
     const iTot = cols.length - 1
@@ -317,10 +340,10 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
         const yMil = y + 5.4
         police('normal', 7.8, C.gris)
         pdf.text(String(Number(it.quantity) || 0), xCol(1) + cols[1].w / 2, yMil, { align: 'center' })
-        pdf.text(montant(it.unit_price, cur), xCol(2) + cols[2].w - 3, yMil, { align: 'right' })
+        pdf.text(mt(it.unit_price), xCol(2) + cols[2].w - 3, yMil, { align: 'right' })
         if (colonneTva) pdf.text(`${Number(it.tva) || 0} %`, xCol(3) + cols[3].w / 2, yMil, { align: 'center' })
         police('bold', 8, C.texte)
-        pdf.text(montant((Number(it.quantity) || 0) * (Number(it.unit_price) || 0), cur), xCol(iTot) + cols[iTot].w - 3, yMil, { align: 'right' })
+        pdf.text(mt((Number(it.quantity) || 0) * (Number(it.unit_price) || 0)), xCol(iTot) + cols[iTot].w - 3, yMil, { align: 'right' })
         filet(y + h, ML, PW - MR, C.trait, 0.15)
         y += h
     })
@@ -330,9 +353,9 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     const totW = 80, totX = PW - MR - totW
     const lignesTot: [string, string][] = []
     // Sous-total affiché seulement s'il diffère du total (remise ou TVA)
-    if (d.remise > 0 || d.total_tva > 0) lignesTot.push(['Sous-total HT', montant(d.sous_total, cur)])
-    if (d.remise > 0) lignesTot.push(['Remise', '- ' + montant(d.remise, cur)])
-    if (d.total_tva > 0) lignesTot.push([`TVA ${tauxTva} %`, montant(d.total_tva, cur)])
+    if (d.remise > 0 || d.total_tva > 0) lignesTot.push([L.sousTotal, mt(d.sous_total)])
+    if (d.remise > 0) lignesTot.push([L.remise, '- ' + mt(d.remise)])
+    if (d.total_tva > 0) lignesTot.push([`${L.tva} ${tauxTva} %`, mt(d.total_tva)])
     const hTot = lignesTot.length * 6 + 14
     if (y + hTot > BAS) nouvellePage()
     lignesTot.forEach(([l, v]) => {
@@ -342,18 +365,20 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     })
     couleur(C.vert, 'fill'); pdf.roundedRect(totX, y, totW, 10.5, 1.8, 1.8, 'F')
     police('bold', 8, [255, 255, 255]); pdf.setCharSpace(0.4)
-    pdf.text(type === 'avoir' ? 'TOTAL AVOIR' : 'TOTAL TTC', totX + 4, y + 6.7); pdf.setCharSpace(0)
-    const totalTxt = montant(d.total, cur)
+    pdf.text(type === 'avoir' ? L.totalAvoir : L.totalTtc, totX + 4, y + 6.7); pdf.setCharSpace(0)
+    const totalTxt = mt(d.total)
     police('bold', 11, [255, 255, 255])
     ajuster(totalTxt, totW - 34, 11)
     pdf.text(totalTxt, PW - MR - 4, y + 7, { align: 'right' })
     y += 15
 
     // ── SOMME EN LETTRES (+ débours) ─────────────────────────────────────────
-    const phrases = [
-        `${type === 'devis' ? 'Arrêté le présent devis' : type === 'avoir' ? 'Arrêté le présent avoir' : 'Arrêtée la présente facture'} à la somme de ${montantEnLettres(d.total, cur).toLowerCase().replace(/\bcfa\b/g, 'CFA')} TTC.`,
-    ]
-    if (debours) phrases.push('Les montants de TVA figurant dans les lignes sont des frais réels refacturés à l’identique (débours), notamment la TVA facturée par le notaire.')
+    // Somme rédigée par code, jamais par l'IA ; hors français, suivie des chiffres (aucune ambiguïté possible).
+    const lettres = d.langue && d.langue !== 'fr' ? montantEnLettresLangue(d.total, cur, d.langue) : montantEnLettres(d.total, cur).toLowerCase().replace(/\bcfa\b/g, 'CFA')
+    const somme = !d.langue || d.langue === 'fr' ? lettres! : lettres ? `${lettres} (${totalTxt})` : totalTxt
+    const phrases = [L.arrete(type, somme)]
+    if (debours) phrases.push(L.debours)
+    if (L.avertissement) phrases.push(L.avertissement)
     police('italic', 7.4)
     const lignesMention = phrases.flatMap(p => pdf.splitTextToSize(p, CW) as string[])
     const hMention = lignesMention.length * 3.6 + 3
@@ -363,15 +388,11 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     y += hMention + 3
 
     // Conditions / références : les lignes techniques internes ne sont pas pour le client.
-    // « Méthode : » répétait le moyen déjà affiché en en-tête (et en code brut).
-    const notesClient = (d.notes || '').split('\n').map(l => l.trim())
-        .filter(l => l && !/auto-?g[ée]n[ée]r|^\[|^paiement en ligne via|^m[ée]thode\s*:/i.test(l)).join('\n')
-    // Conditions techniques des documents automatiques : rien d'utile au client.
-    const conditions = (d.conditions || '').trim()
-    const conditionsClient = /g[ée]n[ée]r[ée] automatiquement|paiement effectu[ée] en ligne/i.test(conditions) ? '' : conditions
+    const notesClient = notesPourClient(d.notes)
+    const conditionsClient = conditionsPourClient(d.conditions)
     const blocs = [
-        ...(conditionsClient ? [['CONDITIONS', conditionsClient]] : []),
-        ...(notesClient ? [['RÉFÉRENCES', notesClient]] : []),
+        ...(conditionsClient ? [[L.conditions, conditionsClient]] : []),
+        ...(notesClient ? [[L.references, notesClient]] : []),
     ] as [string, string][]
     for (const [etq, texte] of blocs) {
         police('normal', 7.2)
@@ -392,13 +413,13 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
         if (d.mecef.qrDataUrl) {
             try { pdf.addImage(d.mecef.qrDataUrl, 'PNG', ML + 3, y + 2, 22, 22); tX = ML + 29 } catch { /* QR illisible */ }
         }
-        police('bold', 7.2, C.vertFonce); pdf.text('FACTURE CERTIFIÉE — e-MCF / MECeF (DGI BÉNIN)', tX, y + 7)
+        police('bold', 7.2, C.vertFonce); pdf.text(L.mecef.titre, tX, y + 7)
         police('normal', 6.8, C.gris)
         const lm = [
-            d.mecef.code && `Code de contrôle : ${d.mecef.code}`,
-            d.mecef.nim && `NIM : ${d.mecef.nim}`,
-            d.mecef.compteurs && `Compteurs : ${d.mecef.compteurs}`,
-            d.mecef.dateHeure && `Certifiée le ${dateLisible(d.mecef.dateHeure)}`,
+            d.mecef.code && `${L.mecef.code}${L.dp}${d.mecef.code}`,
+            d.mecef.nim && `${L.mecef.nim}${L.dp}${d.mecef.nim}`,
+            d.mecef.compteurs && `${L.mecef.compteurs}${L.dp}${d.mecef.compteurs}`,
+            d.mecef.dateHeure && `${L.mecef.certifieeLe} ${dt(d.mecef.dateHeure)}`,
         ].filter(Boolean) as string[]
         pdf.text(lm, tX, y + 12, { lineHeightFactor: 1.45 })
         y += h + 5
@@ -435,7 +456,7 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
     }
 
     if (cadreClient) {
-        carte(ML, C.fond, 'BON POUR ACCORD — CLIENT')
+        carte(ML, C.fond, L.bonPourAccord)
         const zX = ML + 5, zY = y + hautH + 3, zW = sigW - 10, zH = sigH - hautH - 14
         let pose = false
         if (paraphe) {
@@ -457,7 +478,7 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
             couleur([255, 255, 255], 'draw'); pdf.setLineWidth(0.35)
             pdf.line(cx - 0.7, cy, cx - 0.2, cy + 0.55); pdf.line(cx - 0.2, cy + 0.55, cx + 0.75, cy - 0.5)
             police('normal', 6.8, C.vertFonce)
-            pdf.text(`Signé électroniquement le ${dateLisible(d.signedAt || d.paidAt || d.date)}`, zX + 4.2, y + sigH - 4.2)
+            pdf.text(`${L.signeLe} ${dt(d.signedAt || d.paidAt || d.date)}`, zX + 4.2, y + sigH - 4.2)
         } else {
             // Pas encore signé : espace de signature réel, sans mention trompeuse.
             couleur(C.griseClair, 'draw'); pdf.setLineWidth(0.25)
@@ -465,7 +486,7 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
             pdf.line(zX, yLigne, zX + zW, yLigne)
             pdf.setLineDashPattern([], 0)
             police('italic', 6.6, C.gris)
-            pdf.text('Date, signature et mention « Bon pour accord »', zX, y + sigH - 4.2)
+            pdf.text(L.mentionSignature, zX, y + sigH - 4.2)
         }
     }
 
@@ -477,14 +498,14 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
         pdf.addImage(STAMP_BASE64, 'PNG', dX + sigW - cachet - 3, y + hautH + (sigH - hautH - cachet) / 2 + 0.3, cachet, cachet, undefined, 'FAST')
     } catch { /* cachet indisponible */ }
     const texteW = sigW - cachet - 11
-    police('normal', 6.6, C.gris); pdf.text('La Directrice Générale', dX + 5, y + hautH + 7.5)
+    police('normal', 6.6, C.gris); pdf.text(L.directrice, dX + 5, y + hautH + 7.5)
     pdf.setFont('times', 'bolditalic'); couleur(C.vertFonce)
     const tSig = ajuster(modele.signataire, texteW, 13)
     pdf.setFontSize(tSig); pdf.text(modele.signataire, dX + 5, y + hautH + 16)
     couleur(C.jaune, 'draw'); pdf.setLineWidth(0.6)
     pdf.line(dX + 5, y + hautH + 18.2, dX + 5 + Math.min(texteW, pdf.getTextWidth(modele.signataire)), y + hautH + 18.2)
     police('normal', 6.3, C.griseClair)
-    pdf.text('Signature et cachet de l’entreprise', dX + 5, y + sigH - 4.2)
+    pdf.text(L.cachet, dX + 5, y + sigH - 4.2)
     y += sigH + 4
 
     // ── SIGNATURE GRAPHIQUE « GRAFFITI » (choix de Kevin, 30/09/2026) ──────
@@ -518,9 +539,9 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
             opacite(1)
             pdf.setLineCap('butt')
             pdf.setFont('times', 'bolditalic'); pdf.setFontSize(30 * k); couleur(C.nuit)
-            pdf.text('Merci !', X(8), Y(17), { angle: 6 })
+            pdf.text(L.merci, X(8), Y(17), { angle: 6 })
             pdf.setFont('helvetica', 'bold'); pdf.setFontSize(7 * k); couleur(C.vert)
-            pdf.text('BIENVENUE AU BÉNIN', X(10), Y(24), { angle: 6, charSpace: 1.4 * k })
+            pdf.text(L.bienvenue, X(10), Y(24), { angle: 6, charSpace: 1.4 * k })
         }
     }
 
@@ -530,8 +551,8 @@ export function dessinerDocumentPdf(d: DocumentPdfDonnees): jsPDF {
         .map(l => l.replace(/\s*[—:-]?\s*TVA[^—:]*applicable\s*[—:-]?\s*/i, ' ').trim())
         .filter(l => l && !/^En cas de litige/i.test(l) && !/si[èe]ge|@/i.test(l))
     const legal = piedModele[0] || [raison, ...legales].join(' — ')
-    const mentionTva = tauxTva > 0 && d.total_tva > 0 ? `TVA ${tauxTva} % applicable` : 'Exonérée de TVA'
-    const pied = [legal, `${mentionTva} — En cas de litige, seules les juridictions béninoises sont compétentes.`]
+    const mentionTva = tauxTva > 0 && d.total_tva > 0 ? L.tvaApplicable(tauxTva) : L.exonere
+    const pied = [legal, `${mentionTva} — ${L.litige}`]
     const nb = pdf.getNumberOfPages()
     for (let p = 1; p <= nb; p++) {
         pdf.setPage(p)

@@ -408,7 +408,7 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={service.image_url}
-                                            alt={service.title}
+                                            alt={t(service.title)}
                                             className="w-full h-full object-contain bg-transparent drop-shadow-[0_15px_35px_rgba(0,0,0,0.4)]"
                                         />
                                     </div>
@@ -492,8 +492,8 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                                     className="bg-white rounded-xl p-5 shadow-sm border border-[#FCD116]/20 flex flex-col gap-2"
                                                 >
                                                     <span className="text-4xl font-black text-[#FCD116]/30 leading-none">{step.num}</span>
-                                                    <h4 className="text-sm font-bold text-[#1a2332]">{step.title}</h4>
-                                                    <p className="text-xs text-gray-500 leading-relaxed">{step.desc}</p>
+                                                    <h4 className="text-sm font-bold text-[#1a2332]">{t(step.title)}</h4>
+                                                    <p className="text-xs text-gray-500 leading-relaxed">{t(step.desc)}</p>
                                                 </div>
                                             ))}
                                         </div>

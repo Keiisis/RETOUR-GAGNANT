@@ -25,21 +25,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getMobileUserId } from '@/lib/mobile-auth'
 import { parapheDuClient } from '@/lib/mobile-facture'
-import { generateInvoicePdf, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { generateInvoicePdfLangue, type InvoicePdfItem } from '@/lib/invoice-pdf-generator'
+import { langueDoc } from '@/lib/document-langues'
 import { TVA_RATE } from '@/lib/tax'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
 )
-
-const dateFr = (iso?: string | null) => {
-    if (!iso) return ''
-    const mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
-    const d = new Date(iso)
-    return `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`
-}
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const clientId = await getMobileUserId(req)
@@ -111,10 +104,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const paraphe = f.signature_url
         || (estDevis ? undefined : await parapheDuClient(clientId))
 
-    const base64 = generateInvoicePdf({
+    // Langue choisie dans l'application (?lang=) ; dates en ISO, mises en forme par le modèle.
+    const langue = langueDoc(req.nextUrl.searchParams.get('lang'))
+    const base64 = await generateInvoicePdfLangue({
         invoiceRef: String(f.numero || f.id),
-        date: dateFr(f.created_at),
-        paidAt: f.paid_at ? dateFr(f.paid_at) : undefined,
+        date: f.created_at,
+        paidAt: f.paid_at || undefined,
         isPaid: !!f.paid_at || String(f.status) === 'paye' || String(f.status) === 'payee',
         clientName: [f.client_prenom, f.client_nom].filter(Boolean).join(' ').trim(),
         clientEmail: f.client_email || undefined,
@@ -133,9 +128,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         statut: f.status || undefined,
         signedAt: f.signed_at || undefined,
         clientSignatureDataUrl: paraphe || undefined,
-    })
+    }, langue)
 
-    const nom = `${estDevis ? 'DEVIS' : 'FACTURE'}-${String(f.numero || f.id).replace(/[^\w-]/g, '-')}.pdf`
+    const nom = `${estDevis ? 'DEVIS' : 'FACTURE'}-${String(f.numero || f.id).replace(/[^\w-]/g, '-')}${langue === 'fr' ? '' : '_' + langue}.pdf`
 
     return new NextResponse(new Uint8Array(Buffer.from(base64, 'base64')), {
         headers: {

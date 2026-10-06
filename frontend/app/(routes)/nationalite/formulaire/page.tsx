@@ -748,7 +748,7 @@ export default function NationaliteFormPage() {
 
             if (!uploaded) {
                 const reason = (lastUploadError || 'inconnu').slice(0, 120)
-                marqueurs.push(`${t(doc.label)}: ${doc.name} (upload échoué : ${reason})`)
+                marqueurs.push(`${doc.label}: ${doc.name} (upload échoué : ${reason})`)
                 echecs.push(t(doc.label))
             }
             setUploadProgress(10 + Math.floor((i + 1) / allDocs.length * 50))
@@ -1112,7 +1112,7 @@ export default function NationaliteFormPage() {
                 <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 mb-5 flex items-start gap-2">
                     <Shield size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-slate-600 leading-relaxed">
-                        <T>Vos informations sont protégées. Vous recevrez un email pour créer votre espace personnel : cela n'interrompt pas votre démarche en cours.</T>
+                        <T>Vos informations sont protégées. Vous recevrez un email pour créer votre espace personnel : cela n&apos;interrompt pas votre démarche en cours.</T>
                     </p>
                 </div>
 
@@ -1142,7 +1142,7 @@ export default function NationaliteFormPage() {
                     <p><T>La reconnaissance de la nationalité béninoise aux afrodescendants est un acte de mémoire, de justice et une porte ouverte vers le retour aux racines des descendants des Africains déportés lors de la traite négrière transatlantique, comme membres légitimes de la Nation béninoise.</T></p>
                     <p><T>La loi 2024-31 du 02 Septembre 2024 portant reconnaissance de la nationalité béninoise aux afro-descendants organise en ce sens un mode d&apos;acquisition de la nationalité béninoise par toute personne qui d&apos;après sa généalogie, a un ascendant africain subsaharien déporté hors du continent africain dans le cadre de la traite des noirs et du commerce triangulaire.</T></p>
                     <p className="font-bold text-gray-900"><T>La loi s&apos;adresse à l&apos;afro-descendant :</T></p>
-                    <ul className="list-disc pl-5 space-y-1"><li>âgé d&apos;au moins 18 ans,</li><li><T>résidant hors du continent africain,</T></li><li><T>et pouvant établir sa filiation avec un ascendant africain subsaharien victime de la traite négrière.</T></li></ul>
+                    <ul className="list-disc pl-5 space-y-1"><li><T>âgé d&apos;au moins 18 ans,</T></li><li><T>résidant hors du continent africain,</T></li><li><T>et pouvant établir sa filiation avec un ascendant africain subsaharien victime de la traite négrière.</T></li></ul>
                     <p><span className="font-bold text-gray-900"><T>La preuve de l&apos;afro-descendance peut être apportée par :</T></span> <T>des actes d&apos;état civil, des certificats officiels, des tests d&apos;ADN génétiques, des actes notariés, des arbres généalogiques, des extraits d&apos;archives historiques, et tout autre document probant.</T></p>
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer mb-6 bg-slate-50 border border-slate-200/60 hover:bg-slate-100 transition-colors rounded-xl p-4">
@@ -1255,7 +1255,7 @@ export default function NationaliteFormPage() {
                                     <div className="md:col-span-2"><label className={LC}><T>Adresse complète</T></label><input title={t("Adresse")} value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder={t('Adresse')} /></div>
                                     <div><label className={LC}><T>Téléphone</T></label><input title={t("Téléphone")} value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder={t("+229 XX XX XX XX")} /></div>
                                     <div><label className={LC}><T>Email</T><span className={RQ}>*</span></label><input title={t("Email")} type="email" value={form.email} onChange={e => u('email', e.target.value)} readOnly={preInscriptionDone && !resumeMode && !myafroMode} className={`${IC} ${preInscriptionDone && !resumeMode && !myafroMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder={t("email@exemple.com")} />{preInscriptionDone && !resumeMode && !myafroMode && <p className="text-[10px] text-gray-400 mt-1"><T>L’adresse de votre pré-inscription identifie votre dossier et votre paiement : elle ne se modifie plus ici.</T></p>}</div>
-                                    <div><label className={LC}><T>Profession</T></label><select title={t("Profession")} value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">{t("Choisir")}</option>{PROFESSIONS.map(item => Object.assign(item, { translated: true })).map(p => <option key={t(p)} value={t(p)}>{t(p)}</option>)}</select></div>
+                                    <div><label className={LC}><T>Profession</T></label><select title={t("Profession")} value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">{t("Choisir")}</option>{PROFESSIONS.map(p => <option key={p} value={p}>{t(p)}</option>)}</select></div>
                                 </div>
 
                                 <div className="border-t border-gray-200 pt-5 space-y-4">
@@ -1275,7 +1275,7 @@ export default function NationaliteFormPage() {
                             {step === 3 && <div className="space-y-5">
                                 <h2 className="text-lg font-black text-slate-900"><T>Document d&apos;identité &amp; Parents</T></h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div><label className={LC}><T>Type de document</T><span className={RQ}>*</span></label><select title={t("Type de document d&apos;identité")} value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">{t("Choisir")}</option><option value="passeport">{t("Passeport")}</option><option value="cni">{t("CNI")}</option><option value="carte_electeur">Carte d&apos;électeur</option><option value="autre">{t("Autre")}</option></select></div>
+                                    <div><label className={LC}><T>Type de document</T><span className={RQ}>*</span></label><select title={t("Type de document d'identité")} value={form.type_document_identite} onChange={e => u('type_document_identite', e.target.value)} className={IC}><option value="">{t("Choisir")}</option><option value="passeport">{t("Passeport")}</option><option value="cni">{t("CNI")}</option><option value="carte_electeur">{t("Carte d'électeur")}</option><option value="autre">{t("Autre")}</option></select></div>
                                     <div><label className={LC}><T>Autorité de délivrance</T></label><input title={t("Autorité de délivrance")} value={form.autorite_delivrance} onChange={e => u('autorite_delivrance', e.target.value)} className={IC} /></div>
                                     <div><label className={LC}><T>Numéro du document</T></label><input title={t("Numéro du document")} value={form.numero_document} onChange={e => u('numero_document', e.target.value)} className={IC} /></div>
                                     <div><label className={LC}><T>Pays de délivrance</T></label><select title={t("Pays de délivrance")} value={form.pays_delivrance} onChange={e => u('pays_delivrance', e.target.value)} className={IC}><option value="">{t("Pays")}</option>{COUNTRIES.map(item => Object.assign(item, { translated: true })).map(c => <option key={c} value={c}>{t(c)}</option>)}</select></div>
@@ -1297,15 +1297,14 @@ export default function NationaliteFormPage() {
                                 </div>
 
                                 <div className="border-t border-gray-200 pt-5"><h3 className="text-sm font-black text-slate-900 mb-4"><T>Informations sur vos parents</T></h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{[t('Père'), 'Mère'].map(p => {
-                                        const k = p === 'Père' ? 'pere' : 'mere';
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{([['pere', 'Père'], ['mere', 'Mère']] as const).map(([k, p]) => {
                                         const f = form as Record<string, any>
                                         return (
                                             <div key={t(p)} className="space-y-3">
                                                 <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{t(p)}</span>
-                                                <div><label className={LC}><T>Nom</T></label><input title={`Nom du ${t(p)}`} value={f[`${k}_nom`] || ''} onChange={e => u(`${k}_nom` as keyof NationaliteForm, e.target.value)} className={IC} placeholder={t('Nom')} /></div>
-                                                <div><label className={LC}><T>Prénom(s)</T></label><input title={`Prénom du ${t(p)}`} value={f[`${k}_prenom`] || ''} onChange={e => u(`${k}_prenom` as keyof NationaliteForm, e.target.value)} className={IC} placeholder={t('Prénom(s)')} /></div>
-                                                <div><label className={LC}><T>Date de naissance</T></label><input title={`Date de naissance du ${t(p)}`} type="date" value={f[`${k}_date_naissance`] || ''} onChange={e => u(`${k}_date_naissance` as keyof NationaliteForm, e.target.value)} className={IC} /></div>
+                                                <div><label className={LC}><T>Nom</T></label><input title={`${t('Nom')} : ${t(p)}`} value={f[`${k}_nom`] || ''} onChange={e => u(`${k}_nom` as keyof NationaliteForm, e.target.value)} className={IC} placeholder={t('Nom')} /></div>
+                                                <div><label className={LC}><T>Prénom(s)</T></label><input title={`${t('Prénom(s)')} : ${t(p)}`} value={f[`${k}_prenom`] || ''} onChange={e => u(`${k}_prenom` as keyof NationaliteForm, e.target.value)} className={IC} placeholder={t('Prénom(s)')} /></div>
+                                                <div><label className={LC}><T>Date de naissance</T></label><input title={`${t('Date de naissance')} : ${t(p)}`} type="date" value={f[`${k}_date_naissance`] || ''} onChange={e => u(`${k}_date_naissance` as keyof NationaliteForm, e.target.value)} className={IC} /></div>
                                             </div>
                                         )
                                     })}</div></div>
@@ -1347,10 +1346,10 @@ export default function NationaliteFormPage() {
                                                     <span className="text-sm text-slate-800 font-medium block truncate">
                                                         {t(doc.label)}
                                                         {doc.required && <span className="text-red-500 ml-1">*</span>}
-                                                        {!doc.required && isAncestral && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">Ancestral</span>}
-                                                        {!doc.required && !isAncestral && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Optionnel</span>}
+                                                        {!doc.required && isAncestral && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded"><T>Ancestral</T></span>}
+                                                        {!doc.required && !isAncestral && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded"><T>Optionnel</T></span>}
                                                     </span>
-                                                    {doc.hint && <p className="text-[10px] text-gray-500 mt-0.5">{doc.hint}</p>}
+                                                    {doc.hint && <p className="text-[10px] text-gray-500 mt-0.5">{t(doc.hint)}</p>}
                                                     {piecesDeposees.filter(p => p.key === doc.key).map(p => (
                                                         <p key={p.line} className="text-[10px] text-emerald-700 mt-0.5 truncate">✓ {t('Déposé')} : {p.name}</p>
                                                     ))}
@@ -1385,22 +1384,22 @@ export default function NationaliteFormPage() {
                                         {/* Avertissement docs ancestraux manquants */}
                                         {docWarnings.filter(w => docSlots.find(s => s.label === w && s.ancestral)).length > 0 && (
                                             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                                                <p className="text-xs font-bold text-amber-800 mb-1">Documents ancestraux manquants</p>
+                                                <p className="text-xs font-bold text-amber-800 mb-1"><T>Documents ancestraux manquants</T></p>
                                                 <p className="text-[11px] text-amber-900 leading-relaxed">
-                                                    Vous n'avez pas fourni certains actes d'état civil de vos ascendants. Vous pouvez soumettre votre dossier et les compléter dans un délai de 7 semaines : ou laisser notre service <strong>Recherche Ancestrale</strong> les retrouver pour vous (250 €).
+                                                    <T>Vous n&apos;avez pas fourni certains actes d&apos;état civil de vos ascendants. Vous pouvez soumettre votre dossier et les compléter dans un délai de 7 semaines : ou laisser notre service</T> <strong><T>Recherche Ancestrale</T></strong> <T>les retrouver pour vous (250 €).</T>
                                                 </p>
                                             </div>
                                         )}
 
                                         {/* Slots obligatoires */}
                                         <div className="space-y-3">
-                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Documents obligatoires</p>
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest"><T>Documents obligatoires</T></p>
                                             {obligatoires.map(renderSlot)}
                                         </div>
 
                                         {/* Slots facultatifs */}
                                         <div className="space-y-3">
-                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Documents complémentaires <span className="text-gray-400 font-normal normal-case tracking-normal">(facultatifs : peuvent être transmis dans les 7 semaines suivant la soumission)</span></p>
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest"><T>Documents complémentaires</T> <span className="text-gray-400 font-normal normal-case tracking-normal"><T>(facultatifs : peuvent être transmis dans les 7 semaines suivant la soumission)</T></span></p>
                                             {facultatifs.map(renderSlot)}
                                         </div>
 
@@ -1408,23 +1407,23 @@ export default function NationaliteFormPage() {
                                         {myafroMode && (
                                             <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/40 p-4">
                                                 <div>
-                                                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Tous vos documents MyAfroOrigins</p>
-                                                    <p className="text-[11px] text-gray-500 mt-1">Ajoutez ici <strong>autant de documents que vous le souhaitez</strong> et nommez chacun d&apos;eux (ex. « Acte de naissance grand-père », « Résultat ADN »…).</p>
+                                                    <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest"><T>Tous vos documents MyAfroOrigins</T></p>
+                                                    <p className="text-[11px] text-gray-500 mt-1"><T>Ajoutez ici</T> <strong><T>autant de documents que vous le souhaitez</T></strong> <T>et nommez chacun d&apos;eux (ex. « Acte de naissance grand-père », « Résultat ADN »…).</T></p>
                                                 </div>
                                                 {customDocs.map((d, i) => (
                                                     <div key={i} className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 p-2.5">
                                                         <input
                                                             value={d.name}
                                                             onChange={e => setCustomDocs(prev => prev.map((x, k) => k === i ? { ...x, name: e.target.value } : x))}
-                                                            placeholder="Nom du document"
+                                                            placeholder={t('Nom du document')}
                                                             className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-emerald-500/50"
                                                         />
                                                         <span className="text-[10px] text-gray-400 max-w-[110px] truncate">{d.file.name}</span>
-                                                        <button type="button" onClick={() => setCustomDocs(prev => prev.filter((_, k) => k !== i))} title="Retirer" className="p-1.5 rounded-lg text-red-500 hover:bg-red-50"><X size={15} /></button>
+                                                        <button type="button" onClick={() => setCustomDocs(prev => prev.filter((_, k) => k !== i))} title={t('Retirer')} className="p-1.5 rounded-lg text-red-500 hover:bg-red-50"><X size={15} /></button>
                                                     </div>
                                                 ))}
                                                 <label className="flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-emerald-300 bg-white py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 transition-colors">
-                                                    <FileText size={16} /> Ajouter un document
+                                                    <FileText size={16} /> <T>Ajouter un document</T>
                                                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" onChange={e => { const f = e.target.files; if (f && f[0]) { const file = f[0]; setCustomDocs(prev => [...prev, { name: file.name.replace(/\.[^.]+$/, ''), file }]); e.target.value = '' } }} />
                                                 </label>
                                             </div>
@@ -1434,16 +1433,16 @@ export default function NationaliteFormPage() {
                                             <div className="space-y-3 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/20 p-5 mt-4">
                                                 <div className="flex items-center gap-2 text-emerald-800">
                                                     <Calendar size={18} className="shrink-0" />
-                                                    <p className="text-sm font-black uppercase tracking-wider">Date d&apos;émission sur MyAfroOrigins</p>
+                                                    <p className="text-sm font-black uppercase tracking-wider"><T>Date d&apos;émission sur MyAfroOrigins</T></p>
                                                 </div>
                                                 <p className="text-[11px] text-gray-500">
-                                                    Indiquez depuis combien de temps exactement ou la date exacte à laquelle votre dossier a été fait sur la plateforme MyAfroOrigins (pour permettre des alertes de suivi).
+                                                    <T>Indiquez depuis combien de temps exactement ou la date exacte à laquelle votre dossier a été fait sur la plateforme MyAfroOrigins (pour permettre des alertes de suivi).</T>
                                                 </p>
                                                 <input
                                                     type="text"
                                                     value={form.myafro_date || ''}
                                                     onChange={e => setForm(prev => ({ ...prev, myafro_date: e.target.value }))}
-                                                    placeholder="Ex: 15/04/2024, ou Depuis 6 mois, ou 1 an..."
+                                                    placeholder={t('Ex: 15/04/2024, ou Depuis 6 mois, ou 1 an...')}
                                                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-emerald-500/50"
                                                 />
                                             </div>
@@ -1465,7 +1464,7 @@ export default function NationaliteFormPage() {
                                                             )}
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-xs text-slate-800 font-bold truncate">{t(d.label)}</p>
-                                                                <p className="text-[10px] text-gray-500 truncate">{d.name} : {(d.file.size / 1024).toFixed(0)} Ko</p>
+                                                                <p className="text-[10px] text-gray-500 truncate">{d.name} : {(d.file.size / 1024).toFixed(0)} {t('Ko')}</p>
                                                             </div>
                                                             <button type="button" title={t("Supprimer")} onClick={() => setRawDocs(p => p.filter((_, idx) => idx !== i))} className="p-1.5 text-red-500 hover:text-red-400 hover:bg-red-50/10 rounded-lg transition-all"><X size={14} /></button>
                                                         </div>
@@ -1618,7 +1617,7 @@ export default function NationaliteFormPage() {
                                 <h2 className="text-lg font-black text-slate-900"><T>Récapitulatif de votre demande</T></h2>
                                 <p className="text-xs text-gray-500"><T>Vérifiez attentivement vos informations avant de procéder au paiement.</T></p>
                                 {[
-                                    { title: t('Identité'), items: [[t('Nom complet'), `${form.prenom} ${form.nom}`], [t('Genre'), form.genre], [t('Né(e) le'), form.date_naissance], [t('Nationalité'), form.nationalite], [t('Résidence'), `${form.adresse_residence ? form.adresse_residence + ', ' : ''}${form.pays_residence}`], [t('Email'), form.email], [t('Téléphone'), form.telephone], [t('Profession'), form.profession]] },
+                                    { title: t('Identité'), items: [[t('Nom complet'), `${form.prenom} ${form.nom}`], [t('Genre'), form.genre && t(form.genre)], [t('Né(e) le'), form.date_naissance], [t('Nationalité'), form.nationalite], [t('Résidence'), `${form.adresse_residence ? form.adresse_residence + ', ' : ''}${form.pays_residence}`], [t('Email'), form.email], [t('Téléphone'), form.telephone], [t('Profession'), form.profession && t(form.profession)]] },
                                     { title: t('Afro-descendance'), items: [[t('Description'), form.afro_descendant_description], [t('Ancêtre 1'), `${form.ancestor1_prenom} ${form.ancestor1_nom} : ${form.ancestor1_lien_parente}`], ...(form.ancestor2_nom ? [[t('Ancêtre 2'), `${form.ancestor2_prenom} ${form.ancestor2_nom} : ${form.ancestor2_lien_parente}`]] : []), ...(myafroMode ? [[t('Date MyAfroOrigins'), form.myafro_date]] : [])] },
                                     { title: t("Document d'identité"), items: [[t('Type'), form.type_document_identite], [t('Numéro'), form.numero_document], [t('Pays délivrance'), form.pays_delivrance], [t('Expiration'), form.date_expiration_document]] },
                                     { title: t('Parents'), items: [[t('Père'), `${form.pere_prenom} ${form.pere_nom}`], [t('Mère'), `${form.mere_prenom} ${form.mere_nom}`]] },
@@ -1674,7 +1673,7 @@ export default function NationaliteFormPage() {
                             <button onClick={next} disabled={!!depotEnCours} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)] disabled:opacity-70">{depotEnCours ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi sécurisé de vos pièces</T> {depotEnCours.fait}/{depotEnCours.total}</> : <><T>Suivant</T> <ArrowRight size={16} /></>}</button>
                         ) : (
                             <button onClick={submit} disabled={submitting || !paymentDone} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                                {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> Payez d&apos;abord</> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
+                                {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> <T>Payez d&apos;abord</T></> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
                             </button>
                         )}
                     </>)}

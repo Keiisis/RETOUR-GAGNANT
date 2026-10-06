@@ -16,6 +16,7 @@ import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
 import DescriptionLignes from '@/components/shared/DescriptionLignes'
 
 import { telechargerDocumentPdf, type DocumentSource } from '@/lib/document-pdf-navigateur'
+import ChoixLangueDocument, { useLangueDocument } from '@/components/shared/ChoixLangueDocument'
 
 // Safe date formatter to avoid RangeError: Invalid time value
 const formatDateSafe = (dateStr: string | null | undefined) => {
@@ -79,6 +80,7 @@ export default function ClientPortalPage() {
     const [acompte, setAcompte] = useState('')
     const [dejaPaye, setDejaPaye] = useState(0)
     const { lang } = useTranslation()
+    const [langueDoc, setLangueDoc] = useLangueDocument()
     const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(() => getCurrencyForLang(lang))
     useEffect(() => { setSelectedCurrency(getCurrencyForLang(lang)) }, [lang])
 
@@ -415,7 +417,7 @@ export default function ClientPortalPage() {
         if (!doc) return
         setGenerating(true)
         try {
-            await telechargerDocumentPdf({ ...(doc as unknown as DocumentSource), signature_url: signatureUrl || (doc as unknown as DocumentSource).signature_url }, supabase)
+            await telechargerDocumentPdf({ ...(doc as unknown as DocumentSource), signature_url: signatureUrl || (doc as unknown as DocumentSource).signature_url }, supabase, langueDoc)
         } catch (e) {
             console.error('PDF', e)
             alert(`Génération du PDF impossible : ${e instanceof Error ? e.message : 'erreur inconnue'}`)
@@ -777,14 +779,17 @@ export default function ClientPortalPage() {
 
                     {/* CASE 3: Download Button (Always available unless signing) */}
                     {!signing && (
-                        <button
-                            onClick={generatePDF}
-                            disabled={generating}
-                            className="w-full md:w-auto flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 px-6 py-4 rounded-2xl font-bold transition-all hover:bg-slate-100 disabled:opacity-50"
-                        >
-                            {generating ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
-                            {generating ? 'Génération...' : 'Télécharger le PDF'}
-                        </button>
+                        <div className="w-full md:w-auto flex items-center gap-2">
+                            <ChoixLangueDocument value={langueDoc} onChange={setLangueDoc} className="text-slate-600 shrink-0" />
+                            <button
+                                onClick={generatePDF}
+                                disabled={generating}
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 px-6 py-4 rounded-2xl font-bold transition-all hover:bg-slate-100 disabled:opacity-50"
+                            >
+                                {generating ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
+                                {generating ? 'Génération...' : 'Télécharger le PDF'}
+                            </button>
+                        </div>
                     )}
                 </div>
             </div>

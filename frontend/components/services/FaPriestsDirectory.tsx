@@ -89,7 +89,7 @@ export default function FaPriestsDirectory() {
                 body: JSON.stringify({ ...form, priest_id: open.id }),
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Envoi impossible')
+            if (!res.ok) throw new Error(data.error || t('Envoi impossible'))
             setSent(data.message || t('Merci ! Votre avis sera publié après validation.'))
             setForm({ author_name: '', author_email: '', rating: 5, comment: '' })
         } catch (e) { setErr(e instanceof Error ? e.message : t('Erreur')) }

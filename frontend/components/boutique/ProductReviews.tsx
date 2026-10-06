@@ -67,8 +67,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         e.preventDefault()
         setFormError('')
 
-        if (!name.trim()) { setFormError('Veuillez saisir votre nom'); return }
-        if (rating === 0) { setFormError('Veuillez sélectionner une note'); return }
+        if (!name.trim()) { setFormError(t('Veuillez saisir votre nom')); return }
+        if (rating === 0) { setFormError(t('Veuillez sélectionner une note')); return }
 
         setSubmitting(true)
         try {
@@ -89,10 +89,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                     setShowForm(false)
                 }, 3000)
             } else {
-                setFormError(data.error || 'Une erreur est survenue')
+                setFormError(data.error || t('Une erreur est survenue'))
             }
         } catch {
-            setFormError('Erreur de connexion')
+            setFormError(t('Erreur de connexion'))
         } finally {
             setSubmitting(false)
         }
@@ -124,7 +124,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                         <div className="flex items-center gap-3 mb-2">
                             <div className="h-[2px] w-8 bg-[#FCD116]" />
                             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">
-                                Avis Clients
+                                <T>Avis Clients</T>
                             </h2>
                         </div>
                         {reviews.length > 0 && (
@@ -135,7 +135,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                 <div>
                                     <StarDisplay value={averageRating} size={18} />
                                     <p className="text-xs text-gray-500 mt-1">
-                                        {reviews.length} avis vérifié{reviews.length > 1 ? 's' : ''}
+                                        {reviews.length > 1 ? t('{count} avis vérifiés', { count: reviews.length }) : t('{count} avis vérifié', { count: reviews.length })}
                                     </p>
                                 </div>
                             </div>
@@ -147,7 +147,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                         className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#FCD116]/10 border border-[#FCD116]/20 text-[#FCD116] text-xs font-black uppercase tracking-widest hover:bg-[#FCD116]/20 transition-all"
                     >
                         <ChatText size={16} />
-                        {showForm ? 'Fermer' : 'Laisser un avis'}
+                        {showForm ? t('Fermer') : t('Laisser un avis')}
                     </button>
                 </div>
 
@@ -217,7 +217,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                             ))}
                                             {rating > 0 && (
                                                 <span className="ml-3 text-xs text-gray-400 font-bold">
-                                                    {rating === 1 ? 'Mauvais' : rating === 2 ? 'Passable' : rating === 3 ? 'Bien' : rating === 4 ? 'Très bien' : 'Excellent'}
+                                                    {rating === 1 ? t('Mauvais') : rating === 2 ? t('Passable') : rating === 3 ? t('Bien') : rating === 4 ? t('Très bien') : t('Excellent')}
                                                 </span>
                                             )}
                                         </div>
@@ -256,7 +256,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                         <p className="text-xs text-[#E8112D] font-bold">{formError}</p>
                                     )}
 
-                                    <ConsentCheckbox id="review-consent" purpose="afin de publier mon avis sur ce produit" className="!text-gray-400" />
+                                    <ConsentCheckbox id="review-consent" purpose={t("afin de publier mon avis sur ce produit")} className="!text-gray-400" />
 
                                     <button
                                         type="submit"
@@ -264,7 +264,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                         className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#FCD116] text-black font-black text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50"
                                     >
                                         {submitting ? <CircleNotch size={16} className="animate-spin" /> : <PaperPlaneTilt size={16} />}
-                                        {submitting ? 'Envoi...' : 'Publier mon avis'}
+                                        {submitting ? t('Envoi...') : t('Publier mon avis')}
                                     </button>
                                 </form>
                             )}
@@ -303,7 +303,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                                                 <p className="text-sm font-bold text-white">{review.reviewer_name}</p>
                                                 {review.is_verified && (
                                                     <span className="text-[8px] font-black uppercase tracking-widest text-[#008751] bg-[#008751]/10 px-2 py-0.5 rounded-full">
-                                                        Vérifié
+                                                        <T>Vérifié</T>
                                                     </span>
                                                 )}
                                             </div>

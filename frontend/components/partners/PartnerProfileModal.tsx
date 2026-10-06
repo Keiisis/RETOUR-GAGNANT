@@ -27,6 +27,7 @@ const IconLinkedin = ({ size = 13 }: { size?: number }) => (
 import Image from 'next/image'
 import type { Partner } from './PartnerCard'
 import { CATEGORY_COLORS, DEFAULT_COLOR } from './PartnerCard'
+import { T, useTranslation } from '@/lib/translation'
 
 interface PartnerProfileModalProps {
     partner: Partner | null
@@ -34,6 +35,7 @@ interface PartnerProfileModalProps {
 }
 
 export default function PartnerProfileModal({ partner, onClose }: PartnerProfileModalProps) {
+    const { t } = useTranslation()
     // Lock body scroll while open
     useEffect(() => {
         if (partner) document.body.style.overflow = 'hidden'
@@ -107,16 +109,16 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                 {partner.isPremium
                                     ? <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FCD116] text-[#1a2332] shadow-md">
                                         <Star size={11} fill="currentColor" strokeWidth={0}/>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Partenaire Premium</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest"><T>Partenaire Premium</T></span>
                                     </div>
                                     : <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[11px] font-bold backdrop-blur-sm"
                                         style={{ background: `${colors.badge}e0`, color: colors.badgeText }}>
-                                        {partner.category}
+                                        {t(partner.category)}
                                     </div>
                                 }
 
                                 {/* Close */}
-                                <button type="button" title="Fermer" onClick={onClose}
+                                <button type="button" title={t('Fermer')} onClick={onClose}
                                     className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-sm text-white hover:bg-black/50 transition-all">
                                     <X size={16}/>
                                 </button>
@@ -149,7 +151,7 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                         <div className="flex flex-wrap items-center gap-2 mt-1">
                                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                                                 style={{ background: `${colors.badge}cc`, color: colors.badgeText }}>
-                                                {partner.category}
+                                                {t(partner.category)}
                                             </span>
                                             <span className="flex items-center gap-1 text-[11px] text-gray-400">
                                                 <MapPin size={10}/>{partner.location}
@@ -167,7 +169,7 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                         {partner.email && (
                                             <a href={`mailto:${partner.email}`}
                                                 className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[13px] bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition-all hover:scale-[1.01]">
-                                                <Mail size={16}/> Envoyer un email
+                                                <Mail size={16}/> <T>Envoyer un email</T>
                                             </a>
                                         )}
                                         {waNum && (
@@ -179,7 +181,7 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                         {partner.phone && !waNum && (
                                             <a href={`tel:${partner.phone}`}
                                                 className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-[13px] bg-green-50 text-green-700 border border-green-100 hover:bg-green-100 transition-all">
-                                                <Phone size={16}/> Appeler
+                                                <Phone size={16}/> <T>Appeler</T>
                                             </a>
                                         )}
                                     </div>
@@ -187,7 +189,7 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                     {/* Coordonnées */}
                                     {(partner.phone || partner.website || partner.email) && (
                                         <div className="bg-gray-50 rounded-2xl p-4 space-y-2.5">
-                                            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em] mb-3">Coordonnées</p>
+                                            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em] mb-3"><T>Coordonnées</T></p>
                                             {partner.email && (
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
@@ -226,7 +228,7 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                     {/* Réseaux sociaux */}
                                     {(partner.facebook || partner.instagram || partner.linkedin) && (
                                         <div>
-                                            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em] mb-2.5">Réseaux sociaux</p>
+                                            <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em] mb-2.5"><T>Réseaux sociaux</T></p>
                                             <div className="flex flex-wrap gap-2">
                                                 {partner.facebook && (
                                                     <a href={partner.facebook} target="_blank" rel="noopener noreferrer"
@@ -255,9 +257,9 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                         <div>
                                             <div className="flex items-center gap-2 mb-3">
                                                 <Store size={12} className="text-gray-300"/>
-                                                <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em]">Vitrine</p>
+                                                <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.25em]"><T>Vitrine</T></p>
                                                 <div className="flex-1 h-px bg-gray-100"/>
-                                                <span className="text-[9px] text-gray-300">{partner.products.length} article{partner.products.length > 1 ? 's' : ''}</span>
+                                                <span className="text-[9px] text-gray-300">{partner.products.length > 1 ? t('{count} articles', { count: partner.products.length }) : t('{count} article', { count: partner.products.length })}</span>
                                             </div>
                                             <div className="grid grid-cols-4 gap-2">
                                                 {partner.products.map(product => (
@@ -288,11 +290,11 @@ export default function PartnerProfileModal({ partner, onClose }: PartnerProfile
                                             <Sparkles size={14} className="text-white"/>
                                         </div>
                                         <div className="flex-1">
-                                            <p className="text-[12px] font-bold text-[#1a2332]">Partenaire Retour Gagnant</p>
-                                            <p className="text-[10px] text-gray-400 mt-0.5">Vérifié et certifié par notre équipe</p>
+                                            <p className="text-[12px] font-bold text-[#1a2332]"><T>Partenaire Retour Gagnant</T></p>
+                                            <p className="text-[10px] text-gray-400 mt-0.5"><T>Vérifié et certifié par notre équipe</T></p>
                                         </div>
                                         <div className="flex items-center gap-1 text-[10px] font-bold" style={{ color: colors.from }}>
-                                            <Clock size={10}/><span>Actif</span>
+                                            <Clock size={10}/><span><T>Actif</T></span>
                                         </div>
                                     </div>
                                 </div>

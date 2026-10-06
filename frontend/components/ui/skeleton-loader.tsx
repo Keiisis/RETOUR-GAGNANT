@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { T } from '@/lib/translation';
 
 interface SkeletonProps {
     className?: string;
@@ -59,7 +60,7 @@ export function SkeletonLoader({ className, variant = 'rect' }: SkeletonProps) {
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-12 h-12 border-t-2 border-[#FCD116] border-solid rounded-full animate-spin" />
                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.5em] animate-pulse">
-                            Initialisation du Cosmos...
+                            <T>Initialisation du Cosmos...</T>
                         </span>
                     </div>
                 </div>

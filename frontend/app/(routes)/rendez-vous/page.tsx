@@ -346,7 +346,7 @@ function RendezVousContent() {
                                                                 </div>
                                                             </>
                                                         ) : jourFerme ? (
-                                                            <p className="text-xs text-amber-600 font-medium">{jourFerme} : <T>choisissez une autre date.</T></p>
+                                                            <p className="text-xs text-amber-600 font-medium">{t(jourFerme)} : <T>choisissez une autre date.</T></p>
                                                         ) : (
                                                             <div className="flex gap-3">
                                                                 {['Matin (09h-13h)', 'Après-midi (14h-17h)'].map(slot => (
@@ -405,7 +405,7 @@ function RendezVousContent() {
                                                         <p><span className="font-semibold"><T>Nom:</T></span> {form.nom} {form.prenom}</p>
                                                         <p><span className="font-semibold"><T>Email:</T></span> {form.email}</p>
                                                         {form.telephone && <p><span className="font-semibold"><T>Tél:</T></span> {form.telephone}</p>}
-                                                        <p><span className="font-semibold"><T>Service:</T></span> {form.service}</p>
+                                                        <p><span className="font-semibold"><T>Service:</T></span> {t(form.service)}</p>
                                                         <div className="h-px bg-gray-200 my-2" />
                                                         <p><span className="font-semibold"><T>Date:</T></span> {form.date || t('Non définie')} : {form.timeSlot ? t(form.timeSlot) : t('Non défini')}</p>
                                                         <p><span className="font-semibold"><T>Mode:</T></span> {t(form.contactMethod)}</p>
@@ -416,7 +416,7 @@ function RendezVousContent() {
                                             )}
 
                                             {step === 4 && (
-                                                <ConsentCheckbox id="rdv-consent" purpose="afin de planifier mon rendez-vous et de me recontacter" className="pt-2" />
+                                                <ConsentCheckbox id="rdv-consent" purpose={t('afin de planifier mon rendez-vous et de me recontacter')} className="pt-2" />
                                             )}
 
                                             {status === 'error' && (

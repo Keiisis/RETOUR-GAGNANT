@@ -197,7 +197,7 @@ function ChronoCta() {
                         <dt className="text-[10.5px] font-semibold uppercase tracking-[0.2em] text-[#9A7B2E]">
                             <T>{k}</T>
                         </dt>
-                        <dd className="mt-1 text-[13px] font-medium text-[#0d1a12] md:text-[13.5px]">{v}</dd>
+                        <dd className="mt-1 text-[13px] font-medium text-[#0d1a12] md:text-[13.5px]"><T>{v}</T></dd>
                     </div>
                 ))}
             </dl>

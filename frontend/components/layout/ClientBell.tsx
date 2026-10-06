@@ -101,7 +101,7 @@ export default function ClientBell() {
                                     onClick={() => markAsRead()}
                                     className="text-[10px] text-gray-400 hover:text-emerald-400 font-medium transition-colors"
                                 >
-                                    Tout marquer comme lu
+                                    <T>Tout marquer comme lu</T>
                                 </button>
                             )}
                         </div>
@@ -110,7 +110,7 @@ export default function ClientBell() {
                             {notifications.length === 0 ? (
                                 <div className="p-8 text-center text-sm text-gray-500">
                                     <Bell size={24} className="mx-auto mb-2 opacity-50" />
-                                    Aucune notification
+                                    <T>Aucune notification</T>
                                 </div>
                             ) : (
                                 notifications.map(notif => (
@@ -139,7 +139,7 @@ export default function ClientBell() {
                         </div>
                         <div className="p-3 border-t border-white/5 bg-white/[0.02]">
                             <Link href="/mon-compte" onClick={() => setIsOpen(false)} className="flex items-center justify-center gap-2 text-xs text-gray-400 hover:text-white transition-colors">
-                                Mon Espace <ArrowRight size={12} />
+                                <T>Mon Espace</T> <ArrowRight size={12} />
                             </Link>
                         </div>
                     </motion.div >

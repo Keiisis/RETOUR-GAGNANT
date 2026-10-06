@@ -120,7 +120,7 @@ export default function MonComptePage() {
             const res = await fetch('/api/documents/upload', { method: 'POST', body: fd })
             const json = await res.json().catch(() => ({}))
             if (!res.ok || !json.success) {
-                alert(json.error || "Le dépôt a échoué. Réessayez dans un instant.")
+                alert(json.error || t("Le dépôt a échoué. Réessayez dans un instant."))
                 return
             }
             await chargerEspace(true)

@@ -385,7 +385,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                     onApprove: async (data: { orderID: string }) => {
                         setStep('processing')
                         const oid = paypalOrderIdRef.current
-                        if (!oid) { setErrorMessage('Référence commande perdue'); setStep('error'); return }
+                        if (!oid) { setErrorMessage(t('Référence commande perdue')); setStep('error'); return }
 
                         const res = await fetch('/api/checkout/paypal/capture', {
                             method: 'POST',
@@ -401,14 +401,14 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                             setStep('success')
                         } else {
                             cancelOrder(oid)
-                            setErrorMessage(result.error || 'Capture PayPal échouée')
+                            setErrorMessage(result.error || t('Capture PayPal échouée'))
                             setStep('error')
                         }
                     },
                     onError: () => {
                         const pOid = paypalOrderIdRef.current
                         if (pOid) cancelOrder(pOid)
-                        setErrorMessage('Une erreur PayPal est survenue. Veuillez réessayer.')
+                        setErrorMessage(t('Une erreur PayPal est survenue. Veuillez réessayer.'))
                         setStep('error')
                     },
                     onCancel: () => {
@@ -417,7 +417,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 })
                 .render('#paypal-button-container')
                 .catch(() => {
-                    setErrorMessage("Impossible d'initialiser PayPal")
+                    setErrorMessage(t("Impossible d'initialiser PayPal"))
                     setStep('error')
                 })
         }
@@ -445,7 +445,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${paypalCurrency}&locale=fr_FR&intent=capture`
                 script.onload = initPayPalButtons
                 script.onerror = () => {
-                    setErrorMessage('Impossible de charger PayPal')
+                    setErrorMessage(t('Impossible de charger PayPal'))
                     setStep('error')
                 }
                 document.head.appendChild(script)
@@ -455,10 +455,10 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
     }, [step, settings.paypal_client_id, settings.paypal_currency])
 
     const validateInfo = () => {
-        if (!customerName.trim()) return 'Veuillez saisir votre nom'
-        if (!customerPhone.trim()) return 'Veuillez saisir votre numéro de téléphone'
-        if (!shippingCountry) return 'Veuillez sélectionner votre pays de livraison'
-        if (shippingZone !== 'digital' && !shippingAddress.trim()) return 'Veuillez saisir votre adresse de livraison'
+        if (!customerName.trim()) return t('Veuillez saisir votre nom')
+        if (!customerPhone.trim()) return t('Veuillez saisir votre numéro de téléphone')
+        if (!shippingCountry) return t('Veuillez sélectionner votre pays de livraison')
+        if (shippingZone !== 'digital' && !shippingAddress.trim()) return t('Veuillez saisir votre adresse de livraison')
         return null
     }
 
@@ -495,13 +495,13 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 setOrderId(data.order_id)
                 return data.order_id
             }
-            throw new Error(data.error || 'Erreur lors de la création de la commande')
+            throw new Error(data.error || t('Erreur lors de la création de la commande'))
         } catch (err) {
-            setErrorMessage(err instanceof Error ? err.message : 'Erreur lors de la création de la commande')
+            setErrorMessage(err instanceof Error ? err.message : t('Erreur lors de la création de la commande'))
             setStep('error')
             return null
         }
-    }, [product, quantity, totalAmount, customerName, customerEmail, customerPhone, shippingCountry, shippingZone, shippingAddress, shippingFee])
+    }, [product, quantity, totalAmount, customerName, customerEmail, customerPhone, shippingCountry, shippingZone, shippingAddress, shippingFee, t])
 
     const cancelOrder = useCallback(async (oid: string) => {
         try {
@@ -529,12 +529,12 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 setStep('success')
             } else {
                 await cancelOrder(oid)
-                setErrorMessage(data.error || 'La vérification du paiement a échoué.')
+                setErrorMessage(data.error || t('La vérification du paiement a échoué.'))
                 setStep('error')
             }
         } catch {
             await cancelOrder(oid)
-            setErrorMessage('Erreur de vérification')
+            setErrorMessage(t('Erreur de vérification'))
             setStep('error')
         }
     }
@@ -554,7 +554,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
         if (!publicKey) {
             cancelOrder(oid)
-            setErrorMessage("Kkiapay n'est pas configuré.")
+            setErrorMessage(t("Kkiapay n'est pas configuré."))
             setStep('error')
             return
         }
@@ -563,7 +563,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             await ensureKkiapaySDK()
         } catch {
             cancelOrder(oid)
-            setErrorMessage("SDK Kkiapay non chargé. Rechargez la page.")
+            setErrorMessage(t("SDK Kkiapay non chargé. Rechargez la page."))
             setStep('error')
             return
         }
@@ -623,7 +623,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             }
             surveillerAbandonKkiapay(() => {
                 if (orderId) cancelOrder(orderId)
-                setErrorMessage('Paiement annulé. Rien n’a été débité.')
+                setErrorMessage(t('Paiement annulé. Rien n’a été débité.'))
                 setStep('error')
             })
             window.openKkiapayWidget({
@@ -645,7 +645,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             })
             window.addKkiapayListener('failed', () => {
                 cancelOrder(oid)
-                setErrorMessage('Le paiement a échoué ou a été annulé.')
+                setErrorMessage(t('Le paiement a échoué ou a été annulé.'))
                 setStep('error')
             })
             // 'close' : l'utilisateur a fermé le widget sans payer
@@ -655,7 +655,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         } catch (err) {
             console.error('[Kkiapay] Erreur widget:', err)
             cancelOrder(oid)
-            setErrorMessage(`Erreur Kkiapay: ${err instanceof Error ? err.message : String(err)}`)
+            setErrorMessage(t('Erreur Kkiapay: {msg}', { msg: err instanceof Error ? err.message : String(err) }))
             setStep('error')
         }
     }
@@ -671,7 +671,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
         if (!publicKey) {
             cancelOrder(oid)
-            setErrorMessage("FedaPay n'est pas configuré.")
+            setErrorMessage(t("FedaPay n'est pas configuré."))
             setStep('error')
             return
         }
@@ -681,9 +681,9 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             if (window.FedaPay) { resolve(); return }
             const poll = (ms: number) => {
                 let elapsed = 0
-                const t = setInterval(() => {
-                    if (window.FedaPay) { clearInterval(t); resolve() }
-                    else if (elapsed >= ms) { clearInterval(t); reject(new Error("SDK FedaPay indisponible après chargement")) }
+                const timer = setInterval(() => {
+                    if (window.FedaPay) { clearInterval(timer); resolve() }
+                    else if (elapsed >= ms) { clearInterval(timer); reject(new Error(t("SDK FedaPay indisponible après chargement"))) }
                     elapsed += 200
                 }, 200)
             }
@@ -692,7 +692,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             const s = document.createElement('script')
             s.src = 'https://cdn.fedapay.com/checkout.js?v=1.1.7'
             s.onload = () => poll(4000)
-            s.onerror = () => reject(new Error("Impossible de charger le SDK FedaPay. Vérifiez votre connexion."))
+            s.onerror = () => reject(new Error(t("Impossible de charger le SDK FedaPay. Vérifiez votre connexion.")))
             document.head.appendChild(s)
         })
 
@@ -700,7 +700,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             await ensureFedaPay()
         } catch (err) {
             cancelOrder(oid)
-            setErrorMessage(err instanceof Error ? err.message : "SDK FedaPay non disponible")
+            setErrorMessage(err instanceof Error ? err.message : t("SDK FedaPay non disponible"))
             setStep('error')
             return
         }
@@ -722,14 +722,14 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             const createData = await createRes.json()
             if (!createRes.ok || !createData.fedapay_transaction_id) {
                 cancelOrder(oid)
-                setErrorMessage(createData.error || 'Impossible de créer la transaction FedaPay')
+                setErrorMessage(createData.error || t('Impossible de créer la transaction FedaPay'))
                 setStep('error')
                 return
             }
             fedapayTxId = createData.fedapay_transaction_id
         } catch {
             cancelOrder(oid)
-            setErrorMessage('Erreur de connexion à FedaPay')
+            setErrorMessage(t('Erreur de connexion à FedaPay'))
             setStep('error')
             return
         }
@@ -746,7 +746,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                         await verifyPayment(oid, String(fedapayTxId))
                     } else {
                         cancelOrder(oid)
-                        setErrorMessage("Le paiement n'a pas été approuvé.")
+                        setErrorMessage(t("Le paiement n'a pas été approuvé."))
                         setStep('error')
                     }
                 },
@@ -754,9 +754,9 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             // Déclencher l'ouverture du modal FedaPay
             setTimeout(() => { document.getElementById('fedapay-button')?.click() }, 100)
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Erreur inconnue'
+            const msg = err instanceof Error ? err.message : t('Erreur inconnue')
             cancelOrder(oid)
-            setErrorMessage(`Impossible d'initialiser FedaPay: ${msg}`)
+            setErrorMessage(t("Impossible d'initialiser FedaPay: {msg}", { msg }))
             setStep('error')
         }
     }
@@ -769,7 +769,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
         const redirectUrl = settings.zeyow_redirect_url
         if (!redirectUrl) {
-            setErrorMessage("Zeyow n'est pas configuré.")
+            setErrorMessage(t("Zeyow n'est pas configuré."))
             setStep('error')
             return
         }
@@ -796,7 +796,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         const publicKey = settings.stripe_public_key
         if (!publicKey) {
             cancelOrder(oid)
-            setErrorMessage("Stripe n'est pas configuré.")
+            setErrorMessage(t("Stripe n'est pas configuré."))
             setStep('error')
             return
         }
@@ -817,7 +817,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             const data = await res.json()
             if (!data.client_secret) {
                 cancelOrder(oid)
-                setErrorMessage(data.error || 'Erreur Stripe')
+                setErrorMessage(data.error || t('Erreur Stripe'))
                 setStep('error')
                 return
             }
@@ -825,7 +825,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             setStep('stripe-form')
         } catch {
             cancelOrder(oid)
-            setErrorMessage('Impossible de contacter Stripe')
+            setErrorMessage(t('Impossible de contacter Stripe'))
             setStep('error')
         }
     }
@@ -840,16 +840,16 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 },
             })
             if (result.error) {
-                setErrorMessage(result.error.message || 'Paiement refusé')
+                setErrorMessage(result.error.message || t('Paiement refusé'))
                 setStep('stripe-form')
             } else if (result.paymentIntent?.status === 'succeeded') {
                 await verifyPayment(orderId, result.paymentIntent.id)
             } else {
-                setErrorMessage('Paiement incomplet. Veuillez réessayer ou contacter votre banque.')
+                setErrorMessage(t('Paiement incomplet. Veuillez réessayer ou contacter votre banque.'))
                 setStep('stripe-form')
             }
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Erreur de paiement Stripe'
+            const msg = err instanceof Error ? err.message : t('Erreur de paiement Stripe')
             await cancelOrder(orderId)
             setErrorMessage(msg)
             setStep('error')
@@ -892,7 +892,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             const data = await res.json().catch(() => ({}))
             if (!res.ok || !data.token) {
                 cancelOrder(oid)
-                setErrorMessage(data.error || "Revolut n'a pas pu ouvrir le paiement.")
+                setErrorMessage(data.error || t("Revolut n'a pas pu ouvrir le paiement."))
                 setStep('error')
                 return
             }
@@ -908,7 +908,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                part. */
             await new Promise(r => requestAnimationFrame(() => r(null)))
             const cible = document.getElementById('revolut-pay-button')
-            if (!cible) throw new Error('Zone de paiement indisponible.')
+            if (!cible) throw new Error(t('Zone de paiement indisponible.'))
 
             instance.revolutPay({
                 target: cible,
@@ -919,14 +919,14 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                 onSuccess: () => { setStep('processing'); void verifyPayment(oid, data.order_ref) },
                 onError: (e: unknown) => {
                     cancelOrder(oid)
-                    setErrorMessage(e instanceof Error ? e.message : 'Paiement Revolut échoué.')
+                    setErrorMessage(e instanceof Error ? e.message : t('Paiement Revolut échoué.'))
                     setStep('error')
                 },
                 onCancel: () => { cancelOrder(oid); setStep('payment') },
             })
         } catch (e) {
             cancelOrder(oid)
-            setErrorMessage(e instanceof Error ? e.message : 'Revolut indisponible.')
+            setErrorMessage(e instanceof Error ? e.message : t('Revolut indisponible.'))
             setStep('error')
         }
     }
@@ -953,14 +953,14 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             const data = await res.json().catch(() => ({}))
             if (!res.ok || !data.authorization_url) {
                 cancelOrder(oid)
-                setErrorMessage(data.error || "Paystack n'a pas pu ouvrir le paiement.")
+                setErrorMessage(data.error || t("Paystack n'a pas pu ouvrir le paiement."))
                 setStep('error')
                 return
             }
             window.location.href = data.authorization_url
         } catch (e) {
             cancelOrder(oid)
-            setErrorMessage(e instanceof Error ? e.message : 'Paystack indisponible.')
+            setErrorMessage(e instanceof Error ? e.message : t('Paystack indisponible.'))
             setStep('error')
         }
     }
@@ -983,14 +983,14 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
             const data = await res.json().catch(() => ({}))
             if (!res.ok || !data.link) {
                 cancelOrder(oid)
-                setErrorMessage(data.error || "Flutterwave n'a pas pu ouvrir le paiement.")
+                setErrorMessage(data.error || t("Flutterwave n'a pas pu ouvrir le paiement."))
                 setStep('error')
                 return
             }
             window.location.href = data.link
         } catch (e) {
             cancelOrder(oid)
-            setErrorMessage(e instanceof Error ? e.message : 'Flutterwave indisponible.')
+            setErrorMessage(e instanceof Error ? e.message : t('Flutterwave indisponible.'))
             setStep('error')
         }
     }
@@ -1001,7 +1001,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'kkiapay' as PaymentProvider,
             name: 'Kkiapay',
-            subtitle: 'Mobile Money (MTN, Moov) / Carte',
+            subtitle: t('Mobile Money (MTN, Moov) / Carte'),
             color: '#4A90D9',
             classes: 'bg-[#4A90D9]/10 border-[#4A90D9]/30',
             logo: '/assets/icones moyens de paiement/kkiapay.png',
@@ -1011,7 +1011,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'fedapay' as PaymentProvider,
             name: 'FedaPay',
-            subtitle: 'Mobile Money / Carte bancaire',
+            subtitle: t('Mobile Money / Carte bancaire'),
             color: '#2ECC71',
             classes: 'bg-[#2ECC71]/10 border-[#2ECC71]/30',
             logo: '/assets/icones moyens de paiement/fedapay.png',
@@ -1021,7 +1021,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'zeyow' as PaymentProvider,
             name: 'Zeyow',
-            subtitle: 'Carte Virtuelle',
+            subtitle: t('Carte Virtuelle'),
             color: '#FF6B35',
             classes: 'bg-[#FF6B35]/10 border-[#FF6B35]/30',
             logo: '/assets/icones moyens de paiement/zeyow.jpg',
@@ -1031,7 +1031,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'stripe' as PaymentProvider,
             name: 'Stripe',
-            subtitle: 'Carte bancaire internationale',
+            subtitle: t('Carte bancaire internationale'),
             color: '#635BFF',
             classes: 'bg-[#635BFF]/10 border-[#635BFF]/30',
             logo: '/assets/icones moyens de paiement/Stripe.png',
@@ -1041,7 +1041,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'paypal' as PaymentProvider,
             name: 'PayPal',
-            subtitle: 'Compte PayPal Business',
+            subtitle: t('Compte PayPal Business'),
             color: '#009CDE',
             classes: 'bg-[#009CDE]/10 border-[#009CDE]/30',
             logo: '/assets/icones moyens de paiement/paypal.png',
@@ -1051,7 +1051,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'revolut' as PaymentProvider,
             name: 'Revolut Pay',
-            subtitle: 'Compte Revolut, carte, Apple/Google Pay',
+            subtitle: t('Compte Revolut, carte, Apple/Google Pay'),
             color: '#0666EB',
             classes: 'bg-[#0666EB]/10 border-[#0666EB]/30',
             logo: '/assets/icones moyens de paiement/revolut.png',
@@ -1064,7 +1064,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'paystack' as PaymentProvider,
             name: 'Paystack',
-            subtitle: 'Carte, Mobile Money, virement — encaisse en FCFA',
+            subtitle: t('Carte, Mobile Money, virement — encaisse en FCFA'),
             color: '#0BA4DB',
             classes: 'bg-[#0BA4DB]/10 border-[#0BA4DB]/30',
             logo: '/assets/icones moyens de paiement/paystack.png',
@@ -1076,7 +1076,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
         {
             id: 'flutterwave' as PaymentProvider,
             name: 'Flutterwave',
-            subtitle: 'Carte, Mobile Money, banque — encaisse en FCFA',
+            subtitle: t('Carte, Mobile Money, banque — encaisse en FCFA'),
             color: '#F5A623',
             classes: 'bg-[#F5A623]/10 border-[#F5A623]/30',
             logo: '/assets/icones moyens de paiement/flutterwave.png',
@@ -1132,11 +1132,11 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                         <div className="flex justify-between items-center gap-3">
                             <div>
                                 <p className="text-sm font-bold text-white">{product.title}</p>
-                                <p className="text-[10px] text-gray-500 uppercase tracking-widest">Quantité: {quantity}</p>
+                                <p className="text-[10px] text-gray-500 uppercase tracking-widest"><T>Quantité:</T> {quantity}</p>
                                 {/* TVA en sus (masquée en cas d'exonération : HT === total) */}
                                 {TVA_ENABLED && (
                                 <p className="text-[10px] text-gray-500 mt-1">
-                                    HT <Price amount={baseAmount} currency="XOF" noConvert /> · TVA 18 % +<Price amount={tvaMarchandise} currency="XOF" noConvert />
+                                    <T>HT</T> <Price amount={baseAmount} currency="XOF" noConvert /> · <T>TVA 18 % +</T><Price amount={tvaMarchandise} currency="XOF" noConvert />
                                 </p>
                                 )}
                             </div>
@@ -1150,7 +1150,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 {selectedCurrency !== 'XOF' && (
                                     <div className="text-right">
                                         <p className="text-[10px] text-gray-500">= <Price amount={totalAmount} currency="XOF" noConvert /></p>
-                                        <p className="text-[9px] text-gray-600 mt-0.5">Débité en XOF par votre banque</p>
+                                        <p className="text-[9px] text-gray-600 mt-0.5"><T>Débité en XOF par votre banque</T></p>
                                     </div>
                                 )}
                                 <CurrencySelector
@@ -1196,7 +1196,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">
-                                        Email <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>-pour recevoir votre facture</T></span>
+                                        <T>Email</T> <span className="text-[#FCD116] normal-case font-normal tracking-normal"><T>-pour recevoir votre facture</T></span>
                                     </label>
                                     <div className="relative">
                                         <Envelope size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600" />
@@ -1229,13 +1229,13 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                         <option value="digital" className="bg-[#0a0f18]"><T>Service digital (pas de livraison physique)</T></option>
                                         <optgroup label="──────────" className="bg-[#0a0f18]">
                                             {ALL_COUNTRIES.map(c => (
-                                                <option key={c} value={c} className="bg-[#0a0f18]">{c}</option>
+                                                <option key={c} value={c} className="bg-[#0a0f18]">{t(c)}</option>
                                             ))}
                                         </optgroup>
                                     </select>
                                     {shippingCountry && (
                                         <p className={`text-[10px] mt-1 font-bold ${shippingFee === 0 ? 'text-[#008751]' : 'text-[#FCD116]'}`}>
-                                            {ZONE_LABELS[shippingZone]} {shippingFee > 0 ? `(+${shippingFee.toLocaleString('fr-FR')} FCFA)` : ''}
+                                            {t(ZONE_LABELS[shippingZone])} {shippingFee > 0 ? `(+${shippingFee.toLocaleString('fr-FR')} FCFA)` : ''}
                                         </p>
                                     )}
                                 </div>
@@ -1262,7 +1262,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                     onClick={handleSubmitInfo}
                                     className="w-full h-14 rounded-xl bg-[#FCD116] text-[#0f141e] font-black text-sm hover:bg-[#008751] hover:text-white transition-all"
                                 >
-                                    Choisir le mode de paiement <CaretRight size={18} className="ml-2" />
+                                    <T>Choisir le mode de paiement</T> <CaretRight size={18} className="ml-2" />
                                 </Button>
                             </motion.div>
                         )}
@@ -1271,13 +1271,13 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                         {step === 'payment' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
                                 <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mb-3">
-                                    Sélectionnez votre moyen de paiement
+                                    <T>Sélectionnez votre moyen de paiement</T>
                                 </p>
                                 {providers.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-8 space-y-3">
                                         <CreditCard size={32} className="text-gray-600" />
                                         <p className="text-sm text-gray-400 text-center">
-                                            Aucune passerelle de paiement active.
+                                            <T>Aucune passerelle de paiement active.</T>
                                         </p>
                                     </div>
                                 ) : (
@@ -1315,7 +1315,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                     onClick={() => setStep('info')}
                                     className="text-xs text-gray-500 hover:text-white underline transition-colors block mx-auto"
                                 >
-                                    Retour aux informations
+                                    <T>Retour aux informations</T>
                                 </button>
                             </motion.div>
                         )}
@@ -1370,7 +1370,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">
-                                        Informations de carte
+                                        <T>Informations de carte</T>
                                     </label>
                                     <div
                                         id="stripe-card-element"
@@ -1380,7 +1380,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
 
                                 <div className="text-xs text-gray-500 flex items-center gap-1.5">
                                     <Shield size={12} className="text-[#008751]" />
-                                    Vos données de carte ne transitent jamais par nos serveurs.
+                                    <T>Vos données de carte ne transitent jamais par nos serveurs.</T>
                                 </div>
 
                                 <Button
@@ -1400,7 +1400,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                     onClick={() => setStep('payment')}
                                     className="text-xs text-gray-500 hover:text-white underline transition-colors block mx-auto"
                                 >
-                                    Changer de méthode de paiement
+                                    <T>Changer de méthode de paiement</T>
                                 </button>
                             </motion.div>
                         )}
@@ -1425,7 +1425,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 </div>
 
                                 <p className="text-[10px] text-gray-600 text-center">
-                                    Montant: <span className="text-white font-bold"><Price amount={totalAmount} currency="XOF" noConvert /></span>
+                                    <T>Montant:</T> <span className="text-white font-bold"><Price amount={totalAmount} currency="XOF" noConvert /></span>
                                 </p>
 
                                 <button
@@ -1433,7 +1433,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                     onClick={() => setStep('payment')}
                                     className="text-xs text-gray-500 hover:text-white underline transition-colors block mx-auto"
                                 >
-                                    Changer de méthode de paiement
+                                    <T>Changer de méthode de paiement</T>
                                 </button>
                             </motion.div>
                         )}
@@ -1469,11 +1469,11 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Paiement reçu</T></h4>
                                     <p className="text-sm text-gray-400 mt-2 max-w-xs">
-                                        Votre commande a été confirmée. Vous recevrez les détails par téléphone/email.
+                                        <T>Votre commande a été confirmée. Vous recevrez les détails par téléphone/email.</T>
                                     </p>
                                     {orderId && (
                                         <p className="text-[10px] text-gray-600 font-mono mt-4">
-                                            Réf: {orderId.slice(0, 8).toUpperCase()}
+                                            <T>Réf:</T> {orderId.slice(0, 8).toUpperCase()}
                                         </p>
                                     )}
                                 </div>
@@ -1481,7 +1481,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                     onClick={onClose}
                                     className="h-12 px-8 rounded-xl bg-[#008751] text-white font-bold hover:bg-[#008751]/80 transition-all"
                                 >
-                                    Fermer
+                                    <T>Fermer</T>
                                 </Button>
                             </motion.div>
                         )}
@@ -1499,7 +1499,7 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                 <div className="text-center">
                                     <h4 className="text-2xl font-black text-white font-heading"><T>Erreur</T></h4>
                                     <p className="text-sm text-gray-400 mt-2 max-w-xs">
-                                        {errorMessage || 'Une erreur est survenue. Veuillez réessayer.'}
+                                        {errorMessage || t('Une erreur est survenue. Veuillez réessayer.')}
                                     </p>
                                 </div>
                                 <div className="flex gap-3">
@@ -1508,13 +1508,13 @@ export function PaymentModal({ product, quantity, isOpen, onClose }: PaymentModa
                                         variant="outline"
                                         className="h-12 px-6 rounded-xl border-white/10 text-white"
                                     >
-                                        Réessayer
+                                        <T>Réessayer</T>
                                     </Button>
                                     <Button
                                         onClick={onClose}
                                         className="h-12 px-6 rounded-xl bg-white/10 text-white"
                                     >
-                                        Fermer
+                                        <T>Fermer</T>
                                     </Button>
                                 </div>
                             </motion.div>

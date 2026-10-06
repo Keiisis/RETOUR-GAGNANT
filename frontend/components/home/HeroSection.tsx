@@ -81,9 +81,7 @@ export default function HeroSection() {
 
     const renderTitle = (title: string) => {
         let translated = t(title);
-        const isMainSlogan =
-            title.toUpperCase().includes("VOTRE RETOUR GAGNANT") ||
-            translated.toUpperCase() === "VOTRE RETOUR GAGNANT";
+        const isMainSlogan = title.toUpperCase().includes("VOTRE RETOUR GAGNANT");
         if (isMainSlogan) {
             translated = SLOGAN_VALS[lang] || translated;
             const words = translated.split(" ");

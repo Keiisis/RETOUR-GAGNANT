@@ -2,6 +2,7 @@
 
 import { MapContainer, TileLayer, CircleMarker, Tooltip } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import { useTranslation } from '@/lib/translation'
 
 export interface SitePoint {
     ville: string
@@ -20,6 +21,7 @@ const money = (n: number, d = 'XOF') => `${Math.round(n).toLocaleString('fr-FR')
  * chemin. Tuiles Carto (autorisées par la CSP).
  */
 export default function SitesMap({ points, onSelect }: { points: SitePoint[]; onSelect?: (ville: string) => void }) {
+    const { t } = useTranslation()
     const valid = points.filter(p => typeof p.lat === 'number' && typeof p.lng === 'number')
     const center: [number, number] = valid.length
         ? [valid.reduce((s, p) => s + p.lat, 0) / valid.length, valid.reduce((s, p) => s + p.lng, 0) / valid.length]
@@ -45,7 +47,7 @@ export default function SitesMap({ points, onSelect }: { points: SitePoint[]; on
                         >
                             <Tooltip direction="top" offset={[0, -4]}>
                                 <div style={{ fontWeight: 800 }}>{p.ville}</div>
-                                <div style={{ fontSize: 11 }}>{p.count} logement{p.count > 1 ? 's' : ''}{p.min ? ` · dès ${money(p.min, p.devise)}` : ''}</div>
+                                <div style={{ fontSize: 11 }}>{p.count > 1 ? t('{n} logements', { n: p.count }) : t('{n} logement', { n: p.count })}{p.min ? ` · ${t('dès {prix}', { prix: money(p.min, p.devise) })}` : ''}</div>
                             </Tooltip>
                         </CircleMarker>
                     )

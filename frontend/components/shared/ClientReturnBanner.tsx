@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import { ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link'
+import { T } from '@/lib/translation'
 
 /**
  * Bannière sticky "Retour à l'espace client".
@@ -24,10 +25,10 @@ export function ClientReturnBanner() {
                     className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-bold transition-colors group"
                 >
                     <ArrowLeft size={14} className="group-hover:-translate-x-0.5 transition-transform" />
-                    Retour à mon espace client
+                    <T>Retour à mon espace client</T>
                 </Link>
                 <span className="text-gray-600 text-xs hidden sm:inline">
-                    · Vous naviguez depuis votre espace client
+                    · <T>Vous naviguez depuis votre espace client</T>
                 </span>
             </div>
         </div>

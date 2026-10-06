@@ -40,12 +40,7 @@ export default function PricingCalculator3D({ options, baseColor, serviceName }:
     // Format message for WhatsApp negotiation
     const handleNegotiate = () => {
         const message = encodeURIComponent(
-            t("whatsapp_negotiate_message", {
-                defaultValue: `Bonjour Retour Gagnant 🇧🇯,\n\nJe suis intéressé par le service *{{serviceName}}*.\nOption sélectionnée : *{{selectedOption}}* ({{price}}).\n\nJ'aimerais discuter des détails et négocier cette offre.`,
-                serviceName: serviceName,
-                selectedOption: selectedOption.label,
-                price: selectedOption.price
-            })
+            `Bonjour Retour Gagnant 🇧🇯,\n\nJe suis intéressé par le service *${serviceName}*.\nOption sélectionnée : *${selectedOption.label}* (${selectedOption.price}).\n\nJ'aimerais discuter des détails et négocier cette offre.`
         );
         window.open(`https://wa.me/2290160322121?text=${message}`, '_blank');
     };
@@ -82,7 +77,7 @@ export default function PricingCalculator3D({ options, baseColor, serviceName }:
                             onClick={() => setIsOpen(!isOpen)}
                             className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-xl border-2 border-transparent hover:border-gray-200 transition-all active:scale-[0.98]"
                         >
-                            <span className="font-semibold text-gray-700">{selectedOption.label}</span>
+                            <span className="font-semibold text-gray-700">{t(selectedOption.label)}</span>
                             <ChevronDown
                                 className={cn("transition-transform duration-300 text-gray-400", isOpen && "rotate-180")}
                             />
@@ -105,7 +100,7 @@ export default function PricingCalculator3D({ options, baseColor, serviceName }:
                                             }}
                                             className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                                         >
-                                            <span className="text-sm font-medium text-gray-700">{opt.label}</span>
+                                            <span className="text-sm font-medium text-gray-700">{t(opt.label)}</span>
                                             {selectedOption.label === opt.label && (
                                                 <Check size={16} style={{ color: baseColor }} />
                                             )}
@@ -130,7 +125,7 @@ export default function PricingCalculator3D({ options, baseColor, serviceName }:
                                 {(() => {
                                     const parsed = parseFCFAPrice(selectedOption.price)
                                     if (parsed) {
-                                        return <><Price amount={parsed.amount} currency="XOF" />{parsed.suffix ? ` ${parsed.suffix}` : ''}</>
+                                        return <><Price amount={parsed.amount} currency="XOF" />{parsed.suffix ? ` ${t(parsed.suffix)}` : ''}</>
                                     }
                                     return <T>{selectedOption.price}</T>
                                 })()}

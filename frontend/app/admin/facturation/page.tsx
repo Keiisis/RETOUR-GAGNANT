@@ -15,6 +15,8 @@ import { DOC_FIN_STATUTS } from '@/lib/constants/statuts'
 import DescriptionLignes from '@/components/shared/DescriptionLignes'
 
 import { telechargerDocumentPdf, type DocumentSource } from '@/lib/document-pdf-navigateur'
+import TraductionDocument from '@/components/shared/TraductionDocument'
+import { langueDoc, type LangueDoc } from '@/lib/document-langues'
 
 interface DevisItem {
     description: string
@@ -63,6 +65,7 @@ export default function AdminFacturationPage() {
     const [search, setSearch] = useState('')
     const [filterType, setFilterType] = useState<'all' | 'devis' | 'facture' | 'avoir'>('all')
     const [showPreview, setShowPreview] = useState<DocumentFinancier | null>(null)
+    const [langueOuverture, setLangueOuverture] = useState<LangueDoc | undefined>(undefined)
     const [generating, setGenerating] = useState(false)
     // Avoir / note de crédit
     const [avoirTarget, setAvoirTarget] = useState<DocumentFinancier | null>(null)
@@ -188,6 +191,10 @@ export default function AdminFacturationPage() {
         }))
         setDocuments(mapped as DocumentFinancier[])
         setLoading(false)
+        // Retour du formulaire d'émission (?ouvrir=<id>&langue=en) : le document s'ouvre sur sa traduction à relire.
+        const q = new URLSearchParams(window.location.search)
+        const aOuvrir = q.get('ouvrir') && (mapped as DocumentFinancier[]).find(d => d.id === q.get('ouvrir'))
+        if (aOuvrir) { setLangueOuverture(langueDoc(q.get('langue'))); setShowPreview(aOuvrir) }
     }, [])
 
     useEffect(() => { fetchDocuments() }, [fetchDocuments])
@@ -626,6 +633,10 @@ export default function AdminFacturationPage() {
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Version du document dans la langue du client (relue avant envoi) */}
+                                <TraductionDocument key={showPreview.id} doc={showPreview as unknown as DocumentSource & { id: string }} langueInitiale={langueOuverture}
+                                    onEnvoye={() => { if (showPreview.status === 'brouillon') void handleUpdateStatus(showPreview.id, 'envoye') }} />
 
                                 {/* Status Update */}
                                 <div className="border-t border-white/5 pt-4">

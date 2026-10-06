@@ -295,10 +295,10 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                     fd.append('categorie', p.categorie)
                     const res = await fetch('/api/services/recap-myafroorigins/documents', { method: 'POST', body: fd })
                     const json = await res.json().catch(() => ({}))
-                    if (!res.ok || !json.success) throw new Error(json.error || 'échec')
+                    if (!res.ok || !json.success) throw new Error(json.error || t('échec'))
                     setPieces(l => [...l, { id: p.id, file_name: `${p.titre} — ${json.nom || p.file.name}` }])
                 } catch (e) {
-                    echecs.push(`${p.titre} (${e instanceof Error ? e.message : 'échec'})`)
+                    echecs.push(`${p.titre} (${e instanceof Error ? e.message : t('échec')})`)
                 }
                 setEnvoiPieces({ fait: i + 1, total: file.length, echecs: [...echecs] })
             }
@@ -320,7 +320,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                     <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[#008751] mb-3">{t('Demande enregistrée')}</p>
                     <h2 className="font-display text-3xl font-bold text-[#1c1917] mb-3">{t('Votre dossier est entre nos mains')}</h2>
                     <p className="text-[#57534e] leading-relaxed mb-6">
-                        {t('Un analyste reprend votre situation. Vous recevez votre fiche sous {d}.', { d: delai })}
+                        {t('Un analyste reprend votre situation. Vous recevez votre fiche sous {d}.', { d: t(delai) })}
                     </p>
                     <div className="bg-[#fdfbf7] border border-[#e7e1d8] rounded-2xl px-5 py-4 mb-6 inline-block">
                         <p className="text-[10px] uppercase tracking-widest text-[#a8a29e] font-bold">{t('Votre référence')}</p>

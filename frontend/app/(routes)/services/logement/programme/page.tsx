@@ -12,6 +12,7 @@ import type { SitePoint } from '@/components/logements/SitesMap'
 import { trackEvent } from '@/lib/analytics'
 import { ensureKkiapaySDK, ensureFedaPaySDK } from '@/lib/ensurePaymentSDK'
 import { surveillerAbandonKkiapay } from '@/lib/kkiapay'
+import { useTranslation, T } from '@/lib/translation'
 
 const SitesMap = dynamic(() => import('@/components/logements/SitesMap'), {
     ssr: false,
@@ -55,6 +56,7 @@ const CIBLES = ["Fonctionnaires de l'État", 'Salariés du privé', 'Artisans ·
 const PIECES = ["Pièce d'identité / passeport en cours de validité", 'Justificatif de nationalité béninoise', 'Justificatifs de revenus (ménage)', 'Attestation de non-propriété', 'Fiche de (pré)réservation renseignée']
 
 export default function ProgrammeLogementsPage() {
+    const { t } = useTranslation()
     const [all, setAll] = useState<Logement[]>([])
     const [loading, setLoading] = useState(true)
     const [prog, setProg] = useState<'20000' | 'residences'>('20000')
@@ -121,27 +123,27 @@ export default function ProgrammeLogementsPage() {
                     <div className="relative max-w-6xl mx-auto px-5 md:px-8 pt-24 md:pt-28 pb-14 grid lg:grid-cols-[1.12fr_0.88fr] gap-6 lg:gap-8 items-center">
                       <div>
                         <nav className="flex items-center gap-1.5 text-[13px] text-slate-400 mb-7">
-                            <Link href="/services" className="hover:text-[#008751]">Services</Link><ChevronRight size={13} />
-                            <TransitionLink href="/services/logement" className="hover:text-[#008751]">Logement</TransitionLink><ChevronRight size={13} />
-                            <span className="text-slate-600 font-medium">Programme national</span>
+                            <Link href="/services" className="hover:text-[#008751]"><T>Services</T></Link><ChevronRight size={13} />
+                            <TransitionLink href="/services/logement" className="hover:text-[#008751]"><T>Logement</T></TransitionLink><ChevronRight size={13} />
+                            <span className="text-slate-600 font-medium"><T>Programme national</T></span>
                         </nav>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Building2 size={13} /> En partenariat : Programme national</div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-[11px] font-black uppercase tracking-[0.15em] mb-5"><Building2 size={13} /> <T>En partenariat : Programme national</T></div>
                         <h1 className="font-display text-4xl md:text-[3.7rem] font-bold leading-[1.03] tracking-[-0.02em] max-w-3xl">
-                            <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent">Devenez propriétaire</span> au Bénin.
+                            <span className="bg-gradient-to-br from-[#008751] via-[#0a7d52] to-[#00643C] bg-clip-text text-transparent"><T>Devenez propriétaire</T></span> <T>au Bénin.</T>
                         </h1>
                         <p className="mt-5 text-[17px] text-slate-600 max-w-2xl leading-relaxed">
-                            Logements économiques et sociaux du Programme 20 000 logements et résidences. <strong className="text-slate-900">Retour Gagnant ne vend pas</strong> : nous montons votre <strong className="text-[#008751]">dossier viable et vite accepté</strong>, puis transmettons votre demande.
+                            <T>Logements économiques et sociaux du Programme 20 000 logements et résidences.</T> <strong className="text-slate-900"><T>Retour Gagnant ne vend pas</T></strong> <T>: nous montons votre</T> <strong className="text-[#008751]"><T>dossier viable et vite accepté</T></strong><T>, puis transmettons votre demande.</T>
                         </p>
                         <div className="mt-7 flex flex-wrap gap-3">
-                            <a href="#catalogue" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-all hover:shadow-[0_16px_38px_-12px_rgba(0,135,81,0.75)]"><Home size={18} /> Voir les logements</a>
-                            <a href="#eligibilite" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><ShieldCheck size={18} className="text-[#008751]" /> Mon éligibilité</a>
+                            <a href="#catalogue" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-all hover:shadow-[0_16px_38px_-12px_rgba(0,135,81,0.75)]"><Home size={18} /> <T>Voir les logements</T></a>
+                            <a href="#eligibilite" className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-white border border-slate-200 hover:border-[#008751] text-slate-800 font-bold transition-colors"><ShieldCheck size={18} className="text-[#008751]" /> <T>Mon éligibilité</T></a>
                         </div>
                         {!loading && stats.total > 0 && (
                             <div className="mt-9 flex flex-wrap gap-x-8 gap-y-3">
-                                <div className="flex items-baseline gap-2"><CountUp to={stats.total} className="font-display text-2xl font-bold text-[#008751]" /><span className="text-sm text-slate-500">logements</span></div>
-                                <div className="flex items-baseline gap-2"><CountUp to={stats.villes} className="font-display text-2xl font-bold text-[#008751]" /><span className="text-sm text-slate-500">villes</span></div>
-                                <div className="flex items-baseline gap-2"><span className="font-display text-2xl font-bold text-[#008751]">2</span><span className="text-sm text-slate-500">formules</span></div>
-                                {stats.min > 0 && <div className="flex items-baseline gap-2"><span className="text-sm text-slate-500">dès</span><span className="font-display text-2xl font-bold text-slate-900"><CountUp to={stats.min} suffix=" FCFA" /></span></div>}
+                                <div className="flex items-baseline gap-2"><CountUp to={stats.total} className="font-display text-2xl font-bold text-[#008751]" /><span className="text-sm text-slate-500"><T>logements</T></span></div>
+                                <div className="flex items-baseline gap-2"><CountUp to={stats.villes} className="font-display text-2xl font-bold text-[#008751]" /><span className="text-sm text-slate-500"><T>villes</T></span></div>
+                                <div className="flex items-baseline gap-2"><span className="font-display text-2xl font-bold text-[#008751]">2</span><span className="text-sm text-slate-500"><T>formules</T></span></div>
+                                {stats.min > 0 && <div className="flex items-baseline gap-2"><span className="text-sm text-slate-500"><T>dès</T></span><span className="font-display text-2xl font-bold text-slate-900"><CountUp to={stats.min} suffix=" FCFA" /></span></div>}
                             </div>
                         )}
                       </div>
@@ -158,10 +160,10 @@ export default function ProgrammeLogementsPage() {
                     <div className="bg-gradient-to-br from-[#00643C] via-[#008751] to-[#0a7d52] text-white">
                         <div className="max-w-6xl mx-auto px-5 md:px-8 py-9 grid grid-cols-2 md:grid-cols-4 gap-6">
                             {[
-                                { Ic: Building, to: 20000, suffix: '', label: 'logements économiques & sociaux' },
-                                { Ic: MapPinned, to: 14, suffix: '', label: 'villes couvertes au Bénin' },
-                                { Ic: CalendarClock, to: 25, suffix: ' ans', label: 'durée max en location-accession' },
-                                { Ic: Wallet, to: 22.88, dec: 2, suffix: ' M', label: 'FCFA : dès la villa sociale' },
+                                { Ic: Building, to: 20000, suffix: '', label: t('logements économiques & sociaux') },
+                                { Ic: MapPinned, to: 14, suffix: '', label: t('villes couvertes au Bénin') },
+                                { Ic: CalendarClock, to: 25, suffix: ` ${t('ans')}`, label: t('durée max en location-accession') },
+                                { Ic: Wallet, to: 22.88, dec: 2, suffix: ' M', label: t('FCFA : dès la villa sociale') },
                             ].map((k, i) => (
                                 <div key={i} className="flex flex-col">
                                     <k.Ic size={20} className="text-[#FCD116] mb-2" />
@@ -176,14 +178,14 @@ export default function ProgrammeLogementsPage() {
                 {/* ═══ BARRE PROGRAMME + FILTRES (sticky) ═══ */}
                 <div className="sticky top-0 z-30 bg-white/85 backdrop-blur-xl border-y border-slate-100">
                     <div className="max-w-6xl mx-auto px-5 md:px-8 py-3 flex flex-wrap items-center gap-2">
-                        {([['20000', 'Programme 20 000'], ['residences', 'Résidences']] as const).map(([v, l]) => (
+                        {([['20000', t('Programme 20 000')], ['residences', t('Résidences')]] as const).map(([v, l]) => (
                             <button key={v} onClick={() => { setProg(v); setVille(''); setType('') }} className={`px-4 py-2 rounded-full text-sm font-bold transition-colors ${prog === v ? 'bg-[#008751] text-white' : 'text-slate-500 hover:bg-slate-100'}`}>{l}</button>
                         ))}
                         <span className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
-                        <select value={ville} onChange={e => setVille(e.target.value)} className={flt}><option value="">Toutes les villes</option>{villes.map(v => <option key={v}>{v}</option>)}</select>
-                        <select value={type} onChange={e => setType(e.target.value)} className={flt}><option value="">Tous les types</option>{types.map(t => <option key={t}>{t}</option>)}</select>
-                        <select value={formule} onChange={e => setFormule(e.target.value)} className={flt}><option value="">Toutes formules</option><option value="location-accession">Location-accession</option><option value="comptant">Comptant / crédit</option></select>
-                        {(ville || type || formule) && <button onClick={() => { setVille(''); setType(''); setFormule('') }} className="text-sm font-bold text-[#E8112D] hover:underline">Réinitialiser</button>}
+                        <select value={ville} onChange={e => setVille(e.target.value)} className={flt}><option value="">{t('Toutes les villes')}</option>{villes.map(v => <option key={v}>{v}</option>)}</select>
+                        <select value={type} onChange={e => setType(e.target.value)} className={flt}><option value="">{t('Tous les types')}</option>{types.map(t => <option key={t}>{t}</option>)}</select>
+                        <select value={formule} onChange={e => setFormule(e.target.value)} className={flt}><option value="">{t('Toutes formules')}</option><option value="location-accession">{t('Location-accession')}</option><option value="comptant">{t('Comptant / crédit')}</option></select>
+                        {(ville || type || formule) && <button onClick={() => { setVille(''); setType(''); setFormule('') }} className="text-sm font-bold text-[#E8112D] hover:underline"><T>Réinitialiser</T></button>}
                     </div>
                 </div>
 
@@ -194,7 +196,7 @@ export default function ProgrammeLogementsPage() {
                             {Array.from({ length: 6 }).map((_, i) => <div key={i} className="rounded-3xl border border-slate-200 overflow-hidden"><div className="aspect-[4/3] bg-slate-100 animate-pulse" /><div className="p-4 space-y-2"><div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" /><div className="h-3 bg-slate-100 rounded animate-pulse w-1/2" /><div className="h-5 bg-slate-100 rounded animate-pulse w-2/5 mt-3" /></div></div>)}
                         </div>
                     ) : list.length === 0 ? (
-                        <div className="text-center py-20 text-slate-400"><Building2 size={40} className="mx-auto mb-3 opacity-40" /><p className="font-semibold text-slate-500">Aucun logement pour ces critères. Le catalogue est mis à jour régulièrement.</p></div>
+                        <div className="text-center py-20 text-slate-400"><Building2 size={40} className="mx-auto mb-3 opacity-40" /><p className="font-semibold text-slate-500"><T>Aucun logement pour ces critères. Le catalogue est mis à jour régulièrement.</T></p></div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                             {list.map((l, i) => (
@@ -207,7 +209,7 @@ export default function ProgrammeLogementsPage() {
                                             ? <img src={l.images[0]} alt={l.nom} className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-[600ms]" onError={e => { e.currentTarget.style.display = 'none' }} />
                                             : <div className="w-full h-full flex items-center justify-center text-slate-300"><Home size={40} /></div>}
                                         <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur text-[11px] font-black text-slate-800">{l.type}</span>
-                                        {l.disponibilite !== 'disponible' && <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#FCD116] text-[#5A4A00] text-[10px] font-black uppercase tracking-wide">{l.disponibilite === 'bientot' ? 'Bientôt' : 'Épuisé'}</span>}
+                                        {l.disponibilite !== 'disponible' && <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-[#FCD116] text-[#5A4A00] text-[10px] font-black uppercase tracking-wide">{l.disponibilite === 'bientot' ? t('Bientôt') : t('Épuisé')}</span>}
                                     </motion.div>
                                     <div className="p-4">
                                         <h3 className="font-extrabold text-slate-900 truncate">{l.nom}</h3>
@@ -218,9 +220,9 @@ export default function ProgrammeLogementsPage() {
                                         </div>
                                         <div className="mt-3 pt-3 border-t border-slate-100">
                                             <p className="text-lg font-black text-[#008751]">{money(l.prix_comptant, l.devise)}</p>
-                                            {l.mensualite > 0 && <p className="text-xs text-slate-500">ou {money(l.mensualite, l.devise)}/mois · {l.duree_annees} ans</p>}
+                                            {l.mensualite > 0 && <p className="text-xs text-slate-500">{t('ou {prix}/mois · {n} ans', { prix: money(l.mensualite, l.devise), n: l.duree_annees })}</p>}
                                         </div>
-                                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#008751] group-hover:gap-2 transition-all">Détails & dossier <ChevronRight size={15} /></span>
+                                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-[#008751] group-hover:gap-2 transition-all"><T>Détails & dossier</T> <ChevronRight size={15} /></span>
                                     </div>
                                 </motion.button>
                             ))}
@@ -232,7 +234,7 @@ export default function ProgrammeLogementsPage() {
                         <div className="mt-14 grid lg:grid-cols-[1.4fr_1fr] gap-6 items-start">
                             <SitesMap points={points} onSelect={v => { setVille(v); document.getElementById('catalogue')?.scrollIntoView({ behavior: 'smooth' }) }} />
                             <div>
-                                <h2 className="font-display text-2xl font-bold mb-4">Sites du programme</h2>
+                                <h2 className="font-display text-2xl font-bold mb-4"><T>Sites du programme</T></h2>
                                 <div className="flex flex-wrap gap-2.5">
                                     {points.sort((a, b) => b.count - a.count).map(p => (
                                         <button key={p.ville} onClick={() => { setVille(p.ville); document.getElementById('catalogue')?.scrollIntoView({ behavior: 'smooth' }) }} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-[#008751] transition-colors">
@@ -248,32 +250,32 @@ export default function ProgrammeLogementsPage() {
                 {/* ═══ POURQUOI RGB (contraste solo vs accompagné) ═══ */}
                 <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
                     <div className="text-center max-w-2xl mx-auto mb-10">
-                        <h2 className="font-display text-3xl md:text-4xl font-bold">Le logement est ouvert à tous. <span className="text-[#008751]">L'acceptation, non.</span></h2>
-                        <p className="mt-3 text-slate-600">Un dossier incomplet ou mal monté est recalé : et la place part à un autre. C'est précisément là que nous intervenons.</p>
+                        <h2 className="font-display text-3xl md:text-4xl font-bold"><T>Le logement est ouvert à tous.</T> <span className="text-[#008751]"><T>L'acceptation, non.</T></span></h2>
+                        <p className="mt-3 text-slate-600"><T>Un dossier incomplet ou mal monté est recalé : et la place part à un autre. C'est précisément là que nous intervenons.</T></p>
                     </div>
                     <div className="grid md:grid-cols-2 gap-5 max-w-4xl mx-auto">
                         <div className="rounded-3xl border border-slate-200 bg-slate-50/60 p-6">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-4">En solo</p>
+                            <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-4"><T>En solo</T></p>
                             <ul className="space-y-3">
-                                {['Pièces manquantes ou non conformes = dossier recalé', 'Allers-retours administratifs depuis l\'étranger', 'Critères stricts mal interprétés', 'Délais qui s\'allongent, place qui s\'envole'].map((t, i) => (
-                                    <li key={i} className="flex gap-2.5 text-sm text-slate-500"><span className="w-5 h-5 rounded-full bg-[#FDECEA] text-[#E8112D] flex items-center justify-center shrink-0"><X size={12} /></span> {t}</li>
+                                {[t('Pièces manquantes ou non conformes = dossier recalé'), t('Allers-retours administratifs depuis l\'étranger'), t('Critères stricts mal interprétés'), t('Délais qui s\'allongent, place qui s\'envole')].map((x, i) => (
+                                    <li key={i} className="flex gap-2.5 text-sm text-slate-500"><span className="w-5 h-5 rounded-full bg-[#FDECEA] text-[#E8112D] flex items-center justify-center shrink-0"><X size={12} /></span> {x}</li>
                                 ))}
                             </ul>
                         </div>
                         <div className="rounded-3xl border-2 border-[#008751]/25 bg-[#E6F3ED]/40 p-6 shadow-[0_18px_50px_-28px_rgba(0,135,81,0.5)]">
-                            <p className="text-[11px] font-black uppercase tracking-wider text-[#008751] mb-4">Avec Retour Gagnant</p>
+                            <p className="text-[11px] font-black uppercase tracking-wider text-[#008751] mb-4"><T>Avec Retour Gagnant</T></p>
                             <ul className="space-y-3">
-                                {['Dossier vérifié et fiabilisé, pièce par pièce', 'Tout géré localement : zéro déplacement pour la diaspora', 'Éligibilité confirmée avant de déposer', 'Transmission de votre demande pour une acceptation rapide'].map((t, i) => (
-                                    <li key={i} className="flex gap-2.5 text-sm text-slate-700 font-medium"><span className="w-5 h-5 rounded-full bg-[#008751] text-white flex items-center justify-center shrink-0"><Check size={12} /></span> {t}</li>
+                                {[t('Dossier vérifié et fiabilisé, pièce par pièce'), t('Tout géré localement : zéro déplacement pour la diaspora'), t('Éligibilité confirmée avant de déposer'), t('Transmission de votre demande pour une acceptation rapide')].map((x, i) => (
+                                    <li key={i} className="flex gap-2.5 text-sm text-slate-700 font-medium"><span className="w-5 h-5 rounded-full bg-[#008751] text-white flex items-center justify-center shrink-0"><Check size={12} /></span> {x}</li>
                                 ))}
                             </ul>
                         </div>
                     </div>
                     <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto mt-5">
-                        {[[ShieldCheck, 'Éligibilité confirmée', 'On valide votre profil avant tout dépôt.'], [FileCheck2, 'Pièces fiabilisées', 'Chaque document contrôlé et conforme.'], [Send, 'Transmission assurée', 'Nous portons votre demande au programme.']].map(([Ic, t, d], i) => (
+                        {[[ShieldCheck, t('Éligibilité confirmée'), t('On valide votre profil avant tout dépôt.')], [FileCheck2, t('Pièces fiabilisées'), t('Chaque document contrôlé et conforme.')], [Send, t('Transmission assurée'), t('Nous portons votre demande au programme.')]].map(([Ic, titre, d], i) => (
                             <div key={i} className="rounded-2xl border border-slate-200 p-5 text-center">
                                 <div className="w-11 h-11 rounded-2xl bg-[#E6F3ED] text-[#008751] flex items-center justify-center mx-auto mb-3">{(() => { const I = Ic as typeof ShieldCheck; return <I size={19} /> })()}</div>
-                                <p className="font-bold text-slate-900 text-sm">{t as string}</p>
+                                <p className="font-bold text-slate-900 text-sm">{titre as string}</p>
                                 <p className="text-xs text-slate-500 mt-1">{d as string}</p>
                             </div>
                         ))}
@@ -284,8 +286,8 @@ export default function ProgrammeLogementsPage() {
                 {(content.stats.length > 0 || content.temoignages.length > 0) && (
                     <section className="max-w-6xl mx-auto px-5 md:px-8 py-14">
                         <div className="text-center max-w-2xl mx-auto mb-9">
-                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2">La preuve</p>
-                            <h2 className="font-display text-3xl md:text-4xl font-bold">Ils nous ont confié leur dossier.</h2>
+                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2"><T>La preuve</T></p>
+                            <h2 className="font-display text-3xl md:text-4xl font-bold"><T>Ils nous ont confié leur dossier.</T></h2>
                         </div>
                         {content.stats.length > 0 && (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-11">
@@ -314,26 +316,26 @@ export default function ProgrammeLogementsPage() {
                 {/* ═══ CONDITIONS & ÉLIGIBILITÉ ═══ */}
                 <section id="eligibilite" className="bg-gradient-to-b from-[#F7F9F8] to-white border-y border-slate-100 py-16 scroll-mt-16">
                     <div className="max-w-6xl mx-auto px-5 md:px-8">
-                        <h2 className="font-display text-3xl md:text-4xl font-bold mb-2">Conditions & éligibilité</h2>
-                        <p className="text-slate-500 mb-8 max-w-2xl">Les critères officiels du programme. Notre rôle : vérifier votre profil et fiabiliser chaque pièce.</p>
+                        <h2 className="font-display text-3xl md:text-4xl font-bold mb-2"><T>Conditions & éligibilité</T></h2>
+                        <p className="text-slate-500 mb-8 max-w-2xl"><T>Les critères officiels du programme. Notre rôle : vérifier votre profil et fiabiliser chaque pièce.</T></p>
                         <div className="grid lg:grid-cols-2 gap-8">
                             <div className="space-y-3">
                                 {CONDITIONS.map((c, i) => (
                                     <div key={i} className="flex gap-3.5 bg-white rounded-2xl border border-slate-200 p-4">
                                         <div className="w-10 h-10 rounded-xl bg-[#E6F3ED] text-[#008751] flex items-center justify-center shrink-0"><c.icon size={18} /></div>
-                                        <div><p className="font-bold text-slate-900">{c.t}</p><p className="text-sm text-slate-500 mt-0.5">{c.d}</p></div>
+                                        <div><p className="font-bold text-slate-900">{t(c.t)}</p><p className="text-sm text-slate-500 mt-0.5">{t(c.d)}</p></div>
                                     </div>
                                 ))}
                                 <div className="pt-2">
-                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Cibles éligibles</p>
-                                    <div className="flex flex-wrap gap-2">{CIBLES.map(c => <span key={c} className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">{c}</span>)}</div>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2"><T>Cibles éligibles</T></p>
+                                    <div className="flex flex-wrap gap-2">{CIBLES.map(c => <span key={c} className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">{t(c)}</span>)}</div>
                                 </div>
                             </div>
                             <div className="space-y-4">
                                 <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.3)]">
-                                    <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><FileCheck2 size={18} className="text-[#008751]" /> Pièces du dossier</h3>
-                                    <ul className="space-y-2.5">{PIECES.map((p, i) => <li key={i} className="flex gap-2.5 text-sm text-slate-600"><span className="w-5 h-5 rounded-md bg-[#E6F3ED] text-[#008751] flex items-center justify-center text-[10px] font-black shrink-0">{i + 1}</span> {p}</li>)}</ul>
-                                    <p className="text-[11px] text-slate-400 mt-3">Liste indicative : la liste officielle définitive accompagne la fiche de réservation.</p>
+                                    <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2"><FileCheck2 size={18} className="text-[#008751]" /> <T>Pièces du dossier</T></h3>
+                                    <ul className="space-y-2.5">{PIECES.map((p, i) => <li key={i} className="flex gap-2.5 text-sm text-slate-600"><span className="w-5 h-5 rounded-md bg-[#E6F3ED] text-[#008751] flex items-center justify-center text-[10px] font-black shrink-0">{i + 1}</span> {t(p)}</li>)}</ul>
+                                    <p className="text-[11px] text-slate-400 mt-3"><T>Liste indicative : la liste officielle définitive accompagne la fiche de réservation.</T></p>
                                 </div>
                                 <EligibiliteCheck onLead={() => setLeadFor('general')} />
                             </div>
@@ -345,12 +347,12 @@ export default function ProgrammeLogementsPage() {
                 {content.faq.length > 0 && (
                     <section className="max-w-3xl mx-auto px-5 md:px-8 py-14">
                         <div className="text-center mb-9">
-                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2">On répond avant que vous demandiez</p>
-                            <h2 className="font-display text-3xl md:text-4xl font-bold">Questions fréquentes</h2>
+                            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2"><T>On répond avant que vous demandiez</T></p>
+                            <h2 className="font-display text-3xl md:text-4xl font-bold"><T>Questions fréquentes</T></h2>
                         </div>
                         <div className="space-y-3">{content.faq.map((f, i) => <FaqItem key={i} q={f.q} r={f.r} />)}</div>
                         <div className="text-center mt-8">
-                            <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#008751] text-white font-bold hover:bg-[#00643C] transition-colors">Une autre question ? Parlons de votre dossier <ChevronRight size={16} /></button>
+                            <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#008751] text-white font-bold hover:bg-[#00643C] transition-colors"><T>Une autre question ? Parlons de votre dossier</T> <ChevronRight size={16} /></button>
                         </div>
                     </section>
                 )}
@@ -362,11 +364,11 @@ export default function ProgrammeLogementsPage() {
                         {/* Ancre d'arrivée : le modèle 3D vient se déposer ici (desktop large) */}
                         <div id="model-cta-slot" aria-hidden="true" className="hidden xl:block absolute right-8 top-1/2 h-[420px] w-[380px] -translate-y-1/2 pointer-events-none" />
                         <div className="relative max-w-2xl">
-                            <h2 className="font-display text-3xl md:text-4xl font-bold">Un dossier recalé, c'est une place perdue.</h2>
-                            <p className="mt-3 text-white/85">Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande : pour qu'elle passe du premier coup.</p>
+                            <h2 className="font-display text-3xl md:text-4xl font-bold"><T>Un dossier recalé, c'est une place perdue.</T></h2>
+                            <p className="mt-3 text-white/85"><T>Les critères sont stricts et les places limitées. Nous fiabilisons chaque pièce et transmettons votre demande : pour qu'elle passe du premier coup.</T></p>
                             <div className="mt-7">
-                                <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors text-lg"><Send size={18} /> Composer mon dossier</button>
-                                <p className="mt-3 text-white/70 text-sm">Sans engagement · réponse sous 48 h · nous transmettons pour vous.</p>
+                                <button onClick={() => setLeadFor('general')} className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-[#008751] font-black hover:bg-[#FCD116] transition-colors text-lg"><Send size={18} /> <T>Composer mon dossier</T></button>
+                                <p className="mt-3 text-white/70 text-sm"><T>Sans engagement · réponse sous 48 h · nous transmettons pour vous.</T></p>
                             </div>
                         </div>
                     </div>
@@ -375,10 +377,10 @@ export default function ProgrammeLogementsPage() {
                 {/* Barre CTA sticky (mobile) : toujours visible, conversion */}
                 <div className="fixed bottom-0 inset-x-0 z-40 md:hidden bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-3 flex items-center gap-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
                     <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-black text-slate-900 leading-tight truncate">Prêt à devenir propriétaire ?</p>
-                        <p className="text-[11px] text-slate-500 truncate">On monte et on transmet votre dossier.</p>
+                        <p className="text-[13px] font-black text-slate-900 leading-tight truncate"><T>Prêt à devenir propriétaire ?</T></p>
+                        <p className="text-[11px] text-slate-500 truncate"><T>On monte et on transmet votre dossier.</T></p>
                     </div>
-                    <button onClick={() => setLeadFor('general')} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-3 rounded-full bg-[#008751] text-white font-black text-sm active:scale-95 transition-transform"><Send size={15} /> Composer</button>
+                    <button onClick={() => setLeadFor('general')} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-3 rounded-full bg-[#008751] text-white font-black text-sm active:scale-95 transition-transform"><Send size={15} /> <T>Composer</T></button>
                 </div>
 
                 <AnimatePresence>{detail && <DetailModal l={detail} onClose={() => setDetail(null)} onLead={() => { setLeadFor(detail); setDetail(null) }} />}</AnimatePresence>
@@ -392,6 +394,7 @@ const flt = 'bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm 
 
 /* ── Détail (morph layoutId + galerie Embla) ── */
 function DetailModal({ l, onClose, onLead }: { l: Logement; onClose: () => void; onLead: () => void }) {
+    const { t } = useTranslation()
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md" onClick={onClose}>
             <motion.div initial={{ y: 24 }} animate={{ y: 0 }} exit={{ y: 24, opacity: 0 }} className="w-full max-w-3xl max-h-[93vh] overflow-y-auto bg-white rounded-[1.8rem] shadow-2xl" onClick={e => e.stopPropagation()}>
@@ -404,18 +407,18 @@ function DetailModal({ l, onClose, onLead }: { l: Logement; onClose: () => void;
                     <h3 className="font-display text-2xl md:text-3xl font-bold text-slate-900">{l.nom}</h3>
                     <div className="flex flex-wrap gap-4 text-sm text-slate-600 mt-2.5">
                         <span className="inline-flex items-center gap-1.5"><Ruler size={15} className="text-slate-400" /> {l.surface_m2} m²</span>
-                        {l.chambres > 0 && <span className="inline-flex items-center gap-1.5"><BedDouble size={15} className="text-slate-400" /> {l.chambres} chambres</span>}
+                        {l.chambres > 0 && <span className="inline-flex items-center gap-1.5"><BedDouble size={15} className="text-slate-400" /> {t('{n} chambres', { n: l.chambres })}</span>}
                     </div>
                     {l.description && <p className="text-slate-600 mt-4 leading-relaxed">{l.description}</p>}
                     {l.atouts?.length > 0 && <div className="flex flex-wrap gap-2 mt-4">{l.atouts.map((a, i) => <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#E6F3ED] text-[#00643C] text-xs font-semibold"><Check size={12} /> {a}</span>)}</div>}
                     <div className="grid grid-cols-2 gap-3 mt-6">
-                        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Comptant / crédit</p><p className="text-xl font-black text-slate-900 mt-0.5">{money(l.prix_comptant, l.devise)}</p></div>
-                        {l.mensualite > 0 && <div className="rounded-2xl bg-[#E6F3ED] border border-[#008751]/20 p-4"><p className="text-[10px] font-bold text-[#008751] uppercase tracking-wider">Location-accession</p><p className="text-xl font-black text-[#008751] mt-0.5">{money(l.mensualite, l.devise)}<span className="text-xs font-bold">/mois</span></p><p className="text-[10px] text-slate-500">sur {l.duree_annees} ans</p></div>}
+                        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4"><p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider"><T>Comptant / crédit</T></p><p className="text-xl font-black text-slate-900 mt-0.5">{money(l.prix_comptant, l.devise)}</p></div>
+                        {l.mensualite > 0 && <div className="rounded-2xl bg-[#E6F3ED] border border-[#008751]/20 p-4"><p className="text-[10px] font-bold text-[#008751] uppercase tracking-wider"><T>Location-accession</T></p><p className="text-xl font-black text-[#008751] mt-0.5">{money(l.mensualite, l.devise)}<span className="text-xs font-bold">{t('/mois')}</span></p><p className="text-[10px] text-slate-500">{t('sur {n} ans', { n: l.duree_annees })}</p></div>}
                     </div>
                     <div className="flex flex-wrap gap-3 mt-6">
-                        <button onClick={onLead} className="flex-1 min-w-[190px] inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors"><Send size={16} /> Composer mon dossier</button>
-                        {l.visite_url && <a href={l.visite_url} target="_blank" rel="noreferrer" className="px-5 py-3.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold inline-flex items-center gap-2">Visite <ExternalLink size={14} /></a>}
-                        {l.plan_url && <a href={l.plan_url} target="_blank" rel="noreferrer" className="px-5 py-3.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold inline-flex items-center gap-2">Plan <ExternalLink size={14} /></a>}
+                        <button onClick={onLead} className="flex-1 min-w-[190px] inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-full bg-[#008751] hover:bg-[#00643C] text-white font-bold transition-colors"><Send size={16} /> <T>Composer mon dossier</T></button>
+                        {l.visite_url && <a href={l.visite_url} target="_blank" rel="noreferrer" className="px-5 py-3.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold inline-flex items-center gap-2"><T>Visite</T> <ExternalLink size={14} /></a>}
+                        {l.plan_url && <a href={l.plan_url} target="_blank" rel="noreferrer" className="px-5 py-3.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold inline-flex items-center gap-2"><T>Plan</T> <ExternalLink size={14} /></a>}
                     </div>
                 </div>
             </motion.div>
@@ -425,6 +428,7 @@ function DetailModal({ l, onClose, onLead }: { l: Logement; onClose: () => void;
 
 /* ── Vérification d'éligibilité (outil réel, pas un gadget) ── */
 function EligibiliteCheck({ onLead }: { onLead: () => void }) {
+    const { t } = useTranslation()
     const [q, setQ] = useState<{ nat: boolean | null; prop: boolean | null }>({ nat: null, prop: null })
     const done = q.nat !== null && q.prop !== null
     const eligible = q.nat === true && q.prop === false
@@ -432,24 +436,24 @@ function EligibiliteCheck({ onLead }: { onLead: () => void }) {
         <div className="flex items-center justify-between gap-3 py-2.5">
             <span className="text-sm text-slate-700">{label}</span>
             <div className="flex gap-1.5">
-                <button onClick={() => setQ(s => ({ ...s, [k]: true }))} className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-colors ${q[k] === true ? 'bg-[#008751] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Oui</button>
-                <button onClick={() => setQ(s => ({ ...s, [k]: false }))} className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-colors ${q[k] === false ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Non</button>
+                <button onClick={() => setQ(s => ({ ...s, [k]: true }))} className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-colors ${q[k] === true ? 'bg-[#008751] text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><T>Oui</T></button>
+                <button onClick={() => setQ(s => ({ ...s, [k]: false }))} className={`px-3.5 py-1 rounded-lg text-xs font-bold transition-colors ${q[k] === false ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><T>Non</T></button>
             </div>
         </div>
     )
     return (
         <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.3)]">
-            <h3 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><ShieldCheck size={18} className="text-[#008751]" /> Vérifiez votre éligibilité</h3>
-            <p className="text-xs text-slate-500 mb-2">Deux questions pour une première orientation.</p>
+            <h3 className="font-bold text-slate-900 mb-1 flex items-center gap-2"><ShieldCheck size={18} className="text-[#008751]" /> <T>Vérifiez votre éligibilité</T></h3>
+            <p className="text-xs text-slate-500 mb-2"><T>Deux questions pour une première orientation.</T></p>
             <div className="divide-y divide-slate-100">
-                <Row k="nat" label="Êtes-vous de nationalité béninoise ?" />
-                <Row k="prop" label="Possédez-vous déjà un bien bâti au Bénin ?" />
+                <Row k="nat" label={t('Êtes-vous de nationalité béninoise ?')} />
+                <Row k="prop" label={t('Possédez-vous déjà un bien bâti au Bénin ?')} />
             </div>
             {done && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={`mt-4 rounded-2xl p-4 border ${eligible ? 'bg-[#E6F3ED] border-[#008751]/20' : 'bg-[#FDECEA] border-[#E8112D]/15'}`}>
-                    <p className={`font-black flex items-center gap-1.5 ${eligible ? 'text-[#008751]' : 'text-[#E8112D]'}`}>{eligible ? <Check size={16} /> : <ShieldCheck size={16} />} {eligible ? 'Profil a priori éligible' : 'À étudier ensemble'}</p>
-                    <p className="text-sm text-slate-600 mt-1">{eligible ? 'Composons votre dossier pour une acceptation rapide.' : 'Certaines conditions demandent une analyse ; nos conseillers vous orientent.'}</p>
-                    <button onClick={onLead} className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold"><Send size={14} /> Être accompagné</button>
+                    <p className={`font-black flex items-center gap-1.5 ${eligible ? 'text-[#008751]' : 'text-[#E8112D]'}`}>{eligible ? <Check size={16} /> : <ShieldCheck size={16} />} {eligible ? t('Profil a priori éligible') : t('À étudier ensemble')}</p>
+                    <p className="text-sm text-slate-600 mt-1">{eligible ? t('Composons votre dossier pour une acceptation rapide.') : t('Certaines conditions demandent une analyse ; nos conseillers vous orientent.')}</p>
+                    <button onClick={onLead} className="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold"><Send size={14} /> <T>Être accompagné</T></button>
                 </motion.div>
             )}
         </div>
@@ -458,6 +462,7 @@ function EligibiliteCheck({ onLead }: { onLead: () => void }) {
 
 /* ── Lead ── */
 function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: () => void }) {
+    const { t } = useTranslation()
     const [f, setF] = useState({ prenom: '', nom: '', email: '', telephone: '', pays_residence: '', diaspora: false, formule_souhaitee: '', message: '' })
     const [sending, setSending] = useState(false)
     const [done, setDone] = useState(false)
@@ -496,7 +501,7 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
     const feeXof = fee.currency === 'EUR' ? Math.round(fee.amount * 655.957) : Math.round(fee.amount)
 
     const submit = async () => {
-        if (!f.nom.trim() || (!f.email.trim() && !f.telephone.trim())) { alert('Nom + email ou téléphone requis.'); return }
+        if (!f.nom.trim() || (!f.email.trim() && !f.telephone.trim())) { alert(t('Nom + email ou téléphone requis.')); return }
         setSending(true)
         try {
             const res = await fetch('/api/logements/lead', {
@@ -504,11 +509,11 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                 body: JSON.stringify({ ...f, logement_id: logement?.id || null, logement_nom: logement?.nom || null, programme: logement?.programme || null }),
             })
             const j = await res.json().catch(() => ({}))
-            if (!res.ok || !j.success) throw new Error(j.error || 'Envoi impossible.')
+            if (!res.ok || !j.success) throw new Error(j.error || t('Envoi impossible.'))
             setLeadId(j.lead_id || null)
             trackEvent('logement_lead', { programme: logement?.programme || 'general', logement: logement?.nom || null })
             setPayStep(true) // on enchaîne sur le règlement des frais de dossier
-        } catch (e) { alert(e instanceof Error ? e.message : 'Erreur.') } finally { setSending(false) }
+        } catch (e) { alert(e instanceof Error ? e.message : t('Erreur.')) } finally { setSending(false) }
     }
 
     /* Confirmation SERVEUR : c'est elle qui vérifie le paiement auprès de la
@@ -524,10 +529,10 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                 }),
             })
             const j = await res.json().catch(() => ({}))
-            if (!res.ok || !j.success) throw new Error(j.error || 'Confirmation impossible.')
+            if (!res.ok || !j.success) throw new Error(j.error || t('Confirmation impossible.'))
             setDone(true)
         } catch (e) {
-            setPayError(e instanceof Error ? e.message : 'Confirmation impossible.')
+            setPayError(e instanceof Error ? e.message : t('Confirmation impossible.'))
         } finally { setPaying(false) }
     }
 
@@ -537,7 +542,7 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
             addKkiapayListener?: (e: string, cb: (d: Record<string, unknown>) => void) => void
         }
         if (typeof w.openKkiapayWidget !== 'function') {
-            setPayError("Le module de paiement n'est pas encore chargé. Patientez quelques secondes puis réessayez.")
+            setPayError(t("Le module de paiement n'est pas encore chargé. Patientez quelques secondes puis réessayez."))
             return
         }
         setPaying(true); setPayError('')
@@ -546,12 +551,12 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
             w.addKkiapayListener('success', r => confirmServeur('kkiapay', String(r.transactionId || '')))
             w.addKkiapayListener('failed', () => {
                 setPaying(false)
-                setPayError('Le paiement a échoué ou a été refusé. Essayez le Mobile Money ou un autre moyen.')
+                setPayError(t('Le paiement a échoué ou a été refusé. Essayez le Mobile Money ou un autre moyen.'))
             })
         }
         try {
             surveillerAbandonKkiapay(() => {
-                setPayError('Paiement annulé. Rien n’a été débité.')
+                setPayError(t('Paiement annulé. Rien n’a été débité.'))
                 setPaying(false)
             })
             w.openKkiapayWidget({
@@ -562,12 +567,12 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                 sandbox: paySettings.kkiapay_sandbox === 'true',
                 data: JSON.stringify({ context: 'logement-dossier', lead: leadId }),
             })
-        } catch { setPaying(false); setPayError("Impossible d'ouvrir Kkiapay.") }
+        } catch { setPaying(false); setPayError(t("Impossible d'ouvrir Kkiapay.")) }
     }
 
     const payerFedapay = () => {
         const w = window as unknown as { FedaPay?: { init: (s: string, c: Record<string, unknown>) => void } }
-        if (!w.FedaPay) { setPayError("FedaPay n'est pas disponible."); return }
+        if (!w.FedaPay) { setPayError(t("FedaPay n'est pas disponible.")); return }
         setPaying(true); setPayError('')
         try {
             w.FedaPay.init('#fedapay-logement-btn', {
@@ -578,22 +583,22 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                     const tx = resp.transaction as Record<string, unknown> | undefined
                     if (resp.reason === 'APPROVED' || tx?.status === 'approved') {
                         confirmServeur('fedapay', String(tx?.id || resp.id || ''))
-                    } else { setPaying(false); setPayError('Paiement non approuvé.') }
+                    } else { setPaying(false); setPayError(t('Paiement non approuvé.')) }
                 },
             })
-        } catch { setPaying(false); setPayError("Impossible d'initialiser FedaPay.") }
+        } catch { setPaying(false); setPayError(t("Impossible d'initialiser FedaPay.")) }
     }
 
     const payerZeyow = () => {
         const url = paySettings.zeyow_redirect_url
-        if (!url) { setPayError("Zeyow n'est pas configuré."); return }
+        if (!url) { setPayError(t("Zeyow n'est pas configuré.")); return }
         window.location.href = `${url}?amount=${feeXof}&context=logement-dossier&lead=${leadId || ''}`
     }
 
     const passerelles = [
-        { id: 'kkiapay', nom: 'Kkiapay', sous: 'Mobile Money / Carte', pret: paySettings.kkiapay_enabled === 'true' && !!paySettings.kkiapay_public_key, action: payerKkiapay },
-        { id: 'fedapay', nom: 'FedaPay', sous: 'Mobile Money / Carte', pret: paySettings.fedapay_enabled === 'true' && !!paySettings.fedapay_public_key, action: payerFedapay },
-        { id: 'zeyow', nom: 'Zeyow', sous: 'Carte virtuelle', pret: paySettings.zeyow_enabled === 'true' && !!paySettings.zeyow_redirect_url, action: payerZeyow },
+        { id: 'kkiapay', nom: 'Kkiapay', sous: t('Mobile Money / Carte'), pret: paySettings.kkiapay_enabled === 'true' && !!paySettings.kkiapay_public_key, action: payerKkiapay },
+        { id: 'fedapay', nom: 'FedaPay', sous: t('Mobile Money / Carte'), pret: paySettings.fedapay_enabled === 'true' && !!paySettings.fedapay_public_key, action: payerFedapay },
+        { id: 'zeyow', nom: 'Zeyow', sous: t('Carte virtuelle'), pret: paySettings.zeyow_enabled === 'true' && !!paySettings.zeyow_redirect_url, action: payerZeyow },
     ].filter(p => p.pret)
     const inp = 'w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:outline-none focus:border-[#008751] focus:ring-2 focus:ring-[#008751]/15'
     return (
@@ -603,31 +608,29 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                 {done ? (
                     <div className="p-10 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-[#E6F3ED] flex items-center justify-center mx-auto mb-4"><Check size={28} className="text-[#008751]" /></div>
-                        <h3 className="text-lg font-black text-slate-900">Dossier ouvert.</h3>
+                        <h3 className="text-lg font-black text-slate-900"><T>Dossier ouvert.</T></h3>
                         <p className="text-sm text-slate-500 mt-1">
-                            Vos frais de constitution de dossier sont réglés. Notre équipe monte votre dossier
-                            et le transmet à notre partenaire agréé, puis vous recontacte.
+                            <T>Vos frais de constitution de dossier sont réglés. Notre équipe monte votre dossier et le transmet à notre partenaire agréé, puis vous recontacte.</T>
                         </p>
-                        <button onClick={onClose} className="mt-5 px-5 py-2.5 rounded-full bg-[#008751] text-white font-bold">Fermer</button>
+                        <button onClick={onClose} className="mt-5 px-5 py-2.5 rounded-full bg-[#008751] text-white font-bold"><T>Fermer</T></button>
                     </div>
                 ) : payStep ? (
                     /* ── Règlement des frais de dossier ── */
                     <>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
                             <div>
-                                <h3 className="font-black text-slate-900">Frais de constitution de dossier</h3>
-                                <p className="text-xs text-slate-500">Votre demande est enregistrée. Dernière étape.</p>
+                                <h3 className="font-black text-slate-900"><T>Frais de constitution de dossier</T></h3>
+                                <p className="text-xs text-slate-500"><T>Votre demande est enregistrée. Dernière étape.</T></p>
                             </div>
                             <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={18} /></button>
                         </div>
                         <div className="p-6 space-y-4">
                             <div className="rounded-2xl bg-[#008751] p-5 text-white border-t-4 border-[#FCD116]">
-                                <p className="text-[11px] font-black uppercase tracking-wider text-white/85">Montant à régler</p>
+                                <p className="text-[11px] font-black uppercase tracking-wider text-white/85"><T>Montant à régler</T></p>
                                 <p className="text-3xl font-black mt-0.5">{fee.amount} {feeSymbol}</p>
-                                <p className="text-[11px] text-white/85">Soit environ {feeXof.toLocaleString('fr-FR')} FCFA</p>
+                                <p className="text-[11px] text-white/85">{t('Soit environ {montant} FCFA', { montant: feeXof.toLocaleString('fr-FR') })}</p>
                                 <p className="text-[11px] text-white/90 mt-2">
-                                    Nous montons votre dossier complet et le transmettons à notre partenaire agréé.
-                                    Le prix du logement se règle ensuite directement auprès de lui.
+                                    <T>Nous montons votre dossier complet et le transmettons à notre partenaire agréé. Le prix du logement se règle ensuite directement auprès de lui.</T>
                                 </p>
                             </div>
 
@@ -637,8 +640,7 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
 
                             {passerelles.length === 0 ? (
                                 <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-                                    Aucun moyen de paiement n&apos;est actif pour le moment. Notre équipe vous
-                                    recontacte : votre demande est bien enregistrée.
+                                    <T>Aucun moyen de paiement n&apos;est actif pour le moment. Notre équipe vous recontacte : votre demande est bien enregistrée.</T>
                                 </p>
                             ) : (
                                 <div className="grid gap-2">
@@ -660,40 +662,39 @@ function LeadModal({ logement, onClose }: { logement: Logement | null; onClose: 
                                 </div>
                             )}
                             <p className="text-center text-[11px] text-slate-400">
-                                Paiement sécurisé. Le règlement est vérifié auprès de la passerelle avant l&apos;ouverture du dossier.
+                                <T>Paiement sécurisé. Le règlement est vérifié auprès de la passerelle avant l&apos;ouverture du dossier.</T>
                             </p>
                         </div>
                     </>
                 ) : (
                     <>
                         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                            <div><h3 className="font-black text-slate-900">Composer mon dossier</h3>{logement && <p className="text-xs text-slate-500">{logement.nom}</p>}</div>
+                            <div><h3 className="font-black text-slate-900"><T>Composer mon dossier</T></h3>{logement && <p className="text-xs text-slate-500">{logement.nom}</p>}</div>
                             <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X size={18} /></button>
                         </div>
                         <div className="p-6 space-y-3">
                             <div className="grid grid-cols-2 gap-3">
-                                <input value={f.prenom} onChange={e => setF({ ...f, prenom: e.target.value })} placeholder="Prénom" className={inp} />
-                                <input value={f.nom} onChange={e => setF({ ...f, nom: e.target.value })} placeholder="Nom *" className={inp} />
+                                <input value={f.prenom} onChange={e => setF({ ...f, prenom: e.target.value })} placeholder={t('Prénom')} className={inp} />
+                                <input value={f.nom} onChange={e => setF({ ...f, nom: e.target.value })} placeholder={t('Nom *')} className={inp} />
                             </div>
-                            <input value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="Email" className={inp} />
-                            <input value={f.telephone} onChange={e => setF({ ...f, telephone: e.target.value })} placeholder="Téléphone / WhatsApp" className={inp} />
-                            <input value={f.pays_residence} onChange={e => setF({ ...f, pays_residence: e.target.value })} placeholder="Pays de résidence" className={inp} />
-                            <select value={f.formule_souhaitee} onChange={e => setF({ ...f, formule_souhaitee: e.target.value })} className={inp}><option value="">Formule souhaitée</option><option>Location-accession</option><option>Comptant / crédit</option></select>
-                            <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={f.diaspora} onChange={e => setF({ ...f, diaspora: e.target.checked })} className="w-4 h-4 accent-[#008751]" /> Je fais partie de la diaspora</label>
-                            <textarea rows={2} value={f.message} onChange={e => setF({ ...f, message: e.target.value })} placeholder="Message (optionnel)" className={inp + ' resize-none'} />
+                            <input value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder={t('Email')} className={inp} />
+                            <input value={f.telephone} onChange={e => setF({ ...f, telephone: e.target.value })} placeholder={t('Téléphone / WhatsApp')} className={inp} />
+                            <input value={f.pays_residence} onChange={e => setF({ ...f, pays_residence: e.target.value })} placeholder={t('Pays de résidence')} className={inp} />
+                            <select value={f.formule_souhaitee} onChange={e => setF({ ...f, formule_souhaitee: e.target.value })} className={inp}><option value="">{t('Formule souhaitée')}</option><option value="Location-accession">{t('Location-accession')}</option><option value="Comptant / crédit">{t('Comptant / crédit')}</option></select>
+                            <label className="flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" checked={f.diaspora} onChange={e => setF({ ...f, diaspora: e.target.checked })} className="w-4 h-4 accent-[#008751]" /> <T>Je fais partie de la diaspora</T></label>
+                            <textarea rows={2} value={f.message} onChange={e => setF({ ...f, message: e.target.value })} placeholder={t('Message (optionnel)')} className={inp + ' resize-none'} />
                             {/* Ce que RGB facture réellement : la constitution du dossier. */}
                             <div className="rounded-xl border border-[#008751]/25 bg-[#E6F3ED]/60 p-3.5">
-                                <p className="text-[11px] font-black uppercase tracking-wider text-[#00643C]">Frais de constitution de dossier</p>
+                                <p className="text-[11px] font-black uppercase tracking-wider text-[#00643C]"><T>Frais de constitution de dossier</T></p>
                                 <p className="text-xl font-black text-slate-900 mt-0.5">{fee.amount} {feeSymbol}</p>
                                 <p className="text-[11px] text-slate-600 mt-1">
-                                    Nous montons votre dossier complet et le transmettons à notre partenaire agréé.
-                                    Le prix du logement se règle ensuite directement auprès de lui, jamais sur ce site.
+                                    <T>Nous montons votre dossier complet et le transmettons à notre partenaire agréé. Le prix du logement se règle ensuite directement auprès de lui, jamais sur ce site.</T>
                                 </p>
                             </div>
                         </div>
                         <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
-                            <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50">Annuler</button>
-                            <button onClick={submit} disabled={sending} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">{sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Envoyer</button>
+                            <button onClick={onClose} className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50"><T>Annuler</T></button>
+                            <button onClick={submit} disabled={sending} className="px-5 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-black flex items-center gap-2 disabled:opacity-60">{sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} <T>Envoyer</T></button>
                         </div>
                     </>
                 )}

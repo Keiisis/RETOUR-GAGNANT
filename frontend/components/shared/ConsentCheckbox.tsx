@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { T, useTranslation } from '@/lib/translation'
 
 /**
  * Case de consentement RGPD réutilisable.
@@ -32,6 +33,7 @@ export default function ConsentCheckbox({
     required = true,
     className = '',
 }: ConsentCheckboxProps) {
+    const { t } = useTranslation()
     const controlled = typeof checked === 'boolean' && typeof onChange === 'function'
 
     return (
@@ -49,17 +51,16 @@ export default function ConsentCheckbox({
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-[#008751]"
             />
             <span>
-                J&apos;accepte que mes données personnelles soient collectées et traitées par
-                {' '}Retour Gagnant Bénin {purpose}, conformément à la{' '}
+                {t("J'accepte que mes données personnelles soient collectées et traitées par Retour Gagnant Bénin {purpose}, conformément à la", { purpose })}{' '}
                 <Link
                     href="/confidentialite"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#008751] underline font-medium hover:text-[#006b40]"
                 >
-                    politique de confidentialité
+                    <T>politique de confidentialité</T>
                 </Link>
-                . Vous pouvez exercer vos droits (accès, rectification, suppression) à tout moment.
+                . <T>Vous pouvez exercer vos droits (accès, rectification, suppression) à tout moment.</T>
                 {' '}<span className="text-[#E8112D]" aria-hidden="true">*</span>
             </span>
         </label>

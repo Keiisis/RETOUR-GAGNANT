@@ -4,6 +4,7 @@ import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { hashText } from '@/lib/translation/hash'
+import { copieDuSource } from '@/lib/translation/marques'
 import { SUPPORTED_LANGUAGES, type LangCode } from '@/lib/translation'
 import { guardPublic, TRANSLATE_LIMIT } from '@/lib/api-guard'
 
@@ -315,13 +316,12 @@ export async function POST(req: Request) {
                 }
 
                 // Build upsert records
-                const records = chunk.map((text, idx) => ({
-                    source_text: text,
-                    source_hash: hashText(text),
-                    lang,
-                    translated_text: String(translated[idx] ?? text),
-                    context: 'batch',
-                }))
+                // Pas de repli sur le texte source : un français enregistré comme « traduction » s'afficherait pour toujours.
+                const records = chunk.flatMap((text, idx) => {
+                    const tr = translated[idx]
+                    if (!tr || copieDuSource(text, String(tr))) return []
+                    return [{ source_text: text, source_hash: hashText(text), lang, translated_text: String(tr), context: 'batch' }]
+                })
 
                 const { error: upsertErr } = await supabase
                     .from('translations')

@@ -41,3 +41,9 @@ export function localeActuelle(): string {
     const code = lire(CLE_LANGUE)
     return (code && LOCALES[code]) || LOCALES.fr
 }
+
+/** Code de la langue choisie (fr, en, es, pt, cr, ht) : les PDF de devis/factures sont produits dans cette langue. */
+export function langueActuelle(): string {
+    const code = lire(CLE_LANGUE)
+    return code && LOCALES[code] ? code : 'fr'
+}

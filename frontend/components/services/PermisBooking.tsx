@@ -156,7 +156,7 @@ export default function PermisBooking() {
                 }),
             })
             const data = await res.json()
-            if (!res.ok || !data.success) throw new Error(data.error || 'Erreur lors de la réservation.')
+            if (!res.ok || !data.success) throw new Error(data.error || t('Erreur lors de la réservation.'))
             orderIdRef.current = String(data.order_id)
             serverAmountRef.current = Number(data.amount_xof) || 0
             setStep('paying')

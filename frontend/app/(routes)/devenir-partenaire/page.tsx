@@ -730,7 +730,7 @@ export default function DevenirPartenairePage() {
                                         </div>
 
                                         <ConsentCheckbox id="partner-consent" checked={consent} onChange={setConsent}
-                                            purpose="afin d'étudier ma candidature de partenariat et de me recontacter" />
+                                            purpose={t("afin d'étudier ma candidature de partenariat et de me recontacter")} />
                                     </div>
                                 )}
 
@@ -740,7 +740,7 @@ export default function DevenirPartenairePage() {
                                         initial={{ opacity: 0, y: -4 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
-                                        <Shield size={14} /> {error}
+                                        <Shield size={14} /> {t(error)}
                                     </motion.div>
                                 )}
 

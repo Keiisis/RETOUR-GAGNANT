@@ -8,6 +8,9 @@
 //  appelants, et tient à jour le modèle administrable (document_templates).
 // ══════════════════════════════════════════════════════════════
 import { dessinerDocumentPdf, modeleDepuisContenu, type DocumentPdfDonnees, type DocumentPdfLigne, type ModeleDocument } from './document-pdf'
+import { segmentsDocument, appliquerTraductions } from './document-traduction'
+import { traduireSegments } from './translation/documents'
+import type { LangueDoc } from './document-langues'
 
 export type InvoicePdfItem = DocumentPdfLigne
 export type InvoicePdfData = DocumentPdfDonnees
@@ -45,4 +48,13 @@ export function generateInvoicePdf(data: InvoicePdfData): string {
     if (Date.now() - modeleLuLe > 5 * 60_000) void rafraichirModeleDocument()
     const pdf = dessinerDocumentPdf({ ...data, modele: data.modele || modeleCache })
     return Buffer.from(pdf.output('arraybuffer')).toString('base64')
+}
+
+/** Même document, dans la langue demandée (textes saisis traduits avec contrôle, libellés fixes écrits par langue). */
+export async function generateInvoicePdfLangue(data: InvoicePdfData, langue: LangueDoc): Promise<string> {
+    if (langue === 'fr') return generateInvoicePdf(data)
+    if (!data.modele && (!modeleCache || Date.now() - modeleLuLe > 5 * 60_000)) await rafraichirModeleDocument()
+    const d = { ...data, modele: data.modele || modeleCache }
+    const tr = await traduireSegments(segmentsDocument(d), langue)
+    return generateInvoicePdf(appliquerTraductions(d, langue, tr))
 }

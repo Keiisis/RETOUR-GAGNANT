@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CloudArrowUp as UploadCloud, Plus, Trash as Trash2, CircleNotch as Loader2, Check, ShieldCheck, FileText } from '@phosphor-icons/react';
 import { natFetch } from '@/lib/nationality-flow'
+import { T, useTranslation } from '@/lib/translation'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,7 @@ interface Row { id: string; label: string; file: File | null }
 const newRow = (): Row => ({ id: Math.random().toString(36).slice(2), label: '', file: null })
 
 function DepotInner() {
+    const { t } = useTranslation()
     const params = useSearchParams()
     const token = params.get('t') || ''
 
@@ -35,7 +37,7 @@ function DepotInner() {
 
     const submit = async () => {
         const ready = rows.filter(r => r.file && r.label.trim())
-        if (ready.length === 0) { alert('Ajoutez au moins un fichier avec un nom.'); return }
+        if (ready.length === 0) { alert(t('Ajoutez au moins un fichier avec un nom.')); return }
         setSending(true)
         try {
             const docs: { label: string; path: string }[] = []
@@ -47,7 +49,7 @@ function DepotInner() {
                 fd.append('ext', ext)
                 const up = await natFetch('/api/nationality/upload-file', { method: 'POST', body: fd })
                 const uj = await up.json().catch(() => ({}))
-                if (!up.ok || !uj.path) throw new Error(uj.error || `Échec de l'envoi de « ${r.label} »`)
+                if (!up.ok || !uj.path) throw new Error(uj.error || t("Échec de l'envoi de « {label} »", { label: r.label }))
                 docs.push({ label: r.label.trim(), path: uj.path })
             }
             const res = await natFetch('/api/nationality/depot', {
@@ -55,10 +57,10 @@ function DepotInner() {
                 body: JSON.stringify({ token, docs }),
             })
             const j = await res.json().catch(() => ({}))
-            if (!res.ok || !j.success) throw new Error(j.error || 'Envoi impossible.')
+            if (!res.ok || !j.success) throw new Error(j.error || t('Envoi impossible.'))
             setDone(docs.length)
         } catch (e) {
-            alert(e instanceof Error ? e.message : 'Erreur.')
+            alert(e instanceof Error ? e.message : t('Erreur.'))
         } finally { setSending(false) }
     }
 
@@ -72,26 +74,26 @@ function DepotInner() {
             <div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200/80 shadow-[0_18px_50px_rgba(60,60,60,0.10)] overflow-hidden">
                 <div className="px-6 py-5 border-b border-slate-100">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#008751]">Retour Gagnant Bénin</p>
-                    <h1 className="text-2xl font-black text-[#1F1B16] mt-1">Dépôt de vos pièces</h1>
+                    <h1 className="text-2xl font-black text-[#1F1B16] mt-1"><T>Dépôt de vos pièces</T></h1>
                 </div>
 
                 {state === 'loading' && (
-                    <div className="p-12 flex flex-col items-center gap-3 text-slate-400"><Loader2 size={26} className="animate-spin" /> Vérification du lien…</div>
+                    <div className="p-12 flex flex-col items-center gap-3 text-slate-400"><Loader2 size={26} className="animate-spin" /> <T>Vérification du lien…</T></div>
                 )}
 
                 {state === 'error' && (
                     <div className="p-10 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-[#FDECEA] flex items-center justify-center mx-auto mb-4"><ShieldCheck size={26} className="text-[#E8112D]" /></div>
-                        <h2 className="text-lg font-black text-[#1F1B16] mb-1">Lien indisponible</h2>
-                        <p className="text-sm text-slate-500">{errorMsg}</p>
+                        <h2 className="text-lg font-black text-[#1F1B16] mb-1"><T>Lien indisponible</T></h2>
+                        <p className="text-sm text-slate-500">{t(errorMsg)}</p>
                     </div>
                 )}
 
                 {state === 'ok' && done > 0 && (
                     <div className="p-10 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-[#E6F3ED] flex items-center justify-center mx-auto mb-4"><Check size={28} className="text-[#008751]" /></div>
-                        <h2 className="text-lg font-black text-[#1F1B16] mb-1">Merci {prenom} !</h2>
-                        <p className="text-sm text-slate-500">{done} pièce(s) transmise(s). Notre équipe les traitera pour votre dossier {ref}.</p>
+                        <h2 className="text-lg font-black text-[#1F1B16] mb-1">{t('Merci {prenom} !', { prenom })}</h2>
+                        <p className="text-sm text-slate-500">{t('{done} pièce(s) transmise(s). Notre équipe les traitera pour votre dossier {ref}.', { done, ref })}</p>
                     </div>
                 )}
 
@@ -99,9 +101,9 @@ function DepotInner() {
                     <>
                         <div className="px-6 pt-5">
                             <p className="text-sm text-slate-600">
-                                Bonjour {prenom || ''}, ajoutez ici les pièces demandées pour votre dossier
-                                {ref ? <> <span className="font-bold text-[#1F1B16]">{ref}</span></> : ''}.
-                                Donnez un nom clair à chaque fichier.
+                                {t('Bonjour {prenom}, ajoutez ici les pièces demandées pour votre dossier', { prenom: prenom || '' })}
+                                {ref ? <> <span className="font-bold text-[#1F1B16]">{ref}</span></> : ''}.{' '}
+                                {t('Donnez un nom clair à chaque fichier.')}
                             </p>
                         </div>
                         <div className="p-6 space-y-3">
@@ -110,28 +112,28 @@ function DepotInner() {
                                     <input
                                         type="text" value={r.label}
                                         onChange={e => setRows(prev => prev.map(x => x.id === r.id ? { ...x, label: e.target.value } : x))}
-                                        placeholder="Nom de la pièce (ex : Acte de naissance)"
+                                        placeholder={t('Nom de la pièce (ex : Acte de naissance)')}
                                         className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-[#1F1B16] focus:outline-none focus:border-[#008751]"
                                     />
                                     <label className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-xs text-slate-600 cursor-pointer hover:border-[#008751]/50 whitespace-nowrap">
                                         <UploadCloud size={15} className="text-[#008751]" />
-                                        <span className="truncate max-w-[150px]">{r.file ? r.file.name : 'Choisir un fichier'}</span>
+                                        <span className="truncate max-w-[150px]">{r.file ? r.file.name : t('Choisir un fichier')}</span>
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx" className="hidden"
                                             onChange={e => { const f = e.target.files?.[0] || null; setRows(prev => prev.map(x => x.id === r.id ? { ...x, file: f } : x)) }} />
                                     </label>
                                     {rows.length > 1 && (
-                                        <button onClick={() => setRows(prev => prev.filter(x => x.id !== r.id))} title="Retirer" className="p-2 rounded-xl text-[#E8112D] hover:bg-[#FDECEA] self-center"><Trash2 size={16} /></button>
+                                        <button onClick={() => setRows(prev => prev.filter(x => x.id !== r.id))} title={t('Retirer')} className="p-2 rounded-xl text-[#E8112D] hover:bg-[#FDECEA] self-center"><Trash2 size={16} /></button>
                                     )}
                                 </div>
                             ))}
-                            <button onClick={() => setRows(prev => [...prev, newRow()])} className="flex items-center gap-1.5 text-sm font-bold text-[#008751] hover:text-[#00643C]"><Plus size={15} /> Ajouter une autre pièce</button>
+                            <button onClick={() => setRows(prev => [...prev, newRow()])} className="flex items-center gap-1.5 text-sm font-bold text-[#008751] hover:text-[#00643C]"><Plus size={15} /> <T>Ajouter une autre pièce</T></button>
                         </div>
                         <div className="px-6 pb-6">
                             <button onClick={submit} disabled={sending}
                                 className="w-full py-3.5 rounded-2xl bg-[#008751] hover:bg-[#00643C] text-white font-black flex items-center justify-center gap-2 transition-colors disabled:opacity-60 shadow-[0_12px_28px_-10px_rgba(0,135,81,0.65)]">
-                                {sending ? <><Loader2 size={17} className="animate-spin" /> Envoi en cours…</> : <><FileText size={17} /> Transmettre mes pièces</>}
+                                {sending ? <><Loader2 size={17} className="animate-spin" /> <T>Envoi en cours…</T></> : <><FileText size={17} /> <T>Transmettre mes pièces</T></>}
                             </button>
-                            <p className="text-[11px] text-slate-400 text-center mt-3">Transmission sécurisée. Vos documents ne sont visibles que par notre équipe.</p>
+                            <p className="text-[11px] text-slate-400 text-center mt-3"><T>Transmission sécurisée. Vos documents ne sont visibles que par notre équipe.</T></p>
                         </div>
                     </>
                 )}

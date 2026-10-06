@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { ArrowCounterClockwise as RotateCcw, Check, PencilLine as PenLine } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
+import { T, useTranslation } from '@/lib/translation'
 
 interface SignaturePadProps {
     onSave: (dataUrl: string) => void
@@ -15,6 +16,7 @@ interface SignaturePadProps {
 interface Point { x: number; y: number; pressure?: number }
 
 export default function SignaturePad({ onSave, onClear, initialValue, disabled = false, className }: SignaturePadProps) {
+    const { t } = useTranslation()
     const canvasRef    = useRef<HTMLCanvasElement>(null)
     const wrapperRef   = useRef<HTMLDivElement>(null)
     const isDrawing    = useRef(false)
@@ -197,7 +199,7 @@ export default function SignaturePad({ onSave, onClear, initialValue, disabled =
                 {isEmpty && !disabled && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none select-none">
                         <PenLine size={22} className="text-gray-200" />
-                        <p className="text-[11px] text-gray-300 font-medium">Signez ici avec votre doigt ou la souris</p>
+                        <p className="text-[11px] text-gray-300 font-medium"><T>Signez ici avec votre doigt ou la souris</T></p>
                     </div>
                 )}
                 {/* Guideline */}
@@ -210,23 +212,23 @@ export default function SignaturePad({ onSave, onClear, initialValue, disabled =
             <div className="flex gap-2">
                 <button
                     type="button"
-                    title="Effacer la signature"
+                    title={t('Effacer la signature')}
                     onClick={clear}
                     disabled={isEmpty || disabled}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all text-[12px] font-semibold disabled:opacity-30 disabled:pointer-events-none"
                 >
                     <RotateCcw size={13} />
-                    Effacer
+                    <T>Effacer</T>
                 </button>
                 <button
                     type="button"
-                    title="Valider la signature"
+                    title={t('Valider la signature')}
                     onClick={save}
                     disabled={isEmpty || !hasUnsaved || disabled}
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#008751] text-white font-bold text-[12px] hover:bg-[#006e42] transition-all disabled:opacity-30 disabled:pointer-events-none shadow-sm"
                 >
                     <Check size={13} />
-                    Valider la signature
+                    <T>Valider la signature</T>
                 </button>
             </div>
         </div>
