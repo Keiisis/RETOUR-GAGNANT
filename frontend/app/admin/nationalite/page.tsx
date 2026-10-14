@@ -8,6 +8,7 @@ import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope
 import Link from 'next/link'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 import RattacherFacture from '@/components/admin/RattacherFacture'
+import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import { formatMontant } from '@/lib/currency-format'
 import { statutNationalite, nationalitePayee, NATIONALITE_STATUTS_EDITABLES, NATIONALITE_DECISIONS } from '@/lib/constants/statuts'
 
@@ -144,6 +145,14 @@ export default function AdminNationalitePage() {
     /** null = rien à justifier (paiement en ligne) ; sinon la facture, ou false. */
     const justificatif = (a: Application): Justificatif | false | null =>
         doitEtreJustifie(a) && isPaidStatus(a.payment_status) ? (justifs[a.application_ref] || false) : null
+
+    // ── Plateforme MyAfroOrigins : qui est transmis, qui est prêt à l'être ──
+    const myafro = useEnregistrementsMyafro('nationalite')
+    const [filtreMyafro, setFiltreMyafro] = useState<FiltreMyafro>('tous')
+    /** Prêt à transmettre : paiement prouvé, demande en cours, pas encore enregistrée sur la plateforme. */
+    const aTransmettreMyafro = (a: Application) =>
+        !myafro.parDossier[a.id] && isPaidStatus(a.payment_status) && justificatif(a) !== false
+        && ['soumis', 'en_traitement', 'verification', 'approuve'].includes(a.status)
 
     const detacherJustificatif = async (a: Application) => {
         const j = justifs[a.application_ref]
@@ -920,7 +929,12 @@ export default function AdminNationalitePage() {
                 })()}
 
                 {loading ? <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div> : apps.length === 0 ? <div className="text-center py-20 text-gray-500"><Globe2 className="mx-auto mb-3 text-gray-700" size={40} /><p className="text-sm"><T>Aucune demande</T></p></div> : (
-                    <div className="space-y-3">{apps.filter(a => !seulementAJustifier || justificatif(a) === false).map((a, i) => {
+                    <div className="space-y-3">
+                        <FiltreMyafroChips valeur={filtreMyafro} onChange={setFiltreMyafro}
+                            aTransmettre={apps.filter(aTransmettreMyafro).length} transmis={apps.filter(a => !!myafro.parDossier[a.id]).length} />
+                        {apps.filter(a => !seulementAJustifier || justificatif(a) === false)
+                        .filter(a => filtreMyafro === 'tous' || (filtreMyafro === 'transmis' ? !!myafro.parDossier[a.id] : aTransmettreMyafro(a)))
+                        .map((a, i) => {
                         const st = statut(a.status)
                         const isOpen = expanded === a.id
                         const justif = justificatif(a)
@@ -937,6 +951,10 @@ export default function AdminNationalitePage() {
                                                     <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-600 text-white">
                                                         <T>Payé</T> · {justif.numero}
                                                     </span>
+                                                )}
+                                                <BadgeMyafro e={myafro.parDossier[a.id]} />
+                                                {!myafro.parDossier[a.id] && myafro.charge && aTransmettreMyafro(a) && (
+                                                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-cyan-500/40 text-cyan-400">À transmettre sur MyAfroOrigins</span>
                                                 )}
                                             </div>
                                             <p className="text-sm font-bold text-white">{a.prenom} {a.nom}</p>
@@ -1069,6 +1087,9 @@ export default function AdminNationalitePage() {
                                                 </div>
                                             </div>
                                         )}
+                                        {/* Plateforme MyAfroOrigins : transmission, suivi, fiche de synthèse */}
+                                        <PanneauMyafro nature="nationalite" dossierId={a.id} resume={myafro.parDossier[a.id]} statutDossier={a.status}
+                                            onChange={() => { void myafro.rafraichir(); void fetchApps() }} />
                                         {/* Notes agent */}
                                         <div><span className="text-[10px] text-gray-600 block mb-1"><T>Notes agent</T></span><textarea defaultValue={a.agent_notes || ''} onBlur={e => updateNotes(a.id, e.target.value)} className="w-full bg-white/[0.03] border border-white/5 rounded-lg p-3 text-xs text-white focus:outline-none resize-none" rows={2} placeholder={t("Notes...")} /></div>
                                         {/* Actions : boutons PLEINS, fort contraste (lisibles en clair ET sombre) */}

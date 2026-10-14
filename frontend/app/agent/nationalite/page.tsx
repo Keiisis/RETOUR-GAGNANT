@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
+import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import {
     NATIONALITE_STATUTS_EDITABLES, NATIONALITE_HORS_LISTE, NATIONALITE_DECISIONS,
     statutNationalite, nationalitePayee, type NationaliteStatut,
@@ -155,10 +156,17 @@ export default function AgentNationalitePage() {
         }
     }
 
+    // ── Plateforme MyAfroOrigins : qui est transmis, qui est prêt à l'être ──
+    const myafro = useEnregistrementsMyafro('nationalite')
+    const [filtreMyafro, setFiltreMyafro] = useState<FiltreMyafro>('tous')
+    const aTransmettreMyafro = (a: NationalityApplication) =>
+        !myafro.parDossier[a.id] && nationalitePayee(a.payment_status) && ['soumis', 'en_traitement', 'verification', 'approuve'].includes(a.status)
+
     const filtered = apps.filter(a => {
         const matchSearch = ((a.nom || '') + ' ' + (a.prenom || '') + ' ' + (a.application_ref || '')).toLowerCase().includes(search.toLowerCase())
         const matchStatus = filterStatus === 'all' || a.status === filterStatus
-        return matchSearch && matchStatus
+        const matchMyafro = filtreMyafro === 'tous' || (filtreMyafro === 'transmis' ? !!myafro.parDossier[a.id] : aTransmettreMyafro(a))
+        return matchSearch && matchStatus && matchMyafro
     })
 
     // Couleurs : référence unique (revue_myafro, brouillon compris)
@@ -206,6 +214,8 @@ export default function AgentNationalitePage() {
                     <Clock size={16} className="mr-2" /> Actualiser
                 </Button>
             </div>
+            <FiltreMyafroChips valeur={filtreMyafro} onChange={setFiltreMyafro}
+                aTransmettre={apps.filter(aTransmettreMyafro).length} transmis={apps.filter(a => !!myafro.parDossier[a.id]).length} />
 
             {/* Table */}
             <div className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden">
@@ -259,9 +269,13 @@ export default function AgentNationalitePage() {
                                         </div>
                                     </td>
                                     <td className="p-4">
-                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${getStatusStyle(app.status)}`}>
-                                            {statutNationalite(app.status).label}
-                                        </span>
+                                        <div className="flex flex-col items-start gap-1">
+                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${getStatusStyle(app.status)}`}>
+                                                {statutNationalite(app.status).label}
+                                            </span>
+                                            <BadgeMyafro e={myafro.parDossier[app.id]} />
+                                            {myafro.charge && aTransmettreMyafro(app) && <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-cyan-500/40 text-cyan-400">À transmettre sur MyAfroOrigins</span>}
+                                        </div>
                                     </td>
                                     <td className="p-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -359,6 +373,9 @@ export default function AgentNationalitePage() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                                {/* Plateforme MyAfroOrigins : transmission, suivi, fiche de synthèse */}
+                                <PanneauMyafro nature="nationalite" dossierId={showDetail.id} resume={myafro.parDossier[showDetail.id]} statutDossier={showDetail.status}
+                                    onChange={() => { void myafro.rafraichir(); void fetchApps() }} />
                                 {/* Identité */}
                                 <div>
                                     <h3 className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-3">Identité du demandeur</h3>

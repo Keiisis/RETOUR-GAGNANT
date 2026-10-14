@@ -19,6 +19,7 @@ import {
 } from '@phosphor-icons/react'
 import RecapMyafroAjout from './RecapMyafroAjout'
 import RattacherFacture from './RattacherFacture'
+import { BadgeMyafro, FichesLibresMyafro, PanneauMyafro, useEnregistrementsMyafro } from './EnregistrementMyafro'
 
 interface Recap {
     id: string
@@ -76,6 +77,7 @@ const dateFr = (iso: string | null) => {
 }
 
 export default function RecapMyafroSection() {
+    const myafro = useEnregistrementsMyafro('recap')
     const [demandes, setDemandes] = useState<Recap[]>([])
     const [chargement, setChargement] = useState(true)
     const [erreur, setErreur] = useState('')
@@ -251,6 +253,9 @@ export default function RecapMyafroSection() {
                 </div>
             </div>
 
+            {/* Fiches de suivi des clients déposés sur MyAfroOrigins sans demande chez nous */}
+            <div className="mb-6"><FichesLibresMyafro /></div>
+
             {migration && (
                 <div className="mb-4 flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                     <WarningCircle size={18} className="text-amber-400 shrink-0 mt-0.5" />
@@ -293,6 +298,7 @@ export default function RecapMyafroSection() {
                                             <span className="text-[11px] text-emerald-400 font-bold">
                                                 {d.montant} {d.devise === 'XOF' ? 'FCFA' : d.devise}
                                             </span>
+                                            <BadgeMyafro e={myafro.parDossier[d.id]} />
                                         </div>
                                         <h3 className="text-white font-black mt-2 flex items-center gap-2">
                                             <User size={15} className="text-gray-500" /> {d.prenom} {d.nom}
@@ -341,6 +347,9 @@ export default function RecapMyafroSection() {
                         </div>
 
                         <div className="p-6 space-y-6">
+                            {/* Accès MyAfroOrigins du client (saisi par l'équipe) + fiche de synthèse */}
+                            <PanneauMyafro nature="recap" dossierId={ouverte.id} resume={myafro.parDossier[ouverte.id]} titre="Accès MyAfroOrigins du client"
+                                onChange={() => void myafro.rafraichir()} />
                             {/* Ce que le client a écrit */}
                             <div>
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Situation décrite</p>
