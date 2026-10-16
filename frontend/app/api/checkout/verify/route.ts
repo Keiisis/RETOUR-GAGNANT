@@ -11,6 +11,7 @@ import { markClientConverted } from '@/lib/classement/track'
 import { nextDocumentNumber } from '@/lib/document-numbering'
 import { classifyProposalPayment } from '@/lib/proposal-classify'
 import { toXOFStrict } from '@/lib/server-rates'
+import { chargerTauxServeur, paiementStripeSuffisant } from '@/lib/stripe-montant'
 import { TVA_RATE } from '@/lib/tax'
 import { createTicketForRegistration } from '@/lib/event-tickets'
 import { envoyerBilletParEmail } from '@/lib/event-ticket-email'
@@ -19,12 +20,6 @@ import { detaillerMoyenPaiement } from '@/lib/moyen-paiement-detail'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// XOF et autres devises zero-decimal pour Stripe
-const ZERO_DECIMAL = new Set([
-    'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
-    'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
-])
 
 export async function POST(request: Request) {
     try {
@@ -349,17 +344,17 @@ export async function POST(request: Request) {
                     )
                 }
 
-                // Vérification du montant Stripe
-                const currency = (existingOrder.currency || 'XOF').toUpperCase()
-                const expectedStripeAmount = ZERO_DECIMAL.has(currency)
-                    ? Math.round(existingOrder.amount)
-                    : Math.round(existingOrder.amount * 100)
-
-                if (pi.amount < expectedStripeAmount) {
+                // Vérification du montant Stripe (audit F3) : même règle que la création et le
+                // webhook. L'ancienne comparaison mettait des centimes d'euro face à des FCFA
+                // et rejetait tout paiement EUR/USD légitime.
+                await chargerTauxServeur(supabase)
+                const recu = pi.amount_received || pi.amount
+                if (!paiementStripeSuffisant(recu, pi.currency, Number(existingOrder.amount), existingOrder.currency)) {
                     console.error('[Verify/Stripe] Montant insuffisant:', {
-                        paid: pi.amount,
-                        expected: expectedStripeAmount,
-                        currency,
+                        paid: recu,
+                        devise: pi.currency,
+                        commande: existingOrder.amount,
+                        devise_commande: existingOrder.currency,
                     })
                     return NextResponse.json(
                         { success: false, error: 'Montant Stripe insuffisant' },
@@ -448,12 +443,15 @@ export async function POST(request: Request) {
                                 )
                             }
 
-                            // Vérification du montant PayPal (XOF uniquement : pas de conversion temps réel)
+                            // Vérification du montant PayPal, toutes devises (audit F3) : PayPal
+                            // n'encaisse jamais en XOF, l'ancien contrôle « XOF seulement » ne
+                            // s'appliquait donc à aucun paiement. Devise sans taux = refus.
                             const capturedCurrency = (captureData.amount?.currency_code || '').toUpperCase()
                             const capturedAmountValue = parseFloat(captureData.amount?.value || '0')
-                            if (capturedCurrency === 'XOF' && capturedAmountValue < minXOF) {
+                            const capturedXOF = await toXOFStrict(capturedAmountValue, capturedCurrency)
+                            if (capturedXOF === null || capturedXOF < minXOF) {
                                 console.error('[Verify/PayPal] Montant insuffisant:', {
-                                    paid: capturedAmountValue,
+                                    paid: capturedAmountValue, capturedXOF,
                                     expectedXOF, currency: capturedCurrency,
                                 })
                                 return NextResponse.json(

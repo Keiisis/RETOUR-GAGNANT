@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js'
 import { verifySync } from 'otplib'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { decryptString } from '@/lib/encryption'
+import { signer2FA, COOKIE_2FA, optionsCookie2FA, TENTATIVES_2FA } from '@/lib/totp-cookie'
+import { guardPublic } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -14,6 +16,10 @@ const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY!
 export async function POST(request: NextRequest) {
     const auth = await verifyApiAuth(request, 'admin')
     if (!auth.authenticated) return auth.error!
+
+    // Plafond d'essais par compte (pas par IP : l'attaquant change d'IP, pas de compte)
+    const trop = guardPublic(request, '2fa-admin', TENTATIVES_2FA, `u:${auth.userId!}`)
+    if (trop) return trop
 
     const body = await request.json().catch(() => ({}))
     const { code, action } = body as { code?: string; action?: string }
@@ -58,14 +64,8 @@ export async function POST(request: NextRequest) {
         if (actErr) return NextResponse.json({ error: actErr.message }, { status: 500 })
     }
 
-    // Retourner un cookie de session 2FA (valable 8h)
+    // Preuve 2FA de session (8 h) : jeton signé, lié à cet utilisateur, illisible par le navigateur
     const res = NextResponse.json({ success: true })
-    res.cookies.set('totp_verified', 'true', {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 8 * 60 * 60, // 8 heures
-    })
+    res.cookies.set(COOKIE_2FA.admin, await signer2FA('admin', userId), optionsCookie2FA)
     return res
 }

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, CHECKOUT_LIMIT } from '@/lib/rate-limit'
 import { scanRequestBody } from '@/lib/waf'
 import { ttcFromHt } from '@/lib/tax'
+import { fraisLivraison, evaluerCoupon, COLONNES_COUPON } from '@/lib/boutique-tarifs'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -52,7 +53,6 @@ export async function POST(request: Request) {
             shipping_country,
             shipping_address,
             shipping_zone,
-            shipping_fee,
             is_proposal,
             selected_item_ids,
         } = body
@@ -71,8 +71,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
         }
 
-        // Méthode de paiement: liste blanche stricte
-        const ALLOWED_METHODS = ['kkiapay', 'fedapay', 'stripe', 'paypal', 'zeyow']
+        // Méthode de paiement: liste blanche stricte.
+        // Revolut, Paystack et Flutterwave ont chacun leur route de création
+        // (app/api/checkout/<provider>) et leur vérification serveur dans
+        // app/api/checkout/verify : sans eux ici, PaymentModal ne pouvait
+        // jamais créer la commande et ces moyens étaient inutilisables.
+        const ALLOWED_METHODS = ['kkiapay', 'fedapay', 'stripe', 'paypal', 'zeyow', 'revolut', 'paystack', 'flutterwave']
         if (!ALLOWED_METHODS.includes(payment_method)) {
             return NextResponse.json({ error: 'Méthode de paiement non autorisée' }, { status: 400 })
         }
@@ -131,14 +135,20 @@ export async function POST(request: Request) {
         // validatedAmount : montant réel à stocker en DB.
         // Initialisé au montant client, écrasé par le calcul serveur dès qu'on a des produits.
         let validatedAmount = parsedAmount
-        // validatedShippingFee : clamped server-side ici (scope global) pour être utilisable
-        // dans l'INSERT même si aucun produit n'est présent dans la commande.
-        const validatedShippingFee = Math.max(0, Math.min(Number(shipping_fee) || 0, 100000))
-
         // ── CAS SPÉCIAL : paiement d'une proposition IA ─────────────────────
         // Les propositions voyages sont signalées par le flag is_proposal.
         // Elles ne sont pas dans la table products → validation différente.
         const isProposalPayment = is_proposal === true
+
+        // validatedShippingFee : recalculé serveur depuis le barème par zone
+        // (lib/boutique-tarifs). Le `shipping_fee` envoyé par le navigateur est
+        // ignoré : il pouvait valoir n'importe quoi entre 0 et 100 000.
+        // Une proposition voyage n'a pas de livraison (son montant n'en inclut pas).
+        const fraisZone = isProposalPayment ? 0 : fraisLivraison(shipping_zone)
+        if (fraisZone === null) {
+            return NextResponse.json({ error: 'Zone de livraison invalide' }, { status: 400 })
+        }
+        const validatedShippingFee = fraisZone
 
         // Déclaré ici pour être accessible dans le rollback de la création d'ordre
         const reservedItems: { product_id: string, quantity: number }[] = []
@@ -274,27 +284,26 @@ export async function POST(request: Request) {
                     expectedSubtotal += unitPrice * (item.quantity || 1)
                 }
 
-                // Recalculer le coupon côté serveur si fourni
+                // Recalculer le coupon côté serveur si fourni : actif, non expiré,
+                // usage restant, minimum de commande sur le sous-total SERVEUR.
+                // Un coupon invalide est refusé (avant : remise 0 mais coupon
+                // quand même rattaché à la commande et son compteur incrémenté).
                 let serverCouponDiscount = 0
                 if (coupon_id) {
                     const { data: coupon } = await supabase
                         .from('coupons')
-                        .select('discount_type, discount_value, is_active, expires_at, max_uses, current_uses')
+                        .select(COLONNES_COUPON)
                         .eq('id', coupon_id)
-                        .single()
+                        .maybeSingle()
 
-                    if (
-                        coupon &&
-                        coupon.is_active &&
-                        (!coupon.expires_at || new Date(coupon.expires_at) >= new Date()) &&
-                        coupon.current_uses < coupon.max_uses
-                    ) {
-                        if (coupon.discount_type === 'percentage') {
-                            serverCouponDiscount = Math.round(expectedSubtotal * coupon.discount_value / 100)
-                        } else {
-                            serverCouponDiscount = Math.max(0, coupon.discount_value)
-                        }
+                    if (!coupon) {
+                        return NextResponse.json({ error: 'Code promo invalide' }, { status: 400 })
                     }
+                    const verdict = evaluerCoupon(coupon, expectedSubtotal)
+                    if (!verdict.valide) {
+                        return NextResponse.json({ error: verdict.erreur }, { status: 400 })
+                    }
+                    serverCouponDiscount = verdict.remise
                 }
 
                 // TVA EN SUS : les prix produits sont HORS TAXE, la TVA s'ajoute
@@ -361,7 +370,7 @@ export async function POST(request: Request) {
                 // inutilisable ici. Permet la classification unique en aval.
                 shipping_address: isProposalPayment ? String(product_id || '') : (shipping_address || null),
                 shipping_zone: isProposalPayment ? 'proposal' : (shipping_zone || null),
-                shipping_fee: validatedShippingFee, // Valeur clampée serveur, jamais celle du client
+                shipping_fee: validatedShippingFee, // Barème serveur par zone, jamais la valeur du client
             })
             .select('id')
             .single()

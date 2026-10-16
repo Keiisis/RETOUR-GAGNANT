@@ -8,26 +8,28 @@ export async function GET() {
     try {
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        // Compter les agents/admins vus dans les 5 dernières minutes
+        // Compter les agents/admins vus dans les 5 dernières minutes.
+        // Les trois libellés d'administrateur comptent (mêmes rôles que lib/api-guard).
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
 
-        const { data, error } = await supabase
+        const { count, error } = await supabase
             .from('user_profiles')
-            .select('id, full_name, role, last_seen_at')
-            .in('role', ['agent', 'admin'])
+            .select('id', { count: 'exact', head: true })
+            .in('role', ['agent', 'admin', 'super_admin', 'superadmin'])
             .gte('last_seen_at', fiveMinutesAgo)
 
         if (error) throw error
 
-        const onlineAgents = data?.length || 0
+        const onlineAgents = count || 0
 
+        // Route publique : ni nom ni rôle de l'équipe. Seulement la disponibilité
+        // et le nombre, affiché par ChatAssistant (« (n) agent(s) en ligne »).
         return NextResponse.json({
+            disponible: onlineAgents > 0,
             onlineAgents,
-            agents: data?.map(a => ({ name: a.full_name, role: a.role })) || [],
-            message: 'Système interrogé avec succès'
         })
     } catch (error) {
         console.error('Support status error:', error)
-        return NextResponse.json({ onlineAgents: 0 }, { status: 500 })
+        return NextResponse.json({ disponible: false, onlineAgents: 0 }, { status: 500 })
     }
 }

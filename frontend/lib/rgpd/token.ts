@@ -11,26 +11,36 @@
 
 import crypto from 'crypto'
 
-const SECRET =
-    process.env.RGPD_TOKEN_SECRET ||
-    process.env.CRON_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    'rgpd-dev-secret-change-me'
-
 const DEFAULT_TTL_MS = 60 * 60 * 1000 // 1 heure
 
-function sign(payload: string): string {
-    return crypto.createHmac('sha256', SECRET).update(payload).digest('base64url')
+/* Secret lu à chaque appel, jamais de valeur codée en dur : l'ancien repli
+   sur une constante publique permettait à quiconque lit le code de forger
+   un jeton (lecture/effacement des données d'autrui) si les variables
+   manquaient. Variable dédiée d'abord (jetons déjà émis toujours valides),
+   puis la même chaîne serveur que lib/signature-serveur.ts. */
+function secret(): string {
+    const s =
+        process.env.RGPD_TOKEN_SECRET ||
+        process.env.CRON_SECRET ||
+        process.env.SIGNATURE_SECRET ||
+        process.env.TOTP_COOKIE_SECRET ||
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!s) throw new Error('Secret RGPD indisponible')
+    return s
 }
 
-/** Émet un jeton lié à un email, valable `ttlMs`. */
+function sign(payload: string): string {
+    return crypto.createHmac('sha256', secret()).update(payload).digest('base64url')
+}
+
+/** Émet un jeton lié à un email, valable `ttlMs`. Lève une erreur si aucun secret serveur. */
 export function makeRgpdToken(email: string, ttlMs: number = DEFAULT_TTL_MS): string {
     const payload = `${email.toLowerCase().trim()}|${Date.now() + ttlMs}`
     const b = Buffer.from(payload).toString('base64url')
     return `${b}.${sign(b)}`
 }
 
-/** Vérifie un jeton ; retourne l'email si valide et non expiré, sinon null. */
+/** Vérifie un jeton ; retourne l'email si valide et non expiré, sinon null (aucun secret = null). */
 export function verifyRgpdToken(token: string): { email: string } | null {
     try {
         const [b, sig] = String(token || '').split('.')

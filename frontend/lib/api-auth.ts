@@ -11,6 +11,20 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
 
+const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
+
+/**
+ * Vrai si le rôle lu en base (user_profiles.role) satisfait le rôle exigé.
+ * Tout autre cas (rôle absent, inconnu, non textuel) : refus.
+ */
+export function roleAutorise(role: unknown, requiredRole: 'admin' | 'agent'): role is string {
+    if (typeof role !== 'string') return false
+    const isAdmin = ADMIN_ROLES.includes(role)
+    if (requiredRole === 'admin') return isAdmin
+    if (requiredRole === 'agent') return isAdmin || role === 'agent'
+    return false
+}
+
 interface AuthResult {
     authenticated: boolean
     userId?: string
@@ -81,25 +95,20 @@ export const verifyApiAuth = async (
         if (requiredRole) {
             const adminSupabase = createClient(supabaseUrl, supabaseServiceKey)
 
-            // Chercher d'abord dans user_profiles, fallback sur user_metadata
+            /* Rôle lu UNIQUEMENT dans user_profiles. L'ancien repli sur le
+               rôle des métadonnées utilisateur (user_metadata) était une
+               élévation de privilège : elles sont modifiables par l'utilisateur lui-même
+               (supabase.auth.updateUser({ data: { role: 'admin' } })).
+               Pas de profil = pas de rôle = refus. */
             const { data: profile } = await adminSupabase
                 .from('user_profiles')
                 .select('role')
                 .eq('id', user.id)
-                .single()
+                .maybeSingle()
 
-            const role = profile?.role || user.user_metadata?.role || null
+            const role = profile?.role
 
-            const ADMIN_ROLES = ['admin', 'super_admin', 'superadmin']
-            const isAdmin = role && ADMIN_ROLES.includes(role)
-            const isAgent = role === 'agent'
-
-            const authorized =
-                requiredRole === 'admin' ? isAdmin :
-                requiredRole === 'agent' ? (isAgent || isAdmin) :
-                false
-
-            if (!authorized) {
+            if (!roleAutorise(role, requiredRole)) {
                 return {
                     authenticated: false,
                     error: NextResponse.json(
@@ -109,7 +118,7 @@ export const verifyApiAuth = async (
                 }
             }
 
-            return { authenticated: true, userId: user.id, role: role || 'agent' }
+            return { authenticated: true, userId: user.id, role }
         }
 
         return { authenticated: true, userId: user.id }

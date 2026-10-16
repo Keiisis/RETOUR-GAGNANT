@@ -14,12 +14,18 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/lib/email';
+import { escapeHtml } from '@/lib/security';
+import { guardPublic, PUBLIC_FORM_LIMIT, EMAIL_LIMIT } from '@/lib/api-guard';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 // Clé serveur : `messages` n'accepte plus d'écriture anonyme (verrou RLS 25/09/2026).
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 export async function POST(request: Request) {
+  // Formulaire public qui écrit en base et envoie un email : plafond par IP.
+  const trop = guardPublic(request, 'support/offline', PUBLIC_FORM_LIMIT);
+  if (trop) return trop;
+
   try {
     const body = await request.json();
     const { nom, prenom, email, whatsapp, message } = body;
@@ -27,6 +33,14 @@ export async function POST(request: Request) {
     if (!nom || !prenom || !email || !whatsapp || !message) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
+    if (![nom, prenom, email, whatsapp, message].every(v => typeof v === 'string')) {
+      return NextResponse.json({ error: "Invalid fields" }, { status: 400 });
+    }
+
+    // Plafond par adresse destinataire : l'accusé de réception part vers
+    // l'email saisi, la route ne doit pas servir à inonder une boîte tierce.
+    const tropEmail = guardPublic(request, 'support/offline:email', EMAIL_LIMIT, email.toLowerCase());
+    if (tropEmail) return tropEmail;
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -44,6 +58,7 @@ export async function POST(request: Request) {
     if (dbError) throw dbError;
 
     // 2. Accuse de reception au client
+    //    Toute saisie du visiteur est echappee avant d'entrer dans le HTML.
     {
       const emailHtml = `
             <!DOCTYPE html>
@@ -59,14 +74,14 @@ export async function POST(request: Request) {
                 </div>
                 <div style="padding: 40px 30px; color: #e5e7eb; line-height: 1.8;">
                   <h2 style="font-size: 20px; font-weight: 700; color: #008751; margin-bottom: 24px;">Votre demande a été enregistrée avec succès.</h2>
-                  <p style="font-size: 15px;">Cher(e) <strong>${prenom} ${nom}</strong>,</p>
+                  <p style="font-size: 15px;">Cher(e) <strong>${escapeHtml(prenom)} ${escapeHtml(nom)}</strong>,</p>
                   <p style="font-size: 15px;">Nous vous confirmons la bonne réception de votre demande d'assistance via l'intelligence artificielle du site. À l'instant de votre requête, nos agents étaient indisponibles en direct, néanmoins votre dossier a été immédiatement assigné en <strong>priorité absolue</strong>.</p>
                   
                   <div style="background: rgba(255,255,255,0.03); border-left: 4px solid #FCD116; padding: 24px; border-radius: 12px; margin: 35px 0; border-top: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
-                    <p style="margin: 0; font-size: 14px; color: #a3a8b4; font-style: italic;">" ${message} "</p>
+                    <p style="margin: 0; font-size: 14px; color: #a3a8b4; font-style: italic;">" ${escapeHtml(message)} "</p>
                   </div>
 
-                  <p style="font-size: 15px;">L'un de nos agents spécialisés va prendre le relais et vous répondra d'ici quelques minutes directement sur l'application WhatsApp au numéro : <strong style="color: #fff;">${whatsapp}</strong>.</p>
+                  <p style="font-size: 15px;">L'un de nos agents spécialisés va prendre le relais et vous répondra par email à l'adresse : <strong style="color: #fff;">${escapeHtml(email)}</strong>.</p>
                   <p style="font-size: 15px; font-weight: 600; color: #FCD116; margin-top: 35px;">L'excellence de votre retour est notre engagement.<br><span style="color: #008751;">L'équipe Expertise Retour Gagnant</span></p>
                 </div>
                 <div style="text-align: center; padding: 25px 30px; background: rgba(0,0,0,0.5); border-top: 1px solid rgba(255,255,255,0.05);">

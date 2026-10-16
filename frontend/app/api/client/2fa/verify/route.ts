@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { verifySync } from 'otplib'
 import { decryptString } from '@/lib/encryption'
+import { signer2FA, COOKIE_2FA, optionsCookie2FA, TENTATIVES_2FA } from '@/lib/totp-cookie'
+import { guardPublic } from '@/lib/api-guard'
 import { getClientUser } from '@/lib/client-auth'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -11,6 +13,10 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 export async function POST(request: NextRequest) {
     const user = await getClientUser(request)
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 })
+
+    // Plafond d'essais par compte (pas par IP : l'attaquant change d'IP, pas de compte)
+    const trop = guardPublic(request, '2fa-client', TENTATIVES_2FA, `u:${user.id}`)
+    if (trop) return trop
 
     const body = await request.json().catch(() => ({}))
     const { code, action } = body as { code?: string; action?: string }
@@ -40,14 +46,8 @@ export async function POST(request: NextRequest) {
             .eq('user_id', user.id)
     }
 
-    // Cookie de session 2FA (8h) : lu par le middleware pour /client
+    // Preuve 2FA de session (8 h) lue par le middleware : jeton signé, lié à ce client
     const res = NextResponse.json({ success: true })
-    res.cookies.set('client_totp_verified', 'true', {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 8 * 60 * 60,
-    })
+    res.cookies.set(COOKIE_2FA.client, await signer2FA('client', user.id), optionsCookie2FA)
     return res
 }

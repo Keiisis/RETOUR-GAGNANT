@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+import { supabaseServeur } from '@/lib/supabase-serveur'
+import { guardPublic, requireStaff, AI_LIMIT } from '@/lib/api-guard'
 
 // ─── Language-aware error messages ───────────────────────────────────────────
 const CHAT_ERRORS: Record<string, { technical: string; notConfigured: string }> = {
@@ -93,8 +91,9 @@ const getAiConfig = async (): Promise<{
     temperature: number
 } | null> => {
     try {
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        const { data, error } = await supabase
+        // Clé serveur : `ai_config` contient la clé API du fournisseur IA,
+        // elle ne doit pas être lisible avec la clé anonyme publique.
+        const { data, error } = await supabaseServeur
             .from('ai_config')
             .select('*')
             .eq('is_active', true)
@@ -232,11 +231,32 @@ const callGemini = async (
 }
 
 export async function POST(request: NextRequest) {
+    // Chaque appel coûte un appel au modèle IA payant : plafond par IP.
+    const trop = guardPublic(request, 'chat', AI_LIMIT)
+    if (trop) return trop
+
     let lang = 'fr' // hoisted so catch block can use it for language-aware error messages
     try {
         const body = await request.json()
-        const { messages, context = 'frontend' } = body
         lang = typeof body.lang === 'string' ? body.lang : 'fr'
+
+        // Contexte public par défaut. Les modes 'admin' et 'agent' (accès aux
+        // processus internes) ne sont accordés qu'à une session interne vérifiée :
+        // un visiteur qui les demande dans le corps reste en mode public.
+        let context = 'frontend'
+        if (body.context === 'admin' || body.context === 'agent') {
+            const staff = await requireStaff(request, body.context)
+            if (staff.ok) context = body.context
+        }
+
+        // Seuls les tours user/assistant sont acceptés : un message `system`
+        // injecté par le navigateur contournerait le contexte imposé ci-dessus.
+        const messages = (Array.isArray(body.messages) ? body.messages : [])
+            .filter((m: unknown): m is { role: 'user' | 'assistant'; content: string } => {
+                const r = m as { role?: unknown; content?: unknown } | null
+                return !!r && (r.role === 'user' || r.role === 'assistant') && typeof r.content === 'string'
+            })
+            .map((m: { role: 'user' | 'assistant'; content: string }) => ({ role: m.role, content: m.content }))
 
         const langMap: Record<string, string> = {
             fr: 'French',
@@ -277,7 +297,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Fetch DB Context
-        const supabase = createClient(supabaseUrl, supabaseKey)
+        const supabase = supabaseServeur
         const { data: dbProducts } = await supabase.from('products').select('title, category, price, stock').eq('is_active', true).limit(50)
         const { data: dbServices } = await supabase.from('services').select('title, description').limit(20)
 

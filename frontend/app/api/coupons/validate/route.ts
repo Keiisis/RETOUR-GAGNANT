@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server'
 import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
+import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { evaluerCoupon, COLONNES_COUPON } from '@/lib/boutique-tarifs'
 
 // POST: Validate a coupon code and return discount info
 export async function POST(request: Request) {
+    // Plafond par IP : sans lui, la route permettait de deviner les codes promo en rafale.
+    const trop = guardPublic(request, 'coupons/validate', PUBLIC_FORM_LIMIT)
+    if (trop) return trop
+
     try {
         const { code, order_amount } = await request.json()
 
-        if (!code) {
+        if (!code || typeof code !== 'string') {
             return NextResponse.json({ valid: false, error: 'Code manquant' })
         }
 
         const { data: coupon, error } = await supabase
             .from('coupons')
-            .select('*')
+            .select(COLONNES_COUPON)
             .eq('code', code.toUpperCase())
             .single()
 
@@ -20,46 +26,22 @@ export async function POST(request: Request) {
             return NextResponse.json({ valid: false, error: 'Code invalide' })
         }
 
-        // Check if active
-        if (!coupon.is_active) {
-            return NextResponse.json({ valid: false, error: 'Ce code n\'est plus actif' })
+        // Aperçu pour l'affichage : la remise réelle est recalculée par /api/checkout
+        // sur le sous-total serveur au moment de créer la commande.
+        const verdict = evaluerCoupon(coupon, Number(order_amount) || 0)
+        if (!verdict.valide) {
+            return NextResponse.json({ valid: false, error: verdict.erreur })
         }
 
-        // Check expiry
-        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-            return NextResponse.json({ valid: false, error: 'Ce code a expire' })
-        }
-
-        // Check usage limit
-        if (coupon.current_uses >= coupon.max_uses) {
-            return NextResponse.json({ valid: false, error: 'Ce code a atteint sa limite d\'utilisation' })
-        }
-
-        // Check minimum order
-        if (order_amount && coupon.min_order_amount > 0 && order_amount < coupon.min_order_amount) {
-            return NextResponse.json({
-                valid: false,
-                error: `Commande minimum: ${new Intl.NumberFormat('fr-FR').format(coupon.min_order_amount)} XOF`
-            })
-        }
-
-        // Calculate discount
-        let discountAmount = 0
-        if (coupon.discount_type === 'percentage') {
-            discountAmount = Math.round((order_amount || 0) * coupon.discount_value / 100)
-        } else {
-            discountAmount = coupon.discount_value
-        }
-
+        // Seuls les champs lus par CartCheckoutModal (`id` est renvoyé à /api/checkout
+        // en `coupon_id` ; l'ancien nom `coupon_id` ici faisait perdre le coupon en route).
         return NextResponse.json({
             valid: true,
-            coupon_id: coupon.id,
+            id: coupon.id,
             code: coupon.code,
-            discount_type: coupon.discount_type,
-            discount_value: coupon.discount_value,
-            discount_amount: discountAmount,
+            discount_amount: verdict.remise,
         })
     } catch {
-        return NextResponse.json({ valid: false, error: 'Erreçur serveur' })
+        return NextResponse.json({ valid: false, error: 'Erreur serveur' })
     }
 }

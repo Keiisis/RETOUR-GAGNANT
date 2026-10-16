@@ -16,7 +16,7 @@ const ABANDON_DELAY_HOURS = 2       // Considérer abandonné après 2h sans pai
  *
  * Système de récupération de paniers abandonnés ultra-dynamique.
  *
- * Détection : commandes avec payment_status='pending' depuis > 2h avec email client.
+ * Détection : commandes non payées (pending ou abandoned) depuis > 2h avec email client.
  * Relance : email personnalisé tous les 5 jours, maximum 3 fois.
  * Tracking : colonne `recovery_emails_count` + `last_recovery_at` sur la table orders.
  * Arrêt automatique : après 3 emails ou si la commande est complétée/annulée.
@@ -66,7 +66,10 @@ export async function POST(request: Request) {
         const { data: abandoned, error: fetchErr } = await supabase
             .from('orders')
             .select('id, customer_name, customer_email, product_title, amount, currency, cart_items, created_at, recovery_emails_count, last_recovery_at')
-            .eq('payment_status', 'pending')
+            // 'abandoned' inclus (audit F4) : orders-abandon (03h15) passe en « abandoned » toute
+            // commande pending de plus de 90 min, avant ce passage de 10h. Avec 'pending' seul,
+            // la relance ne voyait presque rien et les emails 2 et 3 ne partaient jamais.
+            .in('payment_status', ['pending', 'abandoned'])
             .not('customer_email', 'is', null)
             .neq('customer_email', '')
             .lt('created_at', cutoff)       // Abandonné depuis au moins 2h

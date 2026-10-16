@@ -5,6 +5,9 @@ import { escapeHtml } from '@/lib/security'
 import QRCode from 'qrcode'
 import { fetchWithGroqRotation, GROQ_KEYS, GROQ_MODEL } from '@/lib/groq'
 import { TVA_RATE, TVA_ENABLED } from '@/lib/tax'
+import { jetonFactureValide } from '@/lib/lien-facture'
+import { getClientUser } from '@/lib/client-auth'
+import { requireStaff } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -80,6 +83,23 @@ export async function GET(
 
     if (error || !order) {
       return NextResponse.json({ error: 'Commande introuvable' }, { status: 404 })
+    }
+
+    // Accès (audit 2026-10-12, C4) : lien signé de l'email, client propriétaire connecté, ou personnel RGB.
+    // L'identifiant de commande seul ne suffit plus.
+    const jetonOk = await jetonFactureValide(orderId, request.nextUrl.searchParams.get('t'))
+    if (!jetonOk) {
+      const client = await getClientUser(request)
+      const proprietaire = !!client?.email && client.email === String(order.customer_email || '').trim().toLowerCase()
+      if (!proprietaire) {
+        const staff = await requireStaff(request, 'agent')
+        if (!staff.ok) {
+          return new NextResponse(
+            '<!doctype html><meta charset="utf-8"><title>Facture</title><p style="font-family:sans-serif;padding:40px">Ce lien de facture a expiré ou n’est pas valide. Connectez-vous à votre espace client pour retrouver vos factures.</p>',
+            { status: 401, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
+          )
+        }
+      }
     }
 
     // ── Signature client (si elle existe et auto_sign != 'never') ──
