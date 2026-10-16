@@ -2,15 +2,10 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit, getClientIp, rateLimitHeaders, PAYMENT_ROUTE_LIMIT } from '@/lib/rate-limit'
+import { montantStripe, chargerTauxServeur } from '@/lib/stripe-montant'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-
-// XOF et autres devises sans centimes : Stripe n'applique pas *100
-const ZERO_DECIMAL = new Set([
-    'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA',
-    'PYG', 'RWF', 'UGX', 'VND', 'VUV', 'XAF', 'XOF', 'XPF',
-])
 
 export async function POST(request: Request) {
     try {
@@ -31,19 +26,9 @@ export async function POST(request: Request) {
         const supabase = createClient(supabaseUrl, supabaseServiceKey)
         const { order_id } = await request.json()
 
-        // Devise d'affichage optionnelle transmise par le modal (x-display-currency / x-display-amount)
-        const displayCurrencyHeader = request.headers.get('x-display-currency')?.toUpperCase()
-        const displayAmountHeader = request.headers.get('x-display-amount')
-        const VALID_CURRENCIES = new Set(['XOF', 'EUR', 'USD', 'GBP', 'HTG'])
-        const useDisplayCurrency = (
-            displayCurrencyHeader &&
-            VALID_CURRENCIES.has(displayCurrencyHeader) &&
-            displayAmountHeader &&
-            !isNaN(parseFloat(displayAmountHeader)) &&
-            parseFloat(displayAmountHeader) > 0
-        )
-        const effectiveCurrency = useDisplayCurrency ? displayCurrencyHeader! : null
-        const effectiveAmount = useDisplayCurrency ? parseFloat(displayAmountHeader!) : null
+        // Devise d'affichage choisie dans le modal : seule la DEVISE est prise en compte.
+        // Le montant est toujours recalculé depuis la commande (l'en-tête x-display-amount est ignoré).
+        const deviseChoisie = request.headers.get('x-display-currency')
 
         if (!order_id) {
             return NextResponse.json({ error: 'order_id requis' }, { status: 400 })
@@ -82,14 +67,11 @@ export async function POST(request: Request) {
         }
 
         const stripe = new Stripe(secretKey)
-        // Si une devise d'affichage valide est transmise, l'utiliser : sinon fallback XOF
-        const currency = (effectiveCurrency || order.currency || 'XOF').toUpperCase()
-        const rawAmount = effectiveAmount ?? order.amount
-
-        // Montant selon le type de devise (XOF = zéro-décimal)
-        const amount = ZERO_DECIMAL.has(currency)
-            ? Math.round(rawAmount)
-            : Math.round(rawAmount * 100)
+        await chargerTauxServeur(supabase)
+        const { devise: currency, mineur: amount } = montantStripe(Number(order.amount), order.currency, deviseChoisie)
+        if (!(amount > 0)) {
+            return NextResponse.json({ error: 'Montant invalide' }, { status: 400 })
+        }
 
         const paymentIntent = await stripe.paymentIntents.create({
             amount,

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from './email'
 import { generateInvoicePdf, InvoicePdfItem } from './invoice-pdf-generator'
 import { TVA_RATE } from './tax'
+import { lienFacture } from './lien-facture'
 
 /* ════════════════════════════════════════════════════════════════════════════
    Send invoice email to a client.
@@ -94,7 +95,7 @@ export async function sendInvoiceEmail(opts: SendInvoiceEmailOptions): Promise<S
         }
 
         // 3. Récupérer le HTML de la facture (route existante avec signature client auto-injectée)
-        const invoiceUrl = `${baseUrl}/api/invoices/${orderId}`
+        const invoiceUrl = await lienFacture(baseUrl, orderId)   // lien signé : la route exige un accès prouvé
         const htmlRes = await fetch(invoiceUrl, {
             headers: { 'Accept': 'text/html', 'X-Internal-Mailer': '1' },
         })

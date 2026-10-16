@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { guardPublic, CHAT_LIMIT } from '@/lib/api-guard'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 // Clé serveur : `messages` n'accepte plus d'écriture anonyme (verrou RLS 25/09/2026).
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 export async function POST(request: Request) {
+    // Route publique appelée à chaque message vocal du chat : plafond par IP
+    // (profil messagerie, un échange normal est bavard).
+    const trop = guardPublic(request, 'support/voice', CHAT_LIMIT)
+    if (trop) return trop
+
     try {
         const body = await request.json()
         const { nom, prenom, email, whatsapp, transcript, duration, source } = body

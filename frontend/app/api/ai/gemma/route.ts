@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchGemma, type NvidiaMessage } from '@/lib/nvidia'
 import { autoExtractMemory } from '@/lib/gemma-context'
+import { requireStaff } from '@/lib/api-guard'
 
 // Cette route ne fait QUE du streaming NVIDIA : zéro requête DB → pas de timeout
 export const maxDuration = 60
@@ -29,6 +30,9 @@ Tu parles au CEO en tant qu'expert exécutif, pas comme un assistant générique
 - Utilise les formatages Markdown (titres, listes) pour la lisibilité`
 
 export async function POST(request: NextRequest) {
+    // IA payante (NVIDIA) avec le contexte interne : administrateurs seulement (audit 2026-10-12, C2)
+    const g = await requireStaff(request, 'admin')
+    if (!g.ok) return g.response!
     try {
         const body = await request.json()
         // Le client envoie : { messages, context } : context déjà chargé côté client
@@ -109,9 +113,10 @@ export async function POST(request: NextRequest) {
     }
 }
 
-// GET : diagnostic
-export async function GET() {
-    const key = process.env.NVIDIA_API_KEY
-    if (!key) return NextResponse.json({ ok: false, error: 'NVIDIA_API_KEY manquante' }, { status: 500 })
-    return NextResponse.json({ ok: true, key_prefix: key.slice(0, 12) + '...' })
+// GET : diagnostic (admin) — dit si la clé est configurée, sans jamais en montrer une partie
+export async function GET(request: NextRequest) {
+    const g = await requireStaff(request, 'admin')
+    if (!g.ok) return g.response!
+    const ok = !!process.env.NVIDIA_API_KEY
+    return NextResponse.json(ok ? { ok: true } : { ok: false, error: 'NVIDIA_API_KEY manquante' }, { status: ok ? 200 : 500 })
 }

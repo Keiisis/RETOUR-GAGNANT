@@ -16,6 +16,19 @@ const ALLOWED_MIME = new Set([
 ])
 const MAX_SIZE = 10 * 1024 * 1024 // 10 MB
 
+/* Liens de téléchargement courts, régénérés à chaque lecture. On stockait
+   en base une URL signée valable 10 ans : la table est lisible par tout
+   compte connecté (RLS), donc ces liens circulaient sans expiration
+   utile. `file_url` contient désormais le CHEMIN dans le bucket privé. */
+const DUREE_LIEN_S = 600
+
+/** Chemin de stockage depuis `file_url` : chemin brut, ou ancienne URL signée. */
+function cheminStockage(fileUrl: string): string | null {
+    if (!/^https?:\/\//i.test(fileUrl)) return fileUrl || null
+    const m = fileUrl.match(/\/justificatifs-compta\/([^?]+)/)
+    return m ? m[1] : null
+}
+
 // ══════════════════════════════════════════════════════════════
 // GET /api/admin/comptabilite/justificatifs?document_id=... | paiement_id=... | depense_id=...
 // Liste les justificatifs attachés à une transaction
@@ -42,7 +55,21 @@ export async function GET(request: NextRequest) {
 
     const { data, error } = await query.limit(2000)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ justificatifs: data || [] })
+
+    // `file_url` renvoyé = lien signé frais (DUREE_LIEN_S), jamais celui stocké.
+    const lignes = data || []
+    const chemins = lignes.map(l => cheminStockage(String(l.file_url || '')))
+    const valides = chemins.filter((c): c is string => !!c)
+    const liens = new Map<string, string>()
+    if (valides.length) {
+        const { data: signes } = await supabase.storage.from(BUCKET).createSignedUrls(valides, DUREE_LIEN_S)
+        for (const s of signes || []) if (s.path && s.signedUrl) liens.set(s.path, s.signedUrl)
+    }
+    const justificatifs = lignes.map((l, i) => {
+        const c = chemins[i]
+        return { ...l, file_url: c ? liens.get(c) || null : null }
+    })
+    return NextResponse.json({ justificatifs, expire_dans_s: DUREE_LIEN_S })
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -95,10 +122,6 @@ export async function POST(request: NextRequest) {
     })
     if (upErr) return NextResponse.json({ error: `Upload: ${upErr.message}` }, { status: 500 })
 
-    // URL signée 10 ans (bucket privé)
-    const { data: signed } = await supabase.storage.from(BUCKET)
-        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10)
-
     const { data: profile } = await supabase
         .from('user_profiles')
         .select('full_name')
@@ -106,7 +129,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
 
     const insertPayload: Record<string, unknown> = {
-        file_url: signed?.signedUrl || path,
+        file_url: path, // chemin seul : le lien signé est produit à la lecture (GET)
         file_name: file.name,
         file_type: file.type || null,
         file_size: file.size,
@@ -129,7 +152,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: insErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, justificatif: row })
+    const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, DUREE_LIEN_S)
+    return NextResponse.json({ success: true, justificatif: { ...row, file_url: signed?.signedUrl || null } })
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -153,9 +177,9 @@ export async function DELETE(request: NextRequest) {
         .maybeSingle()
 
     if (row?.file_url) {
-        // Extraire le path depuis l'URL signée
-        const m = row.file_url.match(/\/justificatifs-compta\/([^?]+)/)
-        if (m) await supabase.storage.from(BUCKET).remove([m[1]]).catch(() => {})
+        // Chemin brut (nouveau format) ou extrait de l'ancienne URL signée
+        const chemin = cheminStockage(row.file_url)
+        if (chemin) await supabase.storage.from(BUCKET).remove([chemin]).catch(() => {})
     }
 
     const { error } = await supabase.from('justificatifs').delete().eq('id', id)

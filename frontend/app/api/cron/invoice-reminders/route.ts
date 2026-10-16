@@ -18,6 +18,8 @@ const REMINDER_THRESHOLDS = [
 
 type ReminderLevel = typeof REMINDER_THRESHOLDS[number]['level']
 
+const ECART_MIN_RAPPELS_MS = 7 * 24 * 60 * 60 * 1000
+
 /**
  * POST /api/cron/invoice-reminders
  *
@@ -25,11 +27,13 @@ type ReminderLevel = typeof REMINDER_THRESHOLDS[number]['level']
  * rappels de paiement automatiques pour les factures impayées.
  *
  * Sécurité : vérifie CRON_SECRET dans le header Authorization.
- * Idempotence : stocke le dernier rappel envoyé dans les notes du document.
+ * Idempotence : rappels déjà partis comptés dans email_logs (context invoice_reminder,
+ * statut sent). Les notes gardent une trace lisible mais ne décident plus rien :
+ * elles sont modifiables à la main (audit F7).
  *
  * Flux :
- * 1. Récupère toutes les factures avec status IN ('accepte', 'envoye')
- * 2. Calcule l'ancienneté (jours depuis created_at)
+ * 1. Récupère toutes les factures avec status IN ('accepte', 'envoye', 'en_retard')
+ * 2. Calcule le retard (jours depuis due_date, à défaut created_at) ; échéance passée → 'en_retard'
  * 3. Détermine le niveau de rappel approprié
  * 4. Vérifie que ce niveau n'a pas déjà été envoyé (via notes)
  * 5. Envoie l'email au client
@@ -55,9 +59,9 @@ export async function POST(request: Request) {
         // ═══ RÉCUPÉRER LES FACTURES IMPAYÉES ═══════════════════════════
         const { data: unpaidInvoices, error: fetchErr } = await supabase
             .from('documents_financiers')
-            .select('id, numero, client_nom, client_email, client_phone, total, currency, notes, created_at, agent_id')
+            .select('id, numero, client_nom, client_email, client_phone, total, currency, notes, created_at, due_date, status, agent_id')
             .eq('type', 'facture')
-            .in('status', ['accepte', 'envoye'])
+            .in('status', ['accepte', 'envoye', 'en_retard'])
             .order('created_at', { ascending: true })
 
         if (fetchErr) {
@@ -90,6 +94,23 @@ export async function POST(request: Request) {
             }
         }
 
+        // Rappels réellement envoyés, par facture (source d'idempotence)
+        const rappelsEnvoyes: Record<string, number> = {}
+        const dernierRappel: Record<string, number> = {}
+        if (invoiceIds.length > 0) {
+            const { data: logs } = await supabase
+                .from('email_logs')
+                .select('related_id, created_at')
+                .eq('context', 'invoice_reminder')
+                .eq('status', 'sent')
+                .in('related_id', invoiceIds)
+            for (const l of logs || []) {
+                if (!l.related_id) continue
+                rappelsEnvoyes[l.related_id] = (rappelsEnvoyes[l.related_id] || 0) + 1
+                dernierRappel[l.related_id] = Math.max(dernierRappel[l.related_id] || 0, new Date(l.created_at).getTime())
+            }
+        }
+
         const now = new Date()
         const results: {
             invoiceId: string
@@ -102,20 +123,25 @@ export async function POST(request: Request) {
         const formatPrice = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
         for (const invoice of unpaidInvoices) {
-            // Calculer l'ancienneté en jours
-            const createdAt = new Date(invoice.created_at)
-            const daysOverdue = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24))
+            // Retard compté depuis l'échéance (due_date), à défaut depuis l'émission
+            const base = new Date(invoice.due_date || invoice.created_at)
+            const daysOverdue = Math.floor((now.getTime() - base.getTime()) / (1000 * 60 * 60 * 24))
 
-            // Déterminer le niveau de rappel approprié
-            let targetLevel: ReminderLevel | null = null
-            for (const threshold of REMINDER_THRESHOLDS) {
-                if (daysOverdue >= threshold.days) {
-                    targetLevel = threshold.level
-                }
+            // Échéance dépassée : statut « en retard », jamais posé jusque-là (audit F7)
+            if (invoice.due_date && daysOverdue > 0 && invoice.status !== 'en_retard') {
+                await supabase.from('documents_financiers')
+                    .update({ status: 'en_retard' })
+                    .eq('id', invoice.id)
+                    .in('status', ['accepte', 'envoye'])
             }
 
-            // Pas encore éligible pour un rappel (< 7 jours)
-            if (!targetLevel) continue
+            // Prochain rappel = celui qui suit les rappels déjà partis, s'il est échu
+            const dejaEnvoyes = rappelsEnvoyes[invoice.id] || 0
+            const prochain = REMINDER_THRESHOLDS[dejaEnvoyes]
+            if (!prochain || daysOverdue < prochain.days) continue
+            // Facture déjà ancienne : un rappel par semaine au plus, jamais trois d'affilée
+            if (now.getTime() - (dernierRappel[invoice.id] || 0) < ECART_MIN_RAPPELS_MS) continue
+            const targetLevel: ReminderLevel = prochain.level
 
             // Solde restant dû (les paiements sont stockés en XOF)
             const totalXOF = await toXOFStrict(Number(invoice.total) || 0, invoice.currency)
@@ -128,11 +154,7 @@ export async function POST(request: Request) {
             // n'a pas encore été basculé à « payé »).
             if (soldeXOF <= 0) continue
 
-            // Vérifier que ce rappel n'a pas déjà été envoyé (idempotence via notes)
             const currentNotes = invoice.notes || ''
-            if (currentNotes.includes(`[${targetLevel}]`)) {
-                continue // Déjà envoyé ce niveau
-            }
 
             // Vérifier que le client a un email
             if (!invoice.client_email) {

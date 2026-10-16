@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import nodemailer from 'nodemailer'
 import crypto from 'crypto'
+import { lienFacture } from '@/lib/lien-facture'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -228,7 +229,7 @@ export async function POST(request: Request) {
             to: order.customer_email,
             replyTo: settings.smtp_from_email,
  subject: `Facture & Confirmation de commande : ${siteName}`,
-            html: generateCustomerEmailHTML(order, siteName, baseUrl, eventTicket, settings),
+            html: generateCustomerEmailHTML(order, siteName, baseUrl, eventTicket, settings, await lienFacture(baseUrl, String(order.id))),
           })
           console.log('[Notification] Email client envoyé OK')
         } catch (emailErr) {
@@ -294,10 +295,10 @@ function generateCustomerEmailHTML(
   siteName: string,
   baseUrl: string,
   eventTicket: Record<string, string> | null = null,
-  settings: Record<string, string> = {}
+  settings: Record<string, string> = {},
+  invoiceUrl = `${baseUrl}/api/invoices/${order.id}`,   // lien signé (lib/lien-facture) : lisible sans connexion
 ): string {
   const f = (n: number) => new Intl.NumberFormat('fr-FR').format(n)
-  const invoiceUrl = `${baseUrl}/api/invoices/${order.id}`
   const logoUrl = `${baseUrl}/logo.jpg`
   const ref = `RG-${(order.id as string).slice(0, 8).toUpperCase()}`
   const date = new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' })

@@ -278,6 +278,15 @@ export async function requireLogementManager(request: Request): Promise<StaffGua
  * défini en production, on REFUSE : une variable oubliée ne doit pas ouvrir
  * la route à tout Internet.
  */
+/** Égalité de chaînes en temps constant (durée fonction de la seule longueur du secret `attendu`). Sans node:crypto : utilisable partout. */
+export function egalTempsConstant(recu: string, attendu: string): boolean {
+    let diff = recu.length ^ attendu.length
+    for (let i = 0; i < attendu.length; i++) {
+        diff |= (recu.charCodeAt(i) || 0) ^ attendu.charCodeAt(i)
+    }
+    return diff === 0
+}
+
 export function requireCron(request: Request): NextResponse | null {
     const secret = process.env.CRON_SECRET || ''
 
@@ -302,9 +311,14 @@ export function requireCron(request: Request): NextResponse | null {
         return null // développement local : on laisse passer
     }
 
-    const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-    const header = request.headers.get('x-cron-secret')
-    if (bearer === secret || header === secret) return null
+    const bearer = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') || ''
+    const header = request.headers.get('x-cron-secret') || ''
+    // Comparaison en temps constant : `===` s'arrête au premier caractère
+    // différent, ce qui laisse deviner le secret caractère par caractère.
+    // Les deux en-têtes sont toujours comparés (pas de court-circuit).
+    const okBearer = egalTempsConstant(bearer, secret)
+    const okHeader = egalTempsConstant(header, secret)
+    if (okBearer || okHeader) return null
 
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 }

@@ -8,6 +8,10 @@ import { supabaseServeur as supabase } from '@/lib/supabase-serveur'
 import { requireStaff } from '@/lib/api-guard'
 
 export async function GET(request: Request) {
+    // Outil de diagnostic : inexistant en production.
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
+    }
     /* « Usage interne uniquement » n'était écrit que dans le commentaire : la
        route était ouverte à tous, et renvoyait le début de la clé secrète
        FedaPay ainsi que le détail de n'importe quelle transaction. */
@@ -36,10 +40,9 @@ export async function GET(request: Request) {
             settings_fetched: !settingsError,
             fedapay_enabled: sm.fedapay_enabled,
             fedapay_sandbox: isSandbox,
+            // Présence seulement : aucun fragment de clé ne sort de la route.
             fedapay_public_key_present: !!sm.fedapay_public_key,
-            fedapay_public_key_prefix: sm.fedapay_public_key?.slice(0, 12) || 'ABSENT',
             fedapay_secret_key_present: !!secretKey,
-            fedapay_secret_key_prefix: secretKey?.slice(0, 12) || 'ABSENT',
             api_base: apiBase,
         }
 

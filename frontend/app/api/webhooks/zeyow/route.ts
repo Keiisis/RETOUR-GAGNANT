@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
+import { timingSafeEqual } from 'crypto'
 
 // Client SERVEUR (service role) : un webhook ne doit pas dépendre des règles
 // d'accès de la clé publique du navigateur.
@@ -27,13 +28,16 @@ export async function POST(request: Request) {
                 request.headers.get('x-webhook-secret') ||
                 request.headers.get('authorization')?.replace('Bearer ', '')
 
-            if (!receivedSecret || receivedSecret !== configuredSecret) {
+            // Comparaison en temps constant (`!==` laisse deviner le secret caractère par caractère)
+            const recu = Buffer.from(receivedSecret || '')
+            const attendu = Buffer.from(configuredSecret)
+            if (recu.length !== attendu.length || !timingSafeEqual(recu, attendu)) {
                 console.warn('[Zeyow Webhook] Tentative non autorisée : secret invalide ou manquant')
                 return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
             }
         } else {
             // Aucun secret configuré : refuser les appels pour éviter les faux paiements
-            // (configurer zeyow_webhook_secret dans les settings admin)
+            // (champ « Secret du webhook » : Admin › Réglages › Paiement › Zeyow)
             console.warn('[Zeyow Webhook] Rejeté : zeyow_webhook_secret non configuré : configurez-le dans les settings admin')
             return NextResponse.json(
                 { error: 'Webhook Zeyow non configuré : contactez l\'administrateur' },

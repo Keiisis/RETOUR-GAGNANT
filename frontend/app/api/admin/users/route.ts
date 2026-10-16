@@ -38,10 +38,8 @@ export async function GET(request: NextRequest) {
             const profile = profileMap.get(u.id)
             if (profile && VALID_ROLES.includes(profile.role)) return true
 
-            // Inclure si user_metadata.role valide (agents créés avant user_profiles : ex: Nadjath)
-            const metaRole = u.user_metadata?.role
-            if (metaRole && VALID_ROLES.includes(metaRole)) return true
-
+            // user_metadata.role ignoré (audit E4) : modifiable par l'utilisateur lui-même, et le
+            // middleware n'ouvre aucun panel sans ligne user_profiles. Liste = accès réel.
             return false
         })
         .map(u => {
@@ -54,7 +52,7 @@ export async function GET(request: NextRequest) {
                 id: u.id,
                 email: u.email,
                 full_name: profile?.full_name || u.user_metadata?.full_name || 'Sans nom',
-                role: profile?.role || u.user_metadata?.role || 'agent',
+                role: profile?.role || 'agent',
                 is_active: profile?.is_active ?? true,
                 last_seen_at: lastSeen,
                 created_at: u.created_at,

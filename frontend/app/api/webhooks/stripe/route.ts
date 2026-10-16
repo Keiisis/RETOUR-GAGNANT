@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createErpInvoiceForOrder } from '@/lib/erp-invoice'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { paiementStripeSuffisant, chargerTauxServeur } from '@/lib/stripe-montant'
 
 // Client SERVEUR (service role) : un webhook ne doit pas dépendre des règles
 // d'accès de la clé publique du navigateur.
@@ -66,11 +67,18 @@ export async function POST(request: Request) {
 
                 const { data: order } = await supabase
                     .from('orders')
-                    .select('payment_status, product_id, quantity, payment_method')
+                    .select('payment_status, product_id, quantity, payment_method, amount, currency')
                     .eq('id', orderId)
                     .single()
 
                 if (!order) break
+
+                // Le montant réellement encaissé doit couvrir la commande (audit 2026-10-12, C3)
+                await chargerTauxServeur(supabase)
+                if (!paiementStripeSuffisant(pi.amount_received ?? pi.amount, pi.currency, Number(order.amount), order.currency)) {
+                    console.error(`[Stripe Webhook] Montant insuffisant pour ${orderId} :`, { recu: pi.amount_received, devise: pi.currency, attendu: order.amount, deviseCommande: order.currency })
+                    break
+                }
 
                 // Vérifier que c'est bien une commande Stripe (non falsifiable : défini côté serveur).
                 // Empêche un PaymentIntent créé avec un order_id arbitraire en metadata de compléter

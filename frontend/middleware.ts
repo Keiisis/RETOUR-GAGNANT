@@ -47,6 +47,7 @@ import {
     type ThreatType,
 } from '@/lib/waf'
 import { isLogementAgent } from '@/lib/logement-access'
+import { verifier2FA, COOKIE_2FA } from '@/lib/totp-cookie'
 
 // ═══════════════════════════════════════════════════════════════
 // 🛡️ MIDDLEWARE — WAF ULTIME · Défense Active · Cyber-Déception
@@ -100,6 +101,11 @@ const ABSOLUTE_BYPASS = [
     '/client/reset-password',
     '/client/forgot-password',
 ]
+
+// Catégories CRS bloquées dès la détection, même quand le RPC WAF répond (audit E2)
+const INJECTIONS_BLOQUANTES: ReadonlySet<ThreatType> = new Set<ThreatType>([
+    'sql_injection', 'xss', 'lfi', 'rfi', 'rce', 'php_injection', 'nodejs_injection', 'command_injection', 'ssrf',
+])
 
 function isAbsoluteBypass(pathname: string): boolean {
     return ABSOLUTE_BYPASS.some(p => pathname === p || pathname.startsWith(p + '?'))
@@ -213,7 +219,8 @@ export async function middleware(request: NextRequest) {
     // ─── Security Headers (toujours appliqués) ───────────────
     const secHeaders: Record<string, string> = {
         'X-Content-Type-Options':    'nosniff',
-        'X-Frame-Options':           'SAMEORIGIN',
+        // X-Frame-Options : défini une seule fois dans next.config.ts (DENY, SAMEORIGIN pour
+        // /api/contracts/print). Le doubler ici en SAMEORIGIN donnait deux valeurs (audit M10).
         'X-XSS-Protection':          '1; mode=block',
         'Referrer-Policy':           'strict-origin-when-cross-origin',
         'Permissions-Policy':        'camera=(), microphone=(self), geolocation=()',
@@ -823,6 +830,24 @@ export async function middleware(request: NextRequest) {
                     threatType: obsVerdict.topThreat || 'waf_observe',
                     snippet: topMatch?.snippet?.slice(0, 120),
                 })
+                // Audit 2026-10-12, E2 : une injection détectée est bloquée tout de suite,
+                // sans attendre que le score de l'IP chute (l'observation ci-dessus reste).
+                // Les règles « scanner » / protocole restent en observation (faux positifs mobiles).
+                if (obsVerdict.topThreat && INJECTIONS_BLOQUANTES.has(obsVerdict.topThreat)) {
+                    logWafEvent({
+                        ip, method, path: pathname, userAgent,
+                        threatType: obsVerdict.topThreat,
+                        detail: obsVerdict.matches.slice(0, 3).map(m =>
+                            `[R${m.ruleId}:${m.target}] ${m.description} — "${m.snippet}"`
+                        ).join(' | '),
+                        fingerprintHash,
+                        action: 'block',
+                        score: obsVerdict.score,
+                        supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY,
+                    })
+                    recordLocalViolation(ip)
+                    return wafBlock('Accès refusé.', 403)
+                }
             }
         } else if (ip !== 'unknown') {
             updateIpMemory({ ip, isAttack: false, supabaseUrl: SUPA_URL, serviceKey: SUPA_KEY })
@@ -1071,6 +1096,18 @@ export async function middleware(request: NextRequest) {
                     status: 403, headers: { 'Content-Type': 'application/json' },
                 })
             }
+            // Audit E6 : la 2FA d'un admin vaut aussi pour l'API, pas seulement pour les pages.
+            // Sans ça, un mot de passe volé suffisait à appeler /api/admin/* directement.
+            if (ADMIN_ROLES.includes(apiRole) && !pathname.startsWith('/api/admin/2fa')
+                && !(await verifier2FA('admin', apiUser.id, request.cookies.get(COOKIE_2FA.admin)?.value))) {
+                const { data: totpApi } = await adminApi
+                    .from('totp_secrets').select('enabled').eq('user_id', apiUser.id).maybeSingle()
+                if (totpApi?.enabled) {
+                    return new NextResponse(JSON.stringify({ error: 'Validation 2FA requise' }), {
+                        status: 401, headers: { 'Content-Type': 'application/json' },
+                    })
+                }
+            }
             return response
         } catch {
             // Fail-closed sur ces routes sensibles : on bloque en cas de doute.
@@ -1163,8 +1200,8 @@ export async function middleware(request: NextRequest) {
             // Si le client a activé la 2FA et n'a pas encore validé le code
             // pour cette session, on le renvoie vers le défi /client/2fa.
             const is2FAPage = pathname.startsWith('/client/2fa')
-            const clientTotpVerified = request.cookies.get('client_totp_verified')?.value
-            if (!is2FAPage && clientTotpVerified !== 'true') {
+            const clientTotpVerified = await verifier2FA('client', user.id, request.cookies.get(COOKIE_2FA.client)?.value)
+            if (!is2FAPage && !clientTotpVerified) {
                 const { data: totpRow } = await adminSupabase
                     .from('totp_secrets')
                     .select('enabled')
@@ -1199,10 +1236,10 @@ export async function middleware(request: NextRequest) {
 
         // ─── 2FA Check admins ────────────────────────────────
         if (isAdminRoute && ADMIN_ROLES.includes(role)) {
-            const totpVerified = request.cookies.get('totp_verified')?.value
+            const totpVerified = await verifier2FA('admin', user.id, request.cookies.get(COOKIE_2FA.admin)?.value)
             const is2FAPage    = pathname.startsWith('/admin/2fa')
 
-            if (!is2FAPage && totpVerified !== 'true') {
+            if (!is2FAPage && !totpVerified) {
                 const { data: totpRow } = await adminSupabase
                     .from('totp_secrets')
                     .select('enabled')

@@ -276,19 +276,22 @@ export async function POST(request: Request) {
 
         /* ── Signature ────────────────────────────────────────────────
            Kkiapay signe ses appels par l'en-tête `x-kkiapay-secret` (valeur
-           définie dans son tableau de bord). Si le secret est renseigné dans
-           nos réglages, un appel qui ne le porte pas est refusé. Chaque
-           branche revérifie de toute façon la transaction auprès de Kkiapay :
-           un faux webhook ne peut rien marquer payé. */
+           définie dans son tableau de bord). Secret OBLIGATOIRE : sans
+           `kkiapay_webhook_secret` dans nos réglages, tout appel est refusé
+           (l'ancien code acceptait alors n'importe quel envoi anonyme, qui
+           déclenchait création de fiche, emails et écritures). Chaque branche
+           revérifie en plus la transaction auprès de Kkiapay. */
         const { data: secretRow } = await supabase.from('settings').select('value').eq('key', 'kkiapay_webhook_secret').maybeSingle()
         const secretAttendu = String(secretRow?.value || '').trim()
-        if (secretAttendu) {
-            const recu = Buffer.from(String(request.headers.get('x-kkiapay-secret') || ''))
-            const attendu = Buffer.from(secretAttendu)
-            if (recu.length !== attendu.length || !timingSafeEqual(recu, attendu)) {
-                console.warn('[Kkiapay Webhook] signature absente ou invalide')
-                return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
-            }
+        if (!secretAttendu) {
+            console.error('[Kkiapay Webhook] REFUSÉ : kkiapay_webhook_secret non configuré (Admin › Réglages › Paiement › Kkiapay)')
+            return NextResponse.json({ error: 'Webhook Kkiapay non configuré' }, { status: 401 })
+        }
+        const recu = Buffer.from(String(request.headers.get('x-kkiapay-secret') || ''))
+        const attendu = Buffer.from(secretAttendu)
+        if (recu.length !== attendu.length || !timingSafeEqual(recu, attendu)) {
+            console.warn('[Kkiapay Webhook] signature absente ou invalide')
+            return NextResponse.json({ error: 'Signature invalide' }, { status: 401 })
         }
 
         /* ── Format RÉEL du webhook Kkiapay (docs.kkiapay.me, « Webhook ») ──
