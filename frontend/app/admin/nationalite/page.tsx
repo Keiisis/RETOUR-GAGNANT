@@ -4,13 +4,14 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace, Certificate } from '@phosphor-icons/react';
+import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace, Certificate, Path } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 import RattacherFacture from '@/components/admin/RattacherFacture'
 import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import { formatMontant } from '@/lib/currency-format'
 import PreuveAfroEditeur from '@/components/admin/PreuveAfroEditeur'
+import SuiviClientPanneau from '@/components/admin/SuiviClientPanneau'
 import { statutNationalite, nationalitePayee, NATIONALITE_STATUTS_EDITABLES } from '@/lib/constants/statuts'
 
 interface Application {
@@ -584,6 +585,8 @@ export default function AdminNationalitePage() {
     const [creationOuverte, setCreationOuverte] = useState(false)
     // Preuve d'afro-descendance : `null` fermé, `{ source: null }` client hors plateforme.
     const [preuve, setPreuve] = useState<{ source: Application | null } | null>(null)
+    // Panneau « Suivi client » : les 7 étapes vues par le client sur /suivi-dossier.
+    const [suiviApp, setSuiviApp] = useState<Application | null>(null)
     const [creationForm, setCreationForm] = useState({ ...CREATION_VIDE })
     /* Une entrée PAR EMPLACEMENT officiel — « Extrait de naissance du père »,
        « Justificatif de domicile »… — et non un champ libre. C'est ce qui
@@ -1111,6 +1114,7 @@ export default function AdminNationalitePage() {
                                             <button onClick={() => openAddDocs(a)} className="bg-[#008751] hover:bg-[#00643C] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><FilePlus size={13} /> <T>Ajouter des documents</T></button>
                                             <button onClick={() => openFiche(a)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><ClipboardList size={13} /> <T>Fiche d&apos;analyse</T></button>
                                             <button onClick={() => setPreuve({ source: a })} className="bg-[#0F2350] hover:bg-[#0A1838] text-[#F3DE9C] font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Certificate size={13} /> <T>Preuve d&apos;afro-descendance</T></button>
+                                            <button onClick={() => setSuiviApp(a)} className="bg-[#C99400] hover:bg-[#A97C00] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Path size={13} /> <T>Suivi client</T></button>
                                             <button onClick={() => toggleAncestral(a)} disabled={ancestralBusy === a.id}
                                                 title={t('Recherche ancestrale (généalogie) payée par le client ? Pilote l\'option 250 € de la fiche.')}
                                                 className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50 ${a.recherche_ancestrale_payee ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-300 text-slate-700 hover:bg-slate-400'}`}>
@@ -1989,6 +1993,7 @@ export default function AdminNationalitePage() {
             />
 
             {preuve && <PreuveAfroEditeur source={preuve.source} onClose={() => setPreuve(null)} />}
+            {suiviApp && <SuiviClientPanneau id={suiviApp.id} titre={`${suiviApp.prenom} ${suiviApp.nom}`} onClose={() => setSuiviApp(null)} onEnregistre={() => fetchApps()} />}
         </div>
     )
 }
