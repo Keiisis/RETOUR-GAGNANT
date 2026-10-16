@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check } from '@phosphor-icons/react';
+import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check, Certificate } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
+import PreuveAfroEditeur from '@/components/admin/PreuveAfroEditeur'
 import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import {
-    NATIONALITE_STATUTS_EDITABLES, NATIONALITE_HORS_LISTE, NATIONALITE_DECISIONS,
-    statutNationalite, nationalitePayee, type NationaliteStatut,
+    NATIONALITE_STATUTS_EDITABLES, NATIONALITE_HORS_LISTE,
+    statutNationalite, nationalitePayee,
 } from '@/lib/constants/statuts'
 
 interface NationalityApplication {
@@ -78,6 +79,7 @@ export default function AgentNationalitePage() {
     const [filterStatus, setFilterStatus] = useState('all')
     const [isUpdating, setIsUpdating] = useState(false)
     const [showDetail, setShowDetail] = useState<NationalityApplication | null>(null)
+    const [preuve, setPreuve] = useState<{ source: NationalityApplication | null } | null>(null)
     const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
     const [erreur, setErreur] = useState<string | null>(null)
 
@@ -134,10 +136,13 @@ export default function AgentNationalitePage() {
         setIsUpdating(true)
         // Mêmes valeurs que le panel admin, date de décision comprise : un dossier
         // « approuvé » par un agent sortait des filtres et compteurs de l'admin.
-        const { error } = await supabase
-            .from('nationality_applications')
-            .update({ status: newStatus, decision_date: NATIONALITE_DECISIONS.includes(newStatus as NationaliteStatut) ? new Date().toISOString() : null })
-            .eq('id', id)
+        // Côté serveur : le statut et le suivi client changent ensemble.
+        const res = await fetch('/api/agent/nationalite/statut', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status: newStatus }),
+        })
+        const json = await res.json().catch(() => ({}))
+        const error = res.ok ? null : { message: json.error || `erreur ${res.status}` }
 
         if (!error) {
             setApps(prev => prev.map(a => a.id === id ? { ...a, status: newStatus } : a))
@@ -183,6 +188,12 @@ export default function AgentNationalitePage() {
                     <p className="text-gray-500 text-xs mt-1">Gérez et examinez les demandes de reconnaissance de nationalité.</p>
                     {erreur && <p className="text-red-400 text-sm font-semibold mt-1">{erreur}</p>}
                 </div>
+                <button
+                    onClick={() => setPreuve({ source: null })}
+                    className="self-start md:self-auto text-xs font-bold text-[#0F2350] bg-[#E2AE22] hover:bg-[#d29f17] px-4 py-2 rounded-xl flex items-center gap-2 whitespace-nowrap"
+                >
+                    <Certificate size={14} /> Preuve d&apos;afro-descendance
+                </button>
             </div>
 
             {/* Filters Bar */}
@@ -287,6 +298,13 @@ export default function AgentNationalitePage() {
                                                 <Eye size={16} />
                                             </button>
                                             <button
+                                                onClick={() => setPreuve({ source: app })}
+                                                className="p-2 rounded-lg bg-[#E2AE22]/10 hover:bg-[#E2AE22]/20 text-[#E2AE22] transition-all"
+                                                title="Preuve d'afro-descendance"
+                                            >
+                                                <Certificate size={16} />
+                                            </button>
+                                            <button
                                                 onClick={() => downloadZip(app.id)}
                                                 className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-all"
                                                 title="Télécharger ZIP"
@@ -362,6 +380,9 @@ export default function AgentNationalitePage() {
                                             : relanceState[`${showDetail.id}:full`] === 'sent'
                                                 ? <><Check size={14} className="mr-2" /> Relance envoyée</>
                                                 : <><Mail size={14} className="mr-2" /> Relancer (dossier complet)</>}
+                                    </Button>
+                                    <Button onClick={() => setPreuve({ source: showDetail })} className="bg-[#E2AE22] hover:bg-[#d29f17] text-[#0F2350] font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9">
+                                        <Certificate size={14} className="mr-2" /> Preuve
                                     </Button>
                                     <Button onClick={() => downloadZip(showDetail.id)} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9">
                                         <Download size={14} className="mr-2" /> ZIP
@@ -517,6 +538,7 @@ export default function AgentNationalitePage() {
                 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
             `}</style>
+            {preuve && <PreuveAfroEditeur source={preuve.source} onClose={() => setPreuve(null)} />}
         </div>
     )
 }

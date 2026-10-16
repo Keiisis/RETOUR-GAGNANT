@@ -4,13 +4,14 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace } from '@phosphor-icons/react';
+import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace, Certificate } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 import RattacherFacture from '@/components/admin/RattacherFacture'
 import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import { formatMontant } from '@/lib/currency-format'
-import { statutNationalite, nationalitePayee, NATIONALITE_STATUTS_EDITABLES, NATIONALITE_DECISIONS } from '@/lib/constants/statuts'
+import PreuveAfroEditeur from '@/components/admin/PreuveAfroEditeur'
+import { statutNationalite, nationalitePayee, NATIONALITE_STATUTS_EDITABLES } from '@/lib/constants/statuts'
 
 interface Application {
     id: string; application_ref: string; status: string
@@ -169,12 +170,13 @@ export default function AdminNationalitePage() {
     useEffect(() => { fetchApps() }, [filter, search])
 
     const updateStatus = async (id: string, status: string) => {
-        // .select('id') : sous RLS un refus touche 0 ligne sans lever d'erreur ;
-        // le sélecteur affichait alors le nouveau statut alors que rien n'était écrit.
-        const { data, error } = await supabase.from('nationality_applications')
-            .update({ status, decision_date: (NATIONALITE_DECISIONS as string[]).includes(status) ? new Date().toISOString() : null })
-            .eq('id', id).select('id')
-        if (error || !data?.length) alert(`Statut non enregistré : ${error?.message || 'aucune ligne mise à jour (droits insuffisants ?)'}`)
+        // Côté serveur : le statut et le suivi client changent ensemble.
+        const res = await fetch('/api/agent/nationalite/statut', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, status }),
+        })
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok) alert(`Statut non enregistré : ${json.error || `erreur ${res.status}`}`)
         fetchApps()
     }
 
@@ -580,6 +582,8 @@ export default function AdminNationalitePage() {
         amount: '', currency: '', agent_notes: '',
     }
     const [creationOuverte, setCreationOuverte] = useState(false)
+    // Preuve d'afro-descendance : `null` fermé, `{ source: null }` client hors plateforme.
+    const [preuve, setPreuve] = useState<{ source: Application | null } | null>(null)
     const [creationForm, setCreationForm] = useState({ ...CREATION_VIDE })
     /* Une entrée PAR EMPLACEMENT officiel — « Extrait de naissance du père »,
        « Justificatif de domicile »… — et non un champ libre. C'est ce qui
@@ -865,6 +869,12 @@ export default function AdminNationalitePage() {
                             clients existaient jusqu'ici dans une boîte mail et
                             nulle part ailleurs. */}
                         <button
+                            onClick={() => setPreuve({ source: null })}
+                            className="text-xs font-bold text-[#0F2350] bg-[#E2AE22] hover:bg-[#d29f17] px-4 py-2 rounded-xl flex items-center gap-2 transition-all"
+                        >
+                            <Certificate size={14} /> <T>Preuve d&apos;afro-descendance</T>
+                        </button>
+                        <button
                             onClick={() => setCreationOuverte(true)}
                             className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl border border-emerald-500/30 flex items-center gap-2 transition-all"
                         >
@@ -1100,6 +1110,7 @@ export default function AdminNationalitePage() {
                                             <button onClick={() => openEdit(a)} className="bg-violet-600 hover:bg-violet-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Pencil size={13} /> <T>Éditer</T></button>
                                             <button onClick={() => openAddDocs(a)} className="bg-[#008751] hover:bg-[#00643C] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><FilePlus size={13} /> <T>Ajouter des documents</T></button>
                                             <button onClick={() => openFiche(a)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><ClipboardList size={13} /> <T>Fiche d&apos;analyse</T></button>
+                                            <button onClick={() => setPreuve({ source: a })} className="bg-[#0F2350] hover:bg-[#0A1838] text-[#F3DE9C] font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5"><Certificate size={13} /> <T>Preuve d&apos;afro-descendance</T></button>
                                             <button onClick={() => toggleAncestral(a)} disabled={ancestralBusy === a.id}
                                                 title={t('Recherche ancestrale (généalogie) payée par le client ? Pilote l\'option 250 € de la fiche.')}
                                                 className={`font-bold text-[11px] px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50 ${a.recherche_ancestrale_payee ? 'bg-emerald-600 text-white hover:bg-emerald-700' : 'bg-slate-300 text-slate-700 hover:bg-slate-400'}`}>
@@ -1977,6 +1988,7 @@ export default function AdminNationalitePage() {
                 }}
             />
 
+            {preuve && <PreuveAfroEditeur source={preuve.source} onClose={() => setPreuve(null)} />}
         </div>
     )
 }

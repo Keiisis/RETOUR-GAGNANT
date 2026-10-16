@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireStaff } from '@/lib/api-guard'
 import { lireLigneDocument } from '@/lib/nationality-docs'
 import { mettreALaCorbeille } from '@/lib/nationality-corbeille'
+import { synchroniserSuiviNationalite } from '@/lib/suivi-nationalite'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -51,6 +52,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (typeof updates.status === 'string') await synchroniserSuiviNationalite(supabase, data?.application_ref, updates.status)
     return NextResponse.json({ success: true, application: data })
 }
 

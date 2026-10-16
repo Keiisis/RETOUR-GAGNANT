@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { guardPublic, PUBLIC_FORM_LIMIT } from '@/lib/api-guard'
+import { suiviEnAvance, suiviNationalite } from '@/lib/suivi-nationalite'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
@@ -30,6 +31,16 @@ export async function POST(request: Request) {
             .single()
 
         if (trackingData) {
+            /* Dossier de nationalité : le statut de la demande fait foi. Filet
+               pour tout chemin qui changerait ce statut sans synchroniser le
+               suivi (incident RG-NAT-2026-8250, figé sur « Réception »). */
+            if (refUpper.startsWith('RG-NAT-')) {
+                const { data: demande } = await supabase
+                    .from('nationality_applications').select('status').eq('application_ref', refUpper).maybeSingle()
+                if (demande && !suiviEnAvance(demande.status, trackingData.etapes)) {
+                    Object.assign(trackingData, suiviNationalite(demande.status, trackingData.etapes))
+                }
+            }
             return NextResponse.json({
                 found: true,
                 dossier: {
