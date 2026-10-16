@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
-import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check, Certificate } from '@phosphor-icons/react';
+import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X, Eye, CircleNotch as Loader2, FileArrowDown as FileDown, Envelope as Mail, Check, Certificate, Path } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button'
 import PreuveAfroEditeur from '@/components/admin/PreuveAfroEditeur'
+import SuiviClientPanneau from '@/components/admin/SuiviClientPanneau'
 import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import {
     NATIONALITE_STATUTS_EDITABLES, NATIONALITE_HORS_LISTE,
@@ -80,6 +81,7 @@ export default function AgentNationalitePage() {
     const [isUpdating, setIsUpdating] = useState(false)
     const [showDetail, setShowDetail] = useState<NationalityApplication | null>(null)
     const [preuve, setPreuve] = useState<{ source: NationalityApplication | null } | null>(null)
+    const [suiviApp, setSuiviApp] = useState<NationalityApplication | null>(null)
     const [relanceState, setRelanceState] = useState<Record<string, 'sending' | 'sent' | 'error'>>({})
     const [erreur, setErreur] = useState<string | null>(null)
 
@@ -305,6 +307,13 @@ export default function AgentNationalitePage() {
                                                 <Certificate size={16} />
                                             </button>
                                             <button
+                                                onClick={() => setSuiviApp(app)}
+                                                className="p-2 rounded-lg bg-[#C99400]/10 hover:bg-[#C99400]/20 text-[#E2AE22] transition-all"
+                                                title="Suivi client (étapes visibles par le client)"
+                                            >
+                                                <Path size={16} />
+                                            </button>
+                                            <button
                                                 onClick={() => downloadZip(app.id)}
                                                 className="p-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-all"
                                                 title="Télécharger ZIP"
@@ -380,6 +389,9 @@ export default function AgentNationalitePage() {
                                             : relanceState[`${showDetail.id}:full`] === 'sent'
                                                 ? <><Check size={14} className="mr-2" /> Relance envoyée</>
                                                 : <><Mail size={14} className="mr-2" /> Relancer (dossier complet)</>}
+                                    </Button>
+                                    <Button onClick={() => setSuiviApp(showDetail)} className="bg-[#C99400] hover:bg-[#A97C00] text-white font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9">
+                                        <Path size={14} className="mr-2" /> Suivi client
                                     </Button>
                                     <Button onClick={() => setPreuve({ source: showDetail })} className="bg-[#E2AE22] hover:bg-[#d29f17] text-[#0F2350] font-bold text-[10px] uppercase tracking-widest px-4 rounded-xl h-9">
                                         <Certificate size={14} className="mr-2" /> Preuve
@@ -539,6 +551,11 @@ export default function AgentNationalitePage() {
                 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
             `}</style>
             {preuve && <PreuveAfroEditeur source={preuve.source} onClose={() => setPreuve(null)} />}
+            {suiviApp && <SuiviClientPanneau id={suiviApp.id} titre={`${suiviApp.prenom} ${suiviApp.nom}`} onClose={() => setSuiviApp(null)}
+                onEnregistre={status => {
+                    setApps(prev => prev.map(a => a.id === suiviApp.id ? { ...a, status } : a))
+                    if (showDetail?.id === suiviApp.id) setShowDetail(prev => prev ? { ...prev, status } : prev)
+                }} />}
         </div>
     )
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { suiviNationalite, suiviEnAvance } from '@/lib/suivi-nationalite'
+import { construireSuivi, lireAvancement, statutPourAvancement, suiviNationalite, suiviEnAvance } from '@/lib/suivi-nationalite'
 
 // Incident 2026-10-16 (RG-NAT-2026-8250) : dossier « En traitement », suivi figé sur « Réception », 14 %.
 const creation = [
@@ -53,5 +53,26 @@ describe('suivi dérivé du statut de la demande', () => {
         const manuel = creation.map(e => e.id <= 4 ? { ...e, status: 'completed' } : e)
         expect(suiviEnAvance('en_traitement', manuel)).toBe(true)
         expect(suiviEnAvance('en_traitement', creation)).toBe(false)
+    })
+
+    it('panneau : étape exacte, statut déduit', () => {
+        const s = construireSuivi({ faites: 4, enCours: true }, creation, { maintenant: jour })
+        expect(s.etapes.map(e => e.status)).toEqual(['completed', 'completed', 'completed', 'completed', 'in_progress', 'pending', 'pending'])
+        expect(statutPourAvancement(4)).toBe('verification')
+        expect([1, 2, 3, 5, 6, 7].map(statutPourAvancement)).toEqual(['soumis', 'en_traitement', 'verification', 'verification', 'approuve', 'approuve'])
+        expect(construireSuivi({ faites: 7, enCours: false }, creation).statut).toBe('termine')
+    })
+
+    it('statut choisi qui contient déjà l’étape : le suivi ne recule pas', () => {
+        const commission = construireSuivi({ faites: 4, enCours: true }, creation, { maintenant: jour }).etapes
+        expect(lireAvancement(suiviNationalite('verification', commission, jour).etapes)).toEqual({ faites: 4, enCours: true })
+        expect(lireAvancement(suiviNationalite('en_traitement', commission, jour).etapes).faites).toBe(2)
+    })
+
+    it('note de l’équipe conservée quand l’étape se termine', () => {
+        const enCours = construireSuivi({ faites: 2, enCours: true }, creation, { notes: { 3: 'Dossier transmis au juriste.' }, maintenant: jour }).etapes
+        const fini = construireSuivi({ faites: 3, enCours: true }, enCours, { maintenant: jour }).etapes
+        expect(fini[2]).toMatchObject({ status: 'completed', note: 'Dossier transmis au juriste.' })
+        expect(fini[1].note).toBe('Pièces justificatives vérifiées.')
     })
 })
