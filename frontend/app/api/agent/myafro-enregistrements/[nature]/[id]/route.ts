@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyApiAuth } from '@/lib/api-auth'
 import { civiliteDepuisGenre, estNature, validerSaisie, type SaisieEnregistrement } from '@/lib/myafro-enregistrement'
+import { synchroniserSuiviNationalite } from '@/lib/suivi-nationalite'
 import { auteur, db, enregistrer, lireDossierSource, lireEnregistrement, mettreEnCorbeille, sansSecret } from '@/lib/myafro-enregistrement-serveur'
 
 export const dynamic = 'force-dynamic'
@@ -52,7 +53,8 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
         const e = await enregistrer(c.nature, c.id, source, v.valeur, await auteur(sb, auth.userId), sb)
         // Transmis sur la plateforme = le dossier est en cours de traitement chez nous (seulement depuis « soumis »).
         if (body?.passerEnTraitement && c.nature === 'nationalite' && source?.statut === 'soumis') {
-            await sb.from('nationality_applications').update({ status: 'en_traitement', updated_at: new Date().toISOString() }).eq('id', c.id).eq('status', 'soumis')
+            const { data: passe } = await sb.from('nationality_applications').update({ status: 'en_traitement', updated_at: new Date().toISOString() }).eq('id', c.id).eq('status', 'soumis').select('application_ref').maybeSingle()
+            if (passe) await synchroniserSuiviNationalite(sb, passe.application_ref, 'en_traitement')
         }
         return NextResponse.json({ enregistrement: sansSecret(e) })
     } catch (e) {
