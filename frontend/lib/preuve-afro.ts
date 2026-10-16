@@ -6,7 +6,7 @@
    de Nationalité » : pré-rempli avec un dossier de la plateforme, ou vierge
    pour un client qui n'y est pas inscrit.
 
-   Rendu : HTML + SVG imprimé par le navigateur (« Enregistrer en PDF »).
+   Rendu : HTML imprimé par le navigateur (« Enregistrer en PDF »).
    Texte vectoriel et sélectionnable, polices du site (public/fonts/preuve).
    Aucune donnée n'est inventée : un champ vide n'est pas affiché.
    ══════════════════════════════════════════════════════════════════ */
@@ -171,20 +171,6 @@ const nomComplet = (prenoms: string, nom: string) => [prenoms, nom].map(t).filte
 /** Ligne « libellé : valeur », omise si la valeur est vide. */
 const ligne = (libelle: string, valeur: string) => t(valeur) ? `<div class="ligne"><dt>${e(libelle)}</dt><dd>${e(valeur)}</dd></div>` : ''
 
-/** Graines déterministes : le crépi de peinture est identique d'un rendu à l'autre. */
-function pulverisation(n: number, graine: number, l: number, h: number, couleur: string): string {
-    let s = graine
-    const r = () => { s = (s * 16807) % 2147483647; return s / 2147483647 }
-    let out = ''
-    for (let i = 0; i < n; i++) {
-        // Concentration autour d'un foyer, retombées clairsemées.
-        const ang = r() * Math.PI * 2, dist = Math.pow(r(), 1.8)
-        const x = l / 2 + Math.cos(ang) * dist * l / 2, y = h / 2 + Math.sin(ang) * dist * h / 2
-        out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.3 + r() * (dist < 0.3 ? 2.2 : 1.1)).toFixed(2)}" fill="${couleur}" opacity="${(0.25 + r() * 0.6).toFixed(2)}"/>`
-    }
-    return out
-}
-
 function carteParent(lien: string, p: Parent): string {
     const nom = nomComplet(p.prenoms, p.nom)
     if (!nom && !p.naissance) return ''
@@ -244,148 +230,136 @@ export function htmlPreuve(d: PreuveAfro, origine = ''): string {
     const arbre = racines(d)
     const brancheTitre = d.brancheLignee === 'Les deux' ? 'branches paternelle et maternelle' : `branche ${d.brancheLignee.toLowerCase()}`
     let n = 0
-    const titre = (texte: string) => `<h3><span class="num">${String(++n).padStart(2, '0')}</span>${e(texte)}</h3>`
+    const titre = (texte: string) => `<h3><span class="num">${++n}</span>${e(texte)}</h3>`
     const f = (fichier: string) => `${origine}/fonts/preuve/${fichier}`
     const img = (fichier: string) => `${origine}/images/${fichier}`
 
     return `<!doctype html><html lang="fr"><head><meta charset="utf-8">
 <title>${e(`PREUVE_AFRO_DESCENDANCE_${[d.demandeur.nom, d.demandeur.prenoms.split(/\s+/)[0]].map(t).filter(Boolean).join('_').toUpperCase().replace(/\s+/g, '_') || 'CLIENT'}`)}</title>
 <style>
-/* Hallmark · document: preuve d'afro-descendance · tone: luxe institutionnel + tag graffiti
- * theme: custom (logo RGB : nuit · or · racine) · display: Fraunces · body: Geist · tag: Sedgwick Ave Display */
+/* Hallmark · document: preuve d'afro-descendance · tone: institutionnel sobre
+ * theme: custom (Bénin : vert · jaune · rouge sur blanc) · display: Fraunces · marque: Montserrat · body: Geist */
 @font-face{font-family:"Fraunces";src:url("${f('fraunces-normal-400-900.woff2')}") format("woff2");font-weight:400 900;font-style:normal}
 @font-face{font-family:"Geist";src:url("${f('geist-normal-300-700.woff2')}") format("woff2");font-weight:300 700}
-@font-face{font-family:"Sedgwick";src:url("${f('sedgwick-ave-display.woff2')}") format("woff2")}
+@font-face{font-family:"Montserrat";src:url("${f('montserrat-normal-400-900.woff2')}") format("woff2");font-weight:400 900}
 :root{
-  --nuit:#0F2350; --nuit-2:#0A1838; --or:#E2AE22; --or-clair:#F3DE9C; --racine:#9C3A1C;
-  --vert:#1E7A3C; --benin-vert:#008751; --benin-jaune:#FCD116; --benin-rouge:#E8112D;
-  --papier:#FBF8F1; --carte:#FFFFFF; --encre:#1A1D26; --encre-2:#5A606C; --filet:#E6DDC8;
-  --font-titre:"Fraunces",Georgia,serif; --font-texte:"Geist",system-ui,sans-serif; --font-tag:"Sedgwick","Fraunces",cursive;
+  --vert:#008751; --vert-fonce:#0B5E3A; --vert-pale:#E8F3EC; --jaune:#EFB300; --jaune-pale:#FDF4D6;
+  --rouge:#D21034; --rouge-pale:#FBE9EC; --racine:#9C3A1C;
+  --papier:#FFFFFF; --carte:#FBFBF8; --encre:#16191F; --encre-2:#5B616B; --encre-3:#8A9099; --filet:#E4E6E2;
+  --font-titre:"Fraunces",Georgia,serif; --font-texte:"Geist",system-ui,sans-serif; --font-marque:"Montserrat","Geist",sans-serif;
 }
-@page{size:A4;margin:12mm 0 14mm;background:#FBF8F1;
-  @bottom-left{content:"Retour Gagnant Bénin · Réf. ${d.ref.replace(/[^\w\- ]/g, '')}";font:500 7.5pt "Geist",sans-serif;color:#8a8f99;padding-left:16mm}
-  @bottom-right{content:"Page " counter(page) " / " counter(pages);font:500 7.5pt "Geist",sans-serif;color:#8a8f99;padding-right:16mm}}
+@page{size:A4;margin:12mm 0 14mm;
+  @bottom-left{content:"Retour Gagnant Bénin · Réf. ${d.ref.replace(/[^\w\- ]/g, '')}";font:500 7.5pt "Geist",sans-serif;color:#8a9099;padding-left:16mm}
+  @bottom-right{content:"Page " counter(page) " / " counter(pages);font:500 7.5pt "Geist",sans-serif;color:#8a9099;padding-right:16mm}}
 @page :first{margin-top:0}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{overflow-x:clip}
 body{font-family:var(--font-texte);color:var(--encre);background:var(--papier);font-size:9.2pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-@media screen{body{background:#cfc8b8;padding:24px 12px}.feuille{width:210mm;min-height:297mm;margin:0 auto;box-shadow:0 18px 50px rgba(10,24,56,.25)}}
+@media screen{body{background:transparent;padding:24px 12px}.feuille{width:210mm;min-height:297mm;margin:0 auto;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 40px rgba(20,30,25,.18)}}
 .feuille{background:var(--papier);position:relative;overflow:hidden}
 .filigrane{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
-.filigrane img{width:120mm;opacity:.045;filter:grayscale(1)}
+.filigrane img{width:115mm;opacity:.04;filter:grayscale(1)}
 main{position:relative;z-index:1;padding:0 16mm 10mm}
 
-/* Bandeau */
-.bandeau{position:relative;background:var(--nuit);color:#fff;padding:9mm 16mm 9mm;overflow:hidden;z-index:1}
-.bandeau .crepi{position:absolute;inset:0;width:100%;height:100%}
-.bandeau .haut{position:relative;display:flex;justify-content:space-between;align-items:flex-start;gap:8mm}
-.marque{display:flex;align-items:center;gap:5mm}
-.marque img{width:22mm;height:22mm;object-fit:contain}
-.tag{font-family:var(--font-tag);font-size:29pt;line-height:.95;white-space:nowrap;color:var(--or);transform:rotate(-5deg);display:block;text-shadow:0 0 1px rgba(226,174,34,.4)}
-.tagbox .sous{display:block;margin-top:3.5mm;font-size:7.5pt;letter-spacing:.42em;text-transform:uppercase;color:var(--or-clair)}
-.tagbox{position:relative}
-.coulures{position:absolute;left:0;top:9.5mm;width:76mm;height:12mm;transform:rotate(-5deg);transform-origin:left top}
-.meta{text-align:right;font-size:8pt;line-height:1.7;color:#dfe5f2;max-width:82mm}
+/* En-tête */
+.entete{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:8mm;padding:9mm 16mm 7mm}
+.marque{display:flex;align-items:center;gap:4.5mm;min-width:0}
+.marque img{width:19mm;height:19mm;object-fit:contain;flex:none}
+.nom-agence{font-family:var(--font-marque);font-weight:900;font-size:18pt;line-height:1;letter-spacing:.01em;white-space:nowrap}
+.nom-agence .r{color:var(--vert)} .nom-agence .g{color:var(--jaune)}
+.nom-agence + .pays{display:block;margin-top:1.8mm;font-family:var(--font-marque);font-weight:800;font-size:9.5pt;letter-spacing:.62em;color:var(--rouge)}
+.meta{flex:none;border-left:.8mm solid var(--vert);padding:1mm 0 1mm 4mm;font-size:8pt;line-height:1.75;width:68mm}
 .meta .type span{white-space:nowrap}
-.meta b{color:var(--or);font-weight:600;letter-spacing:.06em;text-transform:uppercase;font-size:7pt;margin-right:1.5mm}
-.meta .type{color:#fff;font-weight:600;font-size:8.4pt;margin-bottom:1.5mm;line-height:1.35}
-.drapeau{height:2.2mm;display:grid;grid-template-columns:2fr 3fr;position:relative;z-index:1}
-.drapeau i{display:block;background:var(--benin-vert)}
-.drapeau span{display:grid;grid-template-rows:1fr 1fr}
-.drapeau span i:first-child{background:var(--benin-jaune)}.drapeau span i:last-child{background:var(--benin-rouge)}
+.meta .type{font-weight:600;color:var(--encre);font-size:8.3pt;line-height:1.35;margin-bottom:1.2mm}
+.meta div:not(.type){display:flex;gap:2mm}
+.meta b{display:inline-block;min-width:20mm;color:var(--encre-3);font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:6.8pt}
+.drapeau{height:1.8mm;display:grid;grid-template-columns:1fr 1fr 1fr;position:relative;z-index:1}
+.drapeau i{display:block}.drapeau i:nth-child(1){background:var(--vert)}.drapeau i:nth-child(2){background:var(--jaune)}.drapeau i:nth-child(3){background:var(--rouge)}
 
 /* Titre */
-.titre{padding:6mm 0 3.5mm;position:relative}
-.titre h1{font-family:var(--font-titre);font-weight:700;font-size:24pt;line-height:1.05;color:var(--nuit);letter-spacing:-.01em}
-.titre h1 span{display:block;font-weight:400;font-size:15pt;color:var(--racine);margin-top:1.5mm;letter-spacing:0}
-.titre .trait{display:block;width:74mm;height:5mm;margin-top:1mm}
+.titre{padding:7mm 0 4mm}
+.titre h1{font-family:var(--font-titre);font-weight:700;font-size:23pt;line-height:1.08;color:var(--encre);letter-spacing:-.01em}
+.titre h1 span{display:block;font-weight:500;font-size:14pt;color:var(--vert-fonce);margin-top:1.2mm;letter-spacing:0}
+.titre .filet3{display:flex;gap:1mm;margin-top:3mm}
+.titre .filet3 i{display:block;width:9mm;height:1mm;border-radius:.5mm}
+.titre .filet3 i:nth-child(1){background:var(--vert)}.titre .filet3 i:nth-child(2){background:var(--jaune)}.titre .filet3 i:nth-child(3){background:var(--rouge)}
 .titre .qui{margin-top:3mm;font-size:10pt;color:var(--encre-2)}
 .titre .qui strong{color:var(--encre);font-weight:600}
-.cadre{border-left:1.2mm solid var(--or);background:rgba(226,174,34,.07);padding:3mm 4.5mm;font-size:8.2pt;color:#3e434e;line-height:1.6}
-.cadre b{color:var(--nuit)}
+.cadre{border:.3mm solid var(--filet);border-left:1.1mm solid var(--jaune);background:var(--carte);padding:3mm 4.5mm;font-size:8.2pt;color:#3d434d;line-height:1.6;border-radius:0 1.5mm 1.5mm 0}
+.cadre b{color:var(--encre)}
 
 /* Sections */
-section{margin-top:5.5mm;break-inside:auto}
-h3{font-family:var(--font-titre);font-weight:600;font-size:13pt;color:var(--nuit);display:flex;align-items:baseline;gap:3mm;padding-bottom:2mm;border-bottom:.3mm solid var(--filet);margin-bottom:3mm;break-after:avoid}
-h3 .num{font-family:var(--font-tag);color:var(--or);font-size:15pt;font-weight:400;transform:rotate(-6deg);display:inline-block;min-width:9mm}
-.demandeur{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:6mm;align-items:start}
-.demandeur .nomfort{font-family:var(--font-titre);font-weight:700;font-size:17pt;line-height:1.1;color:var(--encre);overflow-wrap:anywhere}
-.demandeur .nomfort small{display:block;font-family:var(--font-texte);font-weight:500;font-size:8pt;letter-spacing:.2em;text-transform:uppercase;color:var(--vert);margin-top:2mm}
-dl .ligne{display:grid;grid-template-columns:30mm minmax(0,1fr);gap:3mm;padding:1mm 0;border-bottom:.2mm dashed var(--filet)}
+section{margin-top:6mm;break-inside:auto}
+h3{font-family:var(--font-titre);font-weight:600;font-size:12.5pt;color:var(--encre);display:flex;align-items:center;gap:3mm;padding-bottom:2mm;border-bottom:.3mm solid var(--filet);margin-bottom:3mm;break-after:avoid}
+h3 .num{flex:none;width:6.4mm;height:6.4mm;border-radius:50%;background:var(--vert);color:#fff;font-family:var(--font-marque);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center}
+.demandeur{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);gap:7mm;align-items:start}
+.demandeur .nomfort{font-family:var(--font-titre);font-weight:700;font-size:16pt;line-height:1.12;color:var(--encre);overflow-wrap:anywhere}
+.demandeur .nomfort small{display:inline-block;font-family:var(--font-texte);font-weight:600;font-size:7pt;letter-spacing:.16em;text-transform:uppercase;color:var(--vert-fonce);background:var(--vert-pale);padding:.8mm 2.4mm;border-radius:1mm;margin-top:2.4mm}
+dl .ligne{display:grid;grid-template-columns:31mm minmax(0,1fr);gap:3mm;padding:1.1mm 0;border-bottom:.2mm solid var(--filet)}
 dl .ligne:last-child{border-bottom:0}
-dt{font-size:7.4pt;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--encre-2);padding-top:.4mm}
+dt{font-size:7.2pt;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--encre-3);padding-top:.5mm}
 dd{overflow-wrap:anywhere}
 .grille{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4mm}
-.carte{background:var(--carte);border:.3mm solid var(--filet);border-radius:2.2mm;padding:3mm 4mm;break-inside:avoid;position:relative}
-.carte .lien{display:inline-block;font-size:6.8pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--nuit);background:var(--or-clair);padding:.6mm 2.2mm;border-radius:1mm}
-.carte.paternelle .lien{background:#dceadf;color:var(--vert)}
+.carte{background:var(--carte);border:.3mm solid var(--filet);border-top:.9mm solid var(--vert);border-radius:1.5mm;padding:3mm 4mm;break-inside:avoid}
+.carte.maternelle{border-top-color:var(--rouge)}
+.carte .lien{display:inline-block;font-size:6.6pt;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--vert-fonce);background:var(--vert-pale);padding:.6mm 2.2mm;border-radius:1mm}
+.carte.maternelle .lien{color:#A00C27;background:var(--rouge-pale)}
 .carte h4{font-family:var(--font-titre);font-weight:600;font-size:11.5pt;margin:1.8mm 0 1mm;color:var(--encre);overflow-wrap:anywhere}
 .carte .surnom{font-family:var(--font-texte);font-weight:400;font-size:9pt;color:var(--encre-2)}
-.carte .origine{font-size:8pt;color:var(--encre-2);margin:-1mm 0 1.5mm}
+.carte .origine{font-size:8pt;color:var(--encre-2);margin:-.6mm 0 1.4mm}
 .carte dl .ligne{grid-template-columns:20mm minmax(0,1fr)}
-.note{margin-top:4mm;font-size:8.8pt;color:#3e434e;padding:3mm 4mm;border-radius:2mm;background:rgba(15,35,80,.05);break-inside:avoid}
-.note b{color:var(--nuit)}
+.note{margin-top:4mm;font-size:8.8pt;color:#3d434d;padding:3mm 4mm;border-radius:1.5mm;background:var(--jaune-pale);break-inside:avoid}
+.note b{color:var(--encre)}
 
-/* Racines */
-.arbre{display:flex;flex-direction:column;align-items:center;padding:1mm 0 1mm;break-inside:avoid;position:relative}
-.niveau{display:flex;flex-direction:column;align-items:center;gap:1.5mm}
-.gen{font-size:6.8pt;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--racine)}
+/* Générations (racines du logo) */
+.arbre{display:flex;flex-direction:column;align-items:center;padding:1.5mm 0;break-inside:avoid}
+.niveau{display:flex;flex-direction:column;align-items:center;gap:1.4mm}
+.gen{font-size:6.6pt;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--encre-3)}
 .noms{display:flex;flex-wrap:wrap;justify-content:center;gap:2mm}
-.nom{font-family:var(--font-titre);font-weight:600;font-size:9.5pt;color:#fff;background:var(--nuit);padding:1.3mm 3.6mm;border-radius:10mm;box-shadow:inset 0 0 0 .5mm rgba(226,174,34,.6)}
+.nom{font-family:var(--font-titre);font-weight:600;font-size:9.5pt;color:#fff;background:var(--vert-fonce);padding:1.3mm 3.8mm;border-radius:10mm;box-shadow:inset 0 0 0 .45mm var(--jaune)}
+.niveau:first-child .nom{background:var(--encre)}
 .racine{width:30mm;height:7mm;margin:.3mm 0}
 .racine path{fill:none;stroke:var(--racine);stroke-width:2.2;stroke-linecap:round}
-.crepi-racines{position:absolute;right:0;top:0;width:40mm;height:30mm;pointer-events:none}
 table{width:100%;border-collapse:collapse;margin-top:3mm;font-size:8.8pt;break-inside:auto}
-th{background:var(--nuit);color:#fff;text-align:left;font-size:7pt;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:2.2mm 3mm}
+th{background:var(--vert-fonce);color:#fff;text-align:left;font-size:6.9pt;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:2.2mm 3mm}
 td{padding:2mm 3mm;border-bottom:.25mm solid var(--filet);vertical-align:top;overflow-wrap:anywhere}
 tr{break-inside:avoid}
 td.id{font-family:var(--font-titre);font-weight:600;font-size:10pt}
-td.gen-c{color:var(--racine);font-weight:600;white-space:nowrap}
+td.gen-c{color:var(--vert-fonce);font-weight:600;white-space:nowrap}
+td.gen-c small{color:var(--encre-3);font-weight:500}
 
 /* Clôture */
-.cloture{margin-top:7mm;display:grid;grid-template-columns:minmax(0,1fr) 62mm;gap:8mm;align-items:end;break-inside:avoid}
-.instruction{font-size:8.8pt;color:#3e434e;border-top:.3mm solid var(--filet);padding-top:3mm}
-.instruction b{color:var(--nuit)}
-.signature{position:relative;text-align:left;padding-top:3mm;border-top:.8mm solid var(--vert)}
-.signature .org{font-family:var(--font-titre);font-weight:700;font-size:11pt;color:var(--vert)}
-.signature .pole{font-size:8.4pt;color:var(--encre-2)}
-.signature .fait{font-size:8pt;color:var(--encre-2);margin-top:1.5mm}
+.cloture{margin-top:8mm;display:grid;grid-template-columns:minmax(0,1fr) 62mm;gap:8mm;align-items:end;break-inside:avoid}
+.instruction{font-size:8.8pt;color:#3d434d;border-top:.3mm solid var(--filet);padding-top:3mm}
+.instruction b{color:var(--encre)}
+.signature{position:relative;padding-top:3mm;border-top:.8mm solid var(--vert)}
+.signature .org{font-family:var(--font-marque);font-weight:900;font-size:10pt;letter-spacing:.02em}
+.signature .org .r{color:var(--vert)} .signature .org .g{color:var(--jaune)} .signature .org .b{color:var(--rouge)}
+.signature .pole{font-size:8.4pt;color:var(--encre-2);margin-top:.6mm}
+.signature .fait{font-size:8pt;color:var(--encre-2);margin-top:1.2mm}
 .signature img{position:absolute;right:2mm;top:-31mm;width:32mm;transform:rotate(-12deg);opacity:.92;mix-blend-mode:multiply}
-.avert{margin-top:6mm;font-size:7pt;color:#8a8f99;line-height:1.5}
+.avert{margin-top:6mm;font-size:7pt;color:var(--encre-3);line-height:1.5}
 </style></head><body><div class="feuille">
 <div class="filigrane"><img src="${img('logo-preuve.png')}" alt=""></div>
 
-<header class="bandeau">
-  <svg class="crepi" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-    <g transform="translate(470 -40)">${pulverisation(260, 7, 360, 220, '#E2AE22')}</g>
-    <g transform="translate(-60 170)">${pulverisation(160, 31, 300, 170, '#1E7A3C')}</g>
-    <path d="M520 268 C600 240 690 262 812 226" stroke="#E2AE22" stroke-width="3" fill="none" opacity=".35" stroke-linecap="round"/>
-  </svg>
-  <div class="haut">
-    <div class="marque">
-      <img src="${img('logo-preuve.png')}" alt="Logo Retour Gagnant Bénin">
-      <div class="tagbox"><span class="tag">Retour Gagnant</span>
-        <svg class="coulures" viewBox="0 0 250 40" aria-hidden="true"><g fill="#E2AE22" opacity=".85">
-          <path d="M5 0 h4 v22 a2 2 0 0 1 -4 0z"/><circle cx="7" cy="30" r="2"/>
-          <path d="M84 0 h3 v12 a1.5 1.5 0 0 1 -3 0z"/>
-          <path d="M113 0 h4 v27 a2 2 0 0 1 -4 0z"/><circle cx="115" cy="35" r="2.3"/>
-          <path d="M203 0 h3 v9 a1.5 1.5 0 0 1 -3 0z"/></g></svg>
-        <span class="sous">Bénin</span></div>
-    </div>
-    <div class="meta">
-      <div class="type">Dossier de demande de nationalité par <span>afro-descendance</span></div>
-      <div><b>Réf. dossier</b>${e(d.ref)}</div>
-      <div><b>Date</b>${e(d.date)}</div>
-      <div><b>Statut</b>${e(d.statut)}</div>
-    </div>
+<header class="entete">
+  <div class="marque">
+    <img src="${img('logo-preuve.png')}" alt="Logo Retour Gagnant Bénin">
+    <div><span class="nom-agence"><span class="r">RETOUR</span> <span class="g">GAGNANT</span></span><span class="pays">BÉNIN</span></div>
+  </div>
+  <div class="meta">
+    <div class="type">Dossier de demande de nationalité par <span>afro-descendance</span></div>
+    <div><b>Réf. dossier</b>${e(d.ref)}</div>
+    <div><b>Date</b>${e(d.date)}</div>
+    <div><b>Statut</b>${e(d.statut)}</div>
   </div>
 </header>
-<div class="drapeau"><i></i><span><i></i><i></i></span></div>
+<div class="drapeau"><i></i><i></i><i></i></div>
 
 <main>
   <div class="titre">
     <h1>Preuve d'afro-descendance<span>&amp; composition familiale</span></h1>
-    <svg class="trait" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true"><path d="M2 13 C60 5 130 16 200 9 S280 6 298 10" stroke="#E2AE22" stroke-width="5" fill="none" stroke-linecap="round" opacity=".9"/><path d="M40 15 C110 11 170 17 260 12" stroke="#9C3A1C" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/></svg>
+    <div class="filet3"><i></i><i></i><i></i></div>
     ${nom ? `<p class="qui"><strong>${e(d.civilite)} ${e(nom)}</strong> · demandeur${d.civilite === 'Mme' ? 'esse' : ''} de la nationalité béninoise</p>` : ''}
   </div>
   ${t(d.cadreLegal) ? `<div class="cadre"><b>Cadre légal et réglementaire.</b> ${e(d.cadreLegal)}</div>` : ''}
@@ -393,7 +367,7 @@ td.gen-c{color:var(--racine);font-weight:600;white-space:nowrap}
   <section>
     ${titre(d.civilite === 'Mme' ? 'La demandeuse principale' : 'Le demandeur principal')}
     <div class="demandeur">
-      <div class="nomfort">${e(d.demandeur.nom || '—')}<br>${e(d.demandeur.prenoms)}<small>${e(d.statut)}</small></div>
+      <div class="nomfort">${e(d.demandeur.nom || '—')}<br>${e(d.demandeur.prenoms)}<br><small>${e(d.statut)}</small></div>
       <dl>${ligne('Naissance', d.demandeur.naissance)}${ligne('Nationalité actuelle', d.demandeur.nationalite)}${ligne("Pièce d'identité", d.demandeur.piece)}${ligne('Profession', d.demandeur.profession)}${ligne('Résidence', d.demandeur.residence)}</dl>
     </div>
   </section>
@@ -407,9 +381,8 @@ td.gen-c{color:var(--racine);font-weight:600;white-space:nowrap}
 
   ${gp ? `<section>${titre('Troisième génération : les grands-parents')}<div class="grille">${gp}</div></section>` : ''}
 
-  ${(arbre || lignee.length || t(d.noteAscendance)) ? `<section style="position:relative">
+  ${(arbre || lignee.length || t(d.noteAscendance)) ? `<section>
     ${titre(`Ligne directe d'afro-descendance (${brancheTitre})`)}
-    <svg class="crepi-racines" viewBox="0 0 160 120" aria-hidden="true">${pulverisation(120, 97, 160, 120, '#9C3A1C')}</svg>
     ${arbre}
     ${lignee.length ? `<table><thead><tr><th>Génération</th><th>Identité</th><th>Origines &amp; mentions</th></tr></thead><tbody>${lignee.map(m => `<tr><td class="gen-c">${e(m.generation)}${t(m.branche) ? `<br><small>${e(m.branche)}</small>` : ''}</td><td class="id">${e(m.identite)}</td><td>${e(m.mentions)}</td></tr>`).join('')}</tbody></table>` : ''}
     ${t(d.noteAscendance) ? `<p class="note"><b>Ascendance.</b> ${e(d.noteAscendance)}</p>` : ''}
@@ -419,7 +392,7 @@ td.gen-c{color:var(--racine);font-weight:600;white-space:nowrap}
     <p class="instruction">${t(d.noteInstruction) ? `<b>Note d'instruction.</b> ${e(d.noteInstruction)}` : `<b>Note d'instruction.</b> Le présent document récapitule la filiation de ${e(d.civilite)} ${e(nom || 'le demandeur')} telle qu'elle résulte des pièces d'état civil communiquées, en vue de sa demande de nationalité béninoise.`}</p>
     <div class="signature">
       ${d.cachet ? `<img src="${img('cachet-preuve.png')}" alt="Cachet Retour Gagnant Bénin">` : ''}
-      <div class="org">Retour Gagnant Bénin</div>
+      <div class="org"><span class="r">RETOUR</span> <span class="g">GAGNANT</span> <span class="b">BÉNIN</span></div>
       <div class="pole">${e(d.signataire)}</div>
       <div class="fait">Établi le ${e(d.date)}</div>
     </div>
