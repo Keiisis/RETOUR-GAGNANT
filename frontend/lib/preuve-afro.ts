@@ -213,7 +213,8 @@ function racines(d: PreuveAfro): string {
     for (const [gen, noms] of autres) niveaux.push({ gen, noms })
     const pleins = niveaux.filter(n => n.noms.length)
     if (pleins.length < 2) return ''
-    const lien = `<svg class="racine" viewBox="0 0 120 34" aria-hidden="true"><path d="M60 0 C60 12 58 18 60 34" /><path d="M60 14 C52 20 44 22 36 30" /><path d="M60 16 C69 21 78 24 86 31" /><path d="M59 24 C55 27 52 29 50 33" /></svg>`
+    // Trait porté par les attributs (et pas seulement le CSS) : l'export PDF les conserve.
+    const lien = `<svg class="racine" viewBox="0 0 120 34" aria-hidden="true"><g fill="none" stroke="#9C3A1C" stroke-width="2.2" stroke-linecap="round"><path d="M60 0 C60 12 58 18 60 34" /><path d="M60 14 C52 20 44 22 36 30" /><path d="M60 16 C69 21 78 24 86 31" /><path d="M59 24 C55 27 52 29 50 33" /></g></svg>`
     return `<div class="arbre">${pleins.map((n, i) => `${i ? lien : ''}<div class="niveau"><span class="gen">${e(n.gen)}</span><div class="noms">${n.noms.map(x => `<span class="nom">${e(x)}</span>`).join('')}</div></div>`).join('')}</div>`
 }
 
@@ -256,7 +257,7 @@ export function htmlPreuve(d: PreuveAfro, origine = ''): string {
 html,body{overflow-x:clip}
 body{font-family:var(--font-texte);color:var(--encre);background:var(--papier);font-size:9.2pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media screen{body{background:transparent;padding:24px 12px}.feuille{width:210mm;min-height:297mm;margin:0 auto;box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 40px rgba(20,30,25,.18)}}
-.feuille{background:var(--papier);position:relative;overflow:hidden}
+.feuille{background:var(--papier);position:relative;overflow:hidden;font-family:var(--font-texte);color:var(--encre);font-size:9.2pt;line-height:1.45}
 .filigrane{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:0}
 .filigrane img{width:115mm;opacity:.04;filter:grayscale(1)}
 main{position:relative;z-index:1;padding:0 16mm 10mm}
@@ -291,7 +292,7 @@ main{position:relative;z-index:1;padding:0 16mm 10mm}
 /* Sections */
 section{margin-top:6mm;break-inside:auto}
 h3{font-family:var(--font-titre);font-weight:600;font-size:12.5pt;color:var(--encre);display:flex;align-items:center;gap:3mm;padding-bottom:2mm;border-bottom:.3mm solid var(--filet);margin-bottom:3mm;break-after:avoid}
-h3 .num{flex:none;width:6.4mm;height:6.4mm;border-radius:50%;background:var(--vert);color:#fff;font-family:var(--font-marque);font-weight:800;font-size:8.5pt;display:flex;align-items:center;justify-content:center}
+h3 .num{flex:none;display:block;width:6.4mm;height:6.4mm;line-height:6.4mm;text-align:center;border-radius:50%;background:var(--vert);color:#fff;font-family:var(--font-marque);font-weight:800;font-size:8.5pt}
 .demandeur{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.55fr);gap:7mm;align-items:start}
 .demandeur .nomfort{font-family:var(--font-titre);font-weight:700;font-size:16pt;line-height:1.12;color:var(--encre);overflow-wrap:anywhere}
 .demandeur .nomfort small{display:inline-block;font-family:var(--font-texte);font-weight:600;font-size:7pt;letter-spacing:.16em;text-transform:uppercase;color:var(--vert-fonce);background:var(--vert-pale);padding:.8mm 2.4mm;border-radius:1mm;margin-top:2.4mm}
@@ -316,7 +317,7 @@ dd{overflow-wrap:anywhere}
 .niveau{display:flex;flex-direction:column;align-items:center;gap:1.4mm}
 .gen{font-size:6.6pt;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--encre-3)}
 .noms{display:flex;flex-wrap:wrap;justify-content:center;gap:2mm}
-.nom{font-family:var(--font-titre);font-weight:600;font-size:9.5pt;color:#fff;background:var(--vert-fonce);padding:1.3mm 3.8mm;border-radius:10mm;box-shadow:inset 0 0 0 .45mm var(--jaune)}
+.nom{display:inline-block;white-space:nowrap;font-family:var(--font-titre);font-weight:600;font-size:9.5pt;line-height:1.2;color:#fff;background:var(--vert-fonce);padding:1.1mm 3.6mm;border-radius:10mm;border:.45mm solid var(--jaune)}
 .niveau:first-child .nom{background:var(--encre)}
 .racine{width:30mm;height:7mm;margin:.3mm 0}
 .racine path{fill:none;stroke:var(--racine);stroke-width:2.2;stroke-linecap:round}

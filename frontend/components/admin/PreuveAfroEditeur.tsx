@@ -2,19 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowCounterClockwise as RotateCcw, CaretDown, Eye, FilePdf, PencilSimpleLine, Plus, Trash, X } from '@phosphor-icons/react'
+import { ArrowCounterClockwise as RotateCcw, CaretDown, CircleNotch, Eye, FilePdf, PencilSimpleLine, Plus, Trash, X } from '@phosphor-icons/react'
 import {
     ascendantVide, htmlPreuve, maillonVide, preuveDepuisDossier, preuveVierge,
     type Ascendant, type DossierSource, type MaillonLignee, type Parent, type PreuveAfro,
 } from '@/lib/preuve-afro'
+import { telechargerPreuvePdf } from '@/lib/preuve-afro-pdf'
 
 /* Éditeur de la « Preuve d'afro-descendance » (onglet Demandes de Nationalité).
 
    Rendu dans <body> par un portail : monté dans la page, il passait sous la
    barre latérale et la barre du haut du panneau (2026-10-16, champs et
    boutons masqués). À gauche la saisie, à droite le document tel qu'il sera
-   imprimé ; sur petit écran, une bascule Saisie / Aperçu. Le PDF sort de la
-   boîte d'impression du navigateur. Brouillon gardé dans ce navigateur. */
+   imprimé ; sur petit écran, une bascule Saisie / Aperçu. Le PDF se télécharge
+   directement (lib/preuve-afro-pdf). Brouillon gardé dans ce navigateur. */
 
 const CLE = (ref: string) => `rgb-preuve-afro:${ref || 'libre'}`
 const LARGEUR_A4 = 794 // 210 mm à 96 ppp
@@ -132,19 +133,16 @@ export default function PreuveAfroEditeur({ source, onClose }: { source?: Dossie
         setD(depart)
     }
 
-    const imprimer = async () => {
-        const w = iframe.current?.contentWindow
-        if (!w) return
-        await w.document.fonts?.ready
-        const zoom = w.document.documentElement.style.getPropertyValue('zoom')
-        w.document.documentElement.style.removeProperty('zoom')
-        // Le titre de la page devient le nom du fichier PDF proposé.
-        const titre = document.title
-        document.title = w.document.title
-        w.focus()
-        w.print()
-        document.title = titre
-        if (zoom) w.document.documentElement.style.setProperty('zoom', zoom)
+    const [genere, setGenere] = useState(false)
+    const telecharger = async () => {
+        const doc = iframe.current?.contentDocument
+        if (!doc || genere) return
+        setGenere(true)
+        try {
+            await telechargerPreuvePdf(doc, doc.title || 'PREUVE_AFRO_DESCENDANCE', d.ref)
+        } catch (err) {
+            alert(`PDF non généré : ${err instanceof Error ? err.message : 'erreur inconnue'}`)
+        } finally { setGenere(false) }
     }
 
     const parent = (qui: 'pere' | 'mere', num: string, l: string) => (
@@ -185,8 +183,8 @@ export default function PreuveAfroEditeur({ source, onClose }: { source?: Dossie
                     <button onClick={repartir} className="flex-1 sm:flex-none h-9 px-3 rounded-lg border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 whitespace-nowrap">
                         <RotateCcw size={15} /> {source ? 'Repartir du dossier' : 'Vider'}
                     </button>
-                    <button onClick={imprimer} className="flex-1 sm:flex-none h-9 px-4 rounded-lg bg-[#008751] hover:bg-[#00703F] active:translate-y-px text-white text-sm font-bold flex items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#008751]">
-                        <FilePdf size={16} /> Télécharger le PDF
+                    <button onClick={telecharger} disabled={genere} aria-busy={genere} className="flex-1 sm:flex-none h-9 px-4 rounded-lg bg-[#008751] hover:bg-[#00703F] active:translate-y-px disabled:opacity-70 disabled:cursor-wait text-white text-sm font-bold flex items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#008751]">
+                        {genere ? <><CircleNotch size={16} className="animate-spin" /> Génération…</> : <><FilePdf size={16} /> Télécharger le PDF</>}
                     </button>
                 </div>
                 {/* Bascule Saisie / Aperçu sous 1024 px */}
@@ -272,7 +270,7 @@ export default function PreuveAfroEditeur({ source, onClose }: { source?: Dossie
                                 <input type="checkbox" checked={d.cachet} onChange={e => maj('cachet', e.target.checked)} className="w-4 h-4 accent-[#008751]" /> Apposer le cachet de Retour Gagnant Bénin
                             </label>
                         </Bloc>
-                        <p className="text-xs text-slate-500 px-1 pb-2">Brouillon enregistré automatiquement dans ce navigateur. Dans la fenêtre d&apos;impression, choisir « Enregistrer au format PDF ».</p>
+                        <p className="text-xs text-slate-500 px-1 pb-2">Brouillon enregistré automatiquement dans ce navigateur.</p>
                     </div>
                 </div>
 
