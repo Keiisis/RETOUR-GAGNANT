@@ -47,6 +47,7 @@ import {
     type ThreatType,
 } from '@/lib/waf'
 import { isLogementAgent } from '@/lib/logement-access'
+import { isNationaliteAgent } from '@/lib/nationalite-access'
 import { verifier2FA, COOKIE_2FA } from '@/lib/totp-cookie'
 
 // ═══════════════════════════════════════════════════════════════
@@ -1050,6 +1051,9 @@ export async function middleware(request: NextRequest) {
             // aussi ouverte à l'agent nommément autorisé (Justamielle), en plus
             // des admins. Aucune autre route /api/admin n'est concernée.
             const isLogementMgrPath = isAdminApi && pathname.startsWith('/api/admin/logements')
+            // Même principe pour l'onglet Nationalité : l'agent désigné
+            // (lib/nationalite-access, Nadjath) y a les droits admin complets.
+            const isNationaliteMgrPath = isAdminApi && pathname.startsWith('/api/admin/nationalite')
 
             /* ── Routes /api/admin ouvertes À TOUS LES AGENTS ──────────
                Ce garde refuse `/api/admin/*` à quiconque n'est pas admin, et
@@ -1090,6 +1094,7 @@ export async function middleware(request: NextRequest) {
                 ? (apiRole === 'agent' || ADMIN_ROLES.includes(apiRole))
                 : ADMIN_ROLES.includes(apiRole)
                     || (isLogementMgrPath && isLogementAgent(apiUser.id))
+                    || (isNationaliteMgrPath && apiRole === 'agent' && isNationaliteAgent(apiUser.id))
                     || (ouverteAgent && apiRole === 'agent')
             if (!apiOk) {
                 return new NextResponse(JSON.stringify({ error: 'Accès non autorisé' }), {

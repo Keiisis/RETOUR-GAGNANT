@@ -39,7 +39,8 @@ const nomRoute = (p: string) =>
 
 // `auth.getUser()` compte : plusieurs routes client vérifient la session
 // directement via createServerClient, sans passer par un helper maison.
-const IDENTITE = /requireStaff|verifyApiAuth|getClientUser|getMobileUserId|requireAdmin|auth\.getUser\(/
+// requireLogementManager / requireNationaliteManager appellent requireStaff.
+const IDENTITE = /requireStaff|requireLogementManager|requireNationaliteManager|verifyApiAuth|getClientUser|getMobileUserId|requireAdmin|auth\.getUser\(/
 // `executerCron` porte la garde du secret ET journalise l'exécution :
 // c'est requireCron plus la trace, donc il compte comme secret.
 const SECRET = /requireCron|executerCron|CRON_SECRET|constructEvent|verifySignature|createHmac|timingSafeEqual|verifyRgpdToken|verifyResumeToken|verifyMyafroToken|verifyWebhook/

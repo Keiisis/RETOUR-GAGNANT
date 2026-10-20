@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireStaff } from '@/lib/api-guard'
+import { requireNationaliteManager } from '@/lib/api-guard'
 import { recordNationalityIncome } from '@/lib/nationality-income'
 import { MOYENS_PAIEMENT, type MoyenPaiement } from '@/lib/moyens-paiement'
 
@@ -76,10 +76,9 @@ function etapesNationalite() {
 }
 
 export async function POST(request: NextRequest) {
-    // 'admin' : dossier « réputé payé sur parole » + revenu comptabilisé.
-    // Seul le panel admin l'appelle (middleware : agents refusés) ; la garde
-    // serveur doit tenir seule.
-    const garde = await requireStaff(request, 'admin')
+    // Admins + agent désigné (lib/nationalite-access) : dossier « réputé payé
+    // sur parole » + revenu comptabilisé. La garde serveur doit tenir seule.
+    const garde = await requireNationaliteManager(request)
     if (!garde.ok) return garde.response!
 
     const body = await request.json().catch(() => ({})) as Record<string, unknown>

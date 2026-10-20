@@ -7,6 +7,8 @@ import { Globe, MagnifyingGlass as Search, Funnel as Filter, Download, Clock, X,
 import { Button } from '@/components/ui/button'
 import PreuveAfroEditeur from '@/components/admin/PreuveAfroEditeur'
 import SuiviClientPanneau from '@/components/admin/SuiviClientPanneau'
+import AdminNationalitePage from '@/app/admin/nationalite/page'
+import { isNationaliteAgent } from '@/lib/nationalite-access'
 import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
 import {
     NATIONALITE_STATUTS_EDITABLES, NATIONALITE_HORS_LISTE,
@@ -73,7 +75,27 @@ interface NationalityApplication {
 /* Statuts d'un dossier : référence unique (lib/constants/statuts), partagée avec l'admin. */
 const STATUTS_DOSSIER = NATIONALITE_STATUTS_EDITABLES.map(v => ({ v, l: statutNationalite(v).label }))
 
+/**
+ * L'agent désigné (lib/nationalite-access) reçoit l'interface admin complète ;
+ * les API concernées l'acceptent en plus des admins. Les autres agents gardent
+ * la vue agent ci-dessous.
+ */
 export default function AgentNationalitePage() {
+    const [gestionnaire, setGestionnaire] = useState<boolean | null>(null)
+
+    useEffect(() => {
+        supabase.auth.getUser()
+            .then(({ data }) => setGestionnaire(isNationaliteAgent(data.user?.id)))
+            .catch(() => setGestionnaire(false))
+    }, [])
+
+    if (gestionnaire === null) {
+        return <div className="flex justify-center py-24"><div className="w-8 h-8 border-2 border-[#008751]/25 border-t-[#008751] rounded-full animate-spin" /></div>
+    }
+    return gestionnaire ? <AdminNationalitePage /> : <VueAgentNationalite />
+}
+
+function VueAgentNationalite() {
     const [apps, setApps] = useState<NationalityApplication[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
