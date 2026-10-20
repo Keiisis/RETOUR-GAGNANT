@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireStaff } from '@/lib/api-guard'
+import { requireNationaliteManager } from '@/lib/api-guard'
 import { lireLigneDocument } from '@/lib/nationality-docs'
 import { mettreALaCorbeille, traceCorbeille } from '@/lib/nationality-corbeille'
 
@@ -18,7 +18,7 @@ const supabase = createClient(
 )
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireNationaliteManager(request)
     if (!garde.ok) return garde.response!
 
     const { id } = await params

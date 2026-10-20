@@ -4,10 +4,12 @@
 //  GET    → enregistrement complet (mot de passe compris, pour l'équipe) +
 //           pré-remplissage tiré du dossier source s'il n'existe pas encore.
 //  PUT    { saisie, passerEnTraitement? } → crée / met à jour ; statut tracé.
-//  DELETE → admin seulement ; la fiche part en corbeille (jamais effacée).
+//  DELETE → admin (+ agent désigné pour la nature « nationalite ») ; la fiche
+//           part en corbeille (jamais effacée).
 // ══════════════════════════════════════════════════════════════
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyApiAuth } from '@/lib/api-auth'
+import { verifyApiAuth, roleAutorise } from '@/lib/api-auth'
+import { isNationaliteAgent } from '@/lib/nationalite-access'
 import { civiliteDepuisGenre, estNature, validerSaisie, type SaisieEnregistrement } from '@/lib/myafro-enregistrement'
 import { synchroniserSuiviNationalite } from '@/lib/suivi-nationalite'
 import { auteur, db, enregistrer, lireDossierSource, lireEnregistrement, mettreEnCorbeille, sansSecret } from '@/lib/myafro-enregistrement-serveur'
@@ -63,10 +65,15 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
 }
 
 export async function DELETE(request: NextRequest, ctx: Ctx) {
-    const auth = await verifyApiAuth(request, 'admin')
+    const auth = await verifyApiAuth(request, 'agent')
     if (!auth.authenticated) return auth.error!
     const c = await cible(ctx)
     if (!c) return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 })
+    // Admins ; l'agent désigné (lib/nationalite-access) pour les seules fiches Nationalité.
+    const admin = roleAutorise(auth.role, 'admin')
+    if (!admin && !(c.nature === 'nationalite' && isNationaliteAgent(auth.userId))) {
+        return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 })
+    }
     if (!(await lireEnregistrement(c.nature, c.id))) return NextResponse.json({ error: 'Fiche introuvable' }, { status: 404 })
     try {
         await mettreEnCorbeille(c.nature, c.id)

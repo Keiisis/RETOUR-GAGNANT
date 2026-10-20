@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace, Certificate, Path } from '@phosphor-icons/react';
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 import RattacherFacture from '@/components/admin/RattacherFacture'
 import { BadgeMyafro, FiltreMyafroChips, PanneauMyafro, useEnregistrementsMyafro, type FiltreMyafro } from '@/components/admin/EnregistrementMyafro'
@@ -104,6 +105,7 @@ interface Justificatif { id: string; numero: string; total: number; currency: st
 
 export default function AdminNationalitePage() {
     const { t } = useTranslation();
+    const depuisAgent = usePathname()?.startsWith('/agent') ?? false
     const [apps, setApps] = useState<Application[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState('all')
@@ -892,12 +894,16 @@ export default function AdminNationalitePage() {
                         >
                             <Copy size={14} /> <T>Code d&apos;invitation</T>
                         </button>
+                        {/* Pages de réglages réservées aux admins : masquées quand
+                            l'agent désigné ouvre cet écran depuis /agent/nationalite. */}
+                        {!depuisAgent && <>
                         <Link href="/admin/nationalite/settings" className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 flex items-center gap-2 hover:bg-emerald-500/20 transition-all">
                             <Globe2 size={14} /> <T>Paramètres formulaire</T> <ExternalLink size={12} />
                         </Link>
                         <Link href="/admin/settings/payment" className="text-xs font-bold text-amber-400 bg-amber-500/10 px-4 py-2 rounded-xl border border-amber-500/20 flex items-center gap-2 hover:bg-amber-500/20 transition-all">
                             <CreditCard size={14} /> <T>Passerelles paiement</T> <ExternalLink size={12} />
                         </Link>
+                        </>}
                     </div>
                 </div>
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireStaff } from '@/lib/api-guard'
+import { requireNationaliteManager } from '@/lib/api-guard'
 import { lireLigneDocument } from '@/lib/nationality-docs'
 import { mettreALaCorbeille } from '@/lib/nationality-corbeille'
 import { synchroniserSuiviNationalite } from '@/lib/suivi-nationalite'
@@ -25,7 +25,7 @@ const EDITABLE = [
 
 // PATCH /api/admin/nationalite/[id] : édition d'une demande (whitelist stricte).
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireNationaliteManager(request)
     if (!garde.ok) return garde.response!
 
     const { id } = await params
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 // DELETE /api/admin/nationalite/[id] : suppression d'une demande + de ses
 // fichiers dans le bucket nationality_documents.
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const garde = await requireStaff(request, 'admin')
+    const garde = await requireNationaliteManager(request)
     if (!garde.ok) return garde.response!
 
     const { id } = await params

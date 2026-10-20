@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { requireStaff } from '@/lib/api-guard'
+import { requireStaff, requireNationaliteManager } from '@/lib/api-guard'
 import { genererCode, normaliserCode } from '@/lib/nationality-invitation'
 
 /* ═══════════════════════════════════════════════════════════════
@@ -41,10 +41,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-    // 'admin' : un code vaut une prestation offerte. Seul le panel admin
-    // appelle cette route (le middleware refuse déjà les agents) ; la garde
-    // serveur doit tenir seule.
-    const garde = await requireStaff(request, 'admin')
+    // Admins + agent désigné (lib/nationalite-access) : un code vaut une
+    // prestation offerte. La garde serveur doit tenir seule.
+    const garde = await requireNationaliteManager(request)
     if (!garde.ok) return garde.response!
 
     const body = await request.json().catch(() => ({})) as Record<string, unknown>

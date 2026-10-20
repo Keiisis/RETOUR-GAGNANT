@@ -26,6 +26,7 @@ import {
 } from '@/lib/rate-limit'
 import { scanRequestBody } from '@/lib/waf'
 import { isLogementAgent } from '@/lib/logement-access'
+import { isNationaliteAgent } from '@/lib/nationalite-access'
 
 // ─── Profils de débit pour les routes publiques ───────────────
 // Calibrés sur l'usage humain réel, pas sur une valeur ronde :
@@ -261,6 +262,21 @@ export async function requireLogementManager(request: Request): Promise<StaffGua
     const g = await requireStaff(request, 'agent') // admins + agents authentifiés
     if (!g.ok) return g
     if (g.isAdmin || isLogementAgent(g.userId)) return g
+    return {
+        ok: false,
+        isAdmin: false,
+        response: NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 }),
+    }
+}
+
+/**
+ * Garde des opérations admin de l'onglet Nationalité : accepte les
+ * administrateurs OU l'agent nommément autorisé (voir lib/nationalite-access).
+ */
+export async function requireNationaliteManager(request: Request): Promise<StaffGuard> {
+    const g = await requireStaff(request, 'agent') // admins + agents authentifiés
+    if (!g.ok) return g
+    if (g.isAdmin || isNationaliteAgent(g.userId)) return g
     return {
         ok: false,
         isAdmin: false,
