@@ -18,8 +18,13 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 const BUCKET = 'nationality_documents'
 const MAX_FILES = 20
 
-// Extensions acceptées pour un dossier de nationalité (scans / photos).
-const ALLOWED_EXT = new Set(['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'heif', 'doc', 'docx'])
+// Mêmes extensions que /upload-file : les fichiers trop lourds pour la voie
+// serveur arrivent ici, ils ne doivent pas retomber en « bin ».
+const ALLOWED_EXT = new Set([
+    'pdf', 'jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif',
+    'doc', 'docx', 'xls', 'xlsx', 'csv', 'ppt', 'pptx',
+    'odt', 'ods', 'odp', 'rtf', 'txt',
+])
 const sanitizeExt = (ext: unknown): string => {
     const e = String(ext ?? '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8)
     return ALLOWED_EXT.has(e) ? e : 'bin'

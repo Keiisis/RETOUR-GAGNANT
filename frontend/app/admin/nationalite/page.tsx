@@ -4,6 +4,7 @@ import { useTranslation, T } from '@/lib/translation';
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
+import { deposerPieceNationalite } from '@/lib/nationality-upload'
 import { Globe as Globe2, CheckCircle as CheckCircle2, Clock, Download, Envelope as Mail, MagnifyingGlass as Search, CaretDown as ChevronDown, CaretUp as ChevronUp, MapPin, CreditCard, ArrowSquareOut as ExternalLink, Check, CircleNotch as Loader2, Eye, Pencil, Trash as Trash2, X, FileText, Image as ImageIcon, ArrowCounterClockwise as RotateCcw, Copy, FilePlus, PaperPlaneTilt as Send, Plus, CloudArrowUp as UploadCloud, ClipboardText as ClipboardList, MagicWand as Wand2, PencilLine as PenLine, ArrowLeft, Bank as Landmark, Swap as Replace, Certificate, Path } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -365,15 +366,9 @@ export default function AdminNationalitePage() {
         try {
             const docs: { label: string; path: string }[] = []
             for (const r of ready) {
-                const ext = (r.file!.name.split('.').pop() || 'bin').toLowerCase()
-                const fd = new FormData()
-                fd.append('file', r.file!)
-                fd.append('key', r.label.trim())
-                fd.append('ext', ext)
-                const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
-                const uj = await up.json().catch(() => ({}))
-                if (!up.ok || !uj.path) throw new Error(uj.error || `Échec de l'envoi de « ${r.label} »`)
-                docs.push({ label: r.label.trim(), path: uj.path })
+                const path = await deposerPieceNationalite(r.file!, r.label.trim())
+                    .catch(e => { throw new Error(`Échec de l'envoi de « ${r.label} » : ${e instanceof Error ? e.message : ''}`) })
+                docs.push({ label: r.label.trim(), path })
             }
             const res = await fetch(`/api/admin/nationalite/${addDocsApp.id}/add-documents`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -652,13 +647,8 @@ export default function AdminNationalitePage() {
             if (aDeposer.length) {
                 const lignes: { label: string; path: string }[] = []
                 for (const { slot, file } of aDeposer) {
-                    const fd = new FormData()
-                    fd.append('file', file)
-                    fd.append('key', slot.key)
-                    fd.append('ext', file.name.split('.').pop() || 'bin')
-                    const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
-                    const uj = await up.json().catch(() => ({}))
-                    if (up.ok && uj.path) lignes.push({ label: slot.label, path: uj.path })
+                    const path = await deposerPieceNationalite(file, slot.key).catch(() => null)
+                    if (path) lignes.push({ label: slot.label, path })
                 }
                 if (lignes.length) {
                     const add = await fetch(`/api/admin/nationalite/${json.id}/add-documents`, {
@@ -800,14 +790,10 @@ export default function AdminNationalitePage() {
         if (!editApp) return
         setEditDocBusy(true)
         try {
-            const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
             const label = file.name.replace(/\.[^.]+$/, '') || 'Document'
-            const fd = new FormData(); fd.append('file', file); fd.append('key', label); fd.append('ext', ext)
-            const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
-            const uj = await up.json().catch(() => ({}))
-            if (!up.ok || !uj.path) throw new Error(uj.error || 'Envoi impossible.')
+            const path = await deposerPieceNationalite(file, label)
             const add = await fetch(`/api/admin/nationalite/${editApp.id}/add-documents`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ docs: [{ label, path: uj.path }] }),
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ docs: [{ label, path }] }),
             })
             if (!add.ok) throw new Error('Enregistrement impossible.')
             await loadEditDocs(editApp.id)
@@ -818,13 +804,9 @@ export default function AdminNationalitePage() {
         if (!editApp) return
         setEditDocBusy(true)
         try {
-            const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
-            const fd = new FormData(); fd.append('file', file); fd.append('key', file.name.replace(/\.[^.]+$/, '') || 'doc'); fd.append('ext', ext)
-            const up = await fetch('/api/nationality/upload-file', { method: 'POST', body: fd })
-            const uj = await up.json().catch(() => ({}))
-            if (!up.ok || !uj.path) throw new Error(uj.error || 'Envoi impossible.')
+            const newPath = await deposerPieceNationalite(file, file.name.replace(/\.[^.]+$/, '') || 'doc')
             const res = await fetch(`/api/admin/nationalite/${editApp.id}/documents`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ oldPath, newPath: uj.path }),
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ oldPath, newPath }),
             })
             if (!res.ok) throw new Error('Remplacement impossible.')
             await loadEditDocs(editApp.id)
