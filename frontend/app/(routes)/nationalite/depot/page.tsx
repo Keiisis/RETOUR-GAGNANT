@@ -4,11 +4,14 @@ import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CloudArrowUp as UploadCloud, Plus, Trash as Trash2, CircleNotch as Loader2, Check, ShieldCheck, FileText } from '@phosphor-icons/react';
 import { natFetch } from '@/lib/nationality-flow'
+import { deposerPieceNationalite } from '@/lib/nationality-upload'
+import { compressImage } from '@/lib/compress-image'
 import { T, useTranslation } from '@/lib/translation'
 
 export const dynamic = 'force-dynamic'
 
-interface Row { id: string; label: string; file: File | null }
+// `path` : pièce déjà déposée au stockage → pas renvoyée si l'envoi est relancé.
+interface Row { id: string; label: string; file: File | null; path?: string }
 const newRow = (): Row => ({ id: Math.random().toString(36).slice(2), label: '', file: null })
 
 function DepotInner() {
@@ -42,15 +45,17 @@ function DepotInner() {
         try {
             const docs: { label: string; path: string }[] = []
             for (const r of ready) {
-                const ext = (r.file!.name.split('.').pop() || 'bin').toLowerCase()
-                const fd = new FormData()
-                fd.append('file', r.file!)
-                fd.append('key', r.label.trim())
-                fd.append('ext', ext)
-                const up = await natFetch('/api/nationality/upload-file', { method: 'POST', body: fd })
-                const uj = await up.json().catch(() => ({}))
-                if (!up.ok || !uj.path) throw new Error(uj.error || t("Échec de l'envoi de « {label} »", { label: r.label }))
-                docs.push({ label: r.label.trim(), path: uj.path })
+                let path = r.path
+                if (!path) {
+                    try {
+                        path = await deposerPieceNationalite(await compressImage(r.file!), r.label.trim())
+                    } catch (e) {
+                        throw new Error(`${t("Échec de l'envoi de « {label} »", { label: r.label })} ${e instanceof Error ? e.message : ''}`.trim())
+                    }
+                    const p = path
+                    setRows(prev => prev.map(x => x.id === r.id ? { ...x, path: p } : x))
+                }
+                docs.push({ label: r.label.trim(), path })
             }
             const res = await natFetch('/api/nationality/depot', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -119,7 +124,7 @@ function DepotInner() {
                                         <UploadCloud size={15} className="text-[#008751]" />
                                         <span className="truncate max-w-[150px]">{r.file ? r.file.name : t('Choisir un fichier')}</span>
                                         <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx" className="hidden"
-                                            onChange={e => { const f = e.target.files?.[0] || null; setRows(prev => prev.map(x => x.id === r.id ? { ...x, file: f } : x)) }} />
+                                            onChange={e => { const f = e.target.files?.[0] || null; setRows(prev => prev.map(x => x.id === r.id ? { ...x, file: f, path: undefined } : x)) }} />
                                     </label>
                                     {rows.length > 1 && (
                                         <button onClick={() => setRows(prev => prev.filter(x => x.id !== r.id))} title={t('Retirer')} className="p-2 rounded-xl text-[#E8112D] hover:bg-[#FDECEA] self-center"><Trash2 size={16} /></button>
