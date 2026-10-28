@@ -104,7 +104,8 @@ const APIFY_ACTORS: Record<string, {
         timeout: 180,
     },
     linkedin: {
-        actor: 'apify~linkedin-profile-scraper',
+        // Sortie: {postUrl, text, numLikes, numComments, numShares, datePosted, ...}
+        actor: 'johnvc~linkedin-posts-api',
         buildInput: (url) => ({ profileUrls: [url] }),
         timeout: 120,
     },
@@ -211,10 +212,10 @@ function normalizeLinkedIn(i: Record<string, unknown>, fallbackUrl: string): Nor
     if (!text && url === fallbackUrl) return null
     return {
         text,
-        likes: num(i.likesCount ?? i.likes ?? i.reactionsCount ?? 0),
-        comments: num(i.commentsCount ?? i.comments ?? 0),
-        shares: num(i.sharesCount ?? i.shares ?? 0),
-        date: strSafe(i.timestamp || i.date || i.publishedAt),
+        likes: num(i.numLikes ?? i.likesCount ?? i.likes ?? i.reactionsCount ?? 0),
+        comments: num(i.numComments ?? i.commentsCount ?? i.comments ?? 0),
+        shares: num(i.numShares ?? i.sharesCount ?? i.shares ?? 0),
+        date: strSafe(i.datePosted || i.timestamp || i.date || i.publishedAt),
         url,
     }
 }

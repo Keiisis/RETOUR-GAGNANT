@@ -64,9 +64,9 @@ const ACTORS: Record<string, { actor: string; buildInput: (url: string, username
         timeout: 120,
     },
     linkedin: {
-        actor: 'apify~linkedin-profile-scraper',
+        actor: 'johnvc~linkedin-posts-api',
         buildInput: (url) => ({ profileUrls: [url] }),
-        timeout: 60,
+        timeout: 120,
     },
 }
 
@@ -146,11 +146,11 @@ export async function GET(request: NextRequest) {
                 first_post_keys: firstPost ? Object.keys(firstPost as object) : [],
                 first_post_preview: firstPost ? {
                     text: String((firstPost as Record<string, unknown>).text || (firstPost as Record<string, unknown>).caption || '').slice(0, 200),
-                    time: (firstPost as Record<string, unknown>).time || (firstPost as Record<string, unknown>).timestamp || (firstPost as Record<string, unknown>).date,
+                    time: (firstPost as Record<string, unknown>).time || (firstPost as Record<string, unknown>).timestamp || (firstPost as Record<string, unknown>).date || (firstPost as Record<string, unknown>).datePosted,
                     url: (firstPost as Record<string, unknown>).url || (firstPost as Record<string, unknown>).postUrl,
-                    reactionsCount: (firstPost as Record<string, unknown>).reactionsCount || (firstPost as Record<string, unknown>).likesCount,
-                    commentsCount: (firstPost as Record<string, unknown>).commentsCount,
-                    sharesCount: (firstPost as Record<string, unknown>).sharesCount,
+                    reactionsCount: (firstPost as Record<string, unknown>).reactionsCount || (firstPost as Record<string, unknown>).likesCount || (firstPost as Record<string, unknown>).numLikes,
+                    commentsCount: (firstPost as Record<string, unknown>).commentsCount || (firstPost as Record<string, unknown>).numComments,
+                    sharesCount: (firstPost as Record<string, unknown>).sharesCount || (firstPost as Record<string, unknown>).numShares,
                 } : null,
                 sample_items: items.slice(0, 2),
             },
