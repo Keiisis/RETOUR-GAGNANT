@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 import { cn } from '@/lib/utils'
 import { isLogementAgent } from '@/lib/logement-access'
 import { AgentCallCenter } from '@/components/agent/AgentCallCenter'
-import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail, Buildings as Building2, FileMagnifyingGlass } from '@phosphor-icons/react';
+import { SquaresFour as LayoutDashboard, FileText, ChatText as MessageSquare, Users as UsersIcon, Compass, CalendarDots as CalendarDays, FolderOpen, PaperPlaneTilt as Send, SignOut as LogOut, List as Menu, Bell, MagnifyingGlass as Search, Headphones, X, TrendUp as TrendingUp, BookOpen, Circle as CircleDot, CaretRight as ChevronRight, Shield, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, Command, UserGear as UserCog, Globe, Handshake, Crosshair as Radar, MonitorPlay, Bank as Landmark, CreditCard, Envelope as Mail, Buildings as Building2, FileMagnifyingGlass, ClipboardText } from '@phosphor-icons/react';
 import { useTranslation, T } from '@/lib/translation'
 import { agentHasComptaAccess } from '@/lib/constants/compta'
 import { ThemeProvider } from '@/lib/theme/ThemeContext'
@@ -437,6 +437,7 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
                    autorisent deja le role agent (verifie). */
                 { title: t('Blog'), icon: BookOpen, href: '/agent/blog' },
                 { title: t('Clients'), icon: UsersIcon, href: '/agent/clients' },
+                { title: t('Fiches de suivi'), icon: ClipboardText, href: '/agent/fiches-suivi' },
                 { title: t('Classement Client'), icon: TrendingUp, href: '/agent/classement-client', badge: relancesDue },
                 { title: t('Partenaires'), icon: Handshake, href: '/agent/partenaires', badge: unreadPartenaires },
             ],

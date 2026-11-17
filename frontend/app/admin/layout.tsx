@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { Authenticated, useLogout, useGetIdentity } from '@refinedev/core'
 import { usePathname, useRouter } from 'next/navigation'
-import { SquaresFour as LayoutDashboard, Gear as Settings, ChatText as MessageSquare, ShieldCheck, SignOut as LogOut, Bell, List as Menu, Globe, Sparkle as Sparkles, User, Question as HelpCircle, ShoppingBag, Receipt, UserGear as UserCog, Tag, Calculator, Envelope as Mail, FileText, Compass, X, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, ChartBar as BarChart3, FileText as FileSignature, FolderOpen, Palette, Calendar, Star, Translate as Languages, Crosshair as Radar, Cube as Box, Coins, Megaphone, Pulse as Activity, StackSimple as Layers, Bank as Landmark, Buildings as Building2, ShieldWarning as ShieldAlert, Key as KeyRound, GitFork, PaperPlaneTilt as Send, MagnifyingGlass as Search, Car, Archive, BookOpen, Handshake, Brain } from '@phosphor-icons/react';
+import { SquaresFour as LayoutDashboard, Gear as Settings, ChatText as MessageSquare, ShieldCheck, SignOut as LogOut, Bell, List as Menu, Globe, Sparkle as Sparkles, User, Question as HelpCircle, ShoppingBag, Receipt, UserGear as UserCog, Tag, Calculator, Envelope as Mail, FileText, Compass, X, Sidebar as PanelLeftClose, SidebarSimple as PanelLeft, ChartBar as BarChart3, FileText as FileSignature, FolderOpen, Palette, Calendar, Star, Translate as Languages, Crosshair as Radar, Cube as Box, Coins, Megaphone, Pulse as Activity, StackSimple as Layers, Bank as Landmark, Buildings as Building2, ShieldWarning as ShieldAlert, Key as KeyRound, GitFork, PaperPlaneTilt as Send, MagnifyingGlass as Search, Car, Archive, BookOpen, Handshake, Brain, ClipboardText } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
@@ -147,6 +147,7 @@ function AdminLayoutContent({
         { title: 'Visiteurs Live', icon: Activity, href: '/admin/analytics-live' },
         { title: 'Frontend', icon: Palette, href: '/admin/frontend' },
         { title: 'Grille Tarifaire', icon: Layers, href: '/admin/grille-tarifaire' },
+        { title: 'Fiches de suivi', icon: ClipboardText, href: '/admin/fiches-suivi' },
         { title: 'Prêtres Fa', icon: Sparkles, href: '/admin/pretres-fa' },
         { title: 'Catégories permis', icon: Car, href: '/admin/permis-types' },
         { title: 'Auto-écoles', icon: Car, href: '/admin/auto-ecoles' },
