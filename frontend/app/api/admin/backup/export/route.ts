@@ -34,7 +34,6 @@ export async function GET(req: NextRequest) {
             repris: res.repris,
             reconstruits: res.reconstruits,
             non_inclus: res.nonInclus,
-            deja_pret: res.deja_pret,
         }, { headers: { 'Cache-Control': 'no-store' } })
     } catch (e) {
         const msg = e instanceof Error ? e.message : 'Erreur inconnue'

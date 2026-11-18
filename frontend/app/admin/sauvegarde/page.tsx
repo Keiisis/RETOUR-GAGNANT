@@ -18,8 +18,8 @@ import { T } from '@/lib/translation'
 
    Une collecte automatique tourne chaque nuit (01h00 UTC) : elle relit
    toute la base, range le dossier de chaque client nouveau ou modifié, et
-   garde un instantané quotidien 30 jours. Le panneau « Collecte
-   automatique » en rend compte ; « Exporter » en profite.
+   garde un instantané quotidien 7 jours. Le panneau « Collecte
+   automatique » en rend compte ; « Exporter » reprend les dossiers rangés.
 ═══════════════════════════════════════════════════════════ */
 
 interface Counts {
@@ -42,7 +42,7 @@ interface EtatCollecte {
 }
 interface ExportPret {
     liens: { nom: string; url: string; taille: number }[]
-    clients: number; repris: number; reconstruits: number; non_inclus: string[]; deja_pret: boolean
+    clients: number; repris: number; reconstruits: number; non_inclus: string[]
 }
 interface Totals { clients: number; comptes: number; dossiers: number; nationalite: number; commandes: number; factures: number; paiements: number }
 
@@ -165,9 +165,7 @@ export default function SauvegardePage() {
                                 {pret.liens.length > 1 && <> — {pret.liens.length} <T>parties</T></>}
                             </p>
                             <p className="mt-0.5 text-xs text-[var(--panel-text-muted)]">
-                                {pret.clients} <T>client(s)</T> · {pret.deja_pret
-                                    ? <T>archive préparée par la collecte automatique, servie instantanément</T>
-                                    : <>{pret.repris} <T>dossier(s) repris</T>, {pret.reconstruits} <T>reconstruit(s)</T></>}
+                                {pret.clients} <T>client(s)</T> · {pret.repris} <T>dossier(s) repris</T>, {pret.reconstruits} <T>reconstruit(s)</T>
                                 {' · '}<T>liens valables 1 heure</T>
                             </p>
                             {pret.liens.length > 1 && (
@@ -752,7 +750,7 @@ function CollectePanel({ onActualise }: { onActualise: () => void }) {
                         <p className="mb-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-[var(--panel-text)]">
                             <ClockCounterClockwise size={14} /> <T>Instantanés quotidiens</T>
                         </p>
-                        <p className="mb-2 text-[11px] text-[var(--panel-text-muted)]"><T>Toutes les données, telles qu’elles étaient ce jour-là. Conservés 30 jours.</T></p>
+                        <p className="mb-2 text-[11px] text-[var(--panel-text-muted)]"><T>Toutes les données, telles qu’elles étaient ce jour-là. Conservés 7 jours.</T></p>
                         <div className="max-h-64 space-y-1 overflow-y-auto">
                             {historique.length === 0 && <p className="text-[11px] text-[var(--panel-text-muted)]">—</p>}
                             {historique.map(h => (

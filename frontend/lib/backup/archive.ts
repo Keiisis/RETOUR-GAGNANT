@@ -15,18 +15,20 @@
      2. EMPREINTE de chaque client : seuls les nouveaux ou modifiés voient
         leur dossier reconstruit, 4 à la fois ;
      3. chaque dossier est rangé dans `sauvegardes/clients/<clé>.zip` ;
-     4. l'ARCHIVE COMPLÈTE est assemblée en parties de 38 Mo au plus (le
-        stockage refuse un fichier de plus de 50 Mo) : `complet/…` ;
-     5. un instantané daté de toutes les données (`historique/…json.gz`),
-        conservé 30 jours ;
-     6. un MANIFESTE décrit l'état.
+     4. un instantané daté de toutes les données (`historique/…json.gz`),
+        conservé 7 jours ;
+     5. un MANIFESTE décrit l'état.
 
-   « Exporter » ne renvoie plus de fichier : il renvoie des LIENS signés vers
-   les parties, que le navigateur télécharge directement depuis le stockage.
-   Si rien n'a changé depuis la nuit, c'est instantané.
+   « Exporter » ne renvoie plus de fichier : il assemble l'archive en parties
+   de 38 Mo au plus (le stockage refuse un fichier de plus de 50 Mo) sous
+   `exports/…`, en reprenant les dossiers déjà rangés, et renvoie des LIENS
+   signés que le navigateur télécharge directement depuis le stockage.
+   L'archive n'est PAS conservée : elle est effacée une fois ses liens
+   expirés. La garder doublait le stockage pour un fichier qui se
+   reconstruit à la demande (dépassement du quota Supabase, nov. 2026).
 ═══════════════════════════════════════════════════════════════════════ */
 import { gzipSync } from 'zlib'
-import { createHash, randomBytes } from 'crypto'
+import { randomBytes } from 'crypto'
 import JSZip from 'jszip'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
@@ -40,11 +42,14 @@ import {
 
 export const BUCKET_SAUVEGARDES = 'sauvegardes'
 const CHEMIN_MANIFESTE = 'manifeste.json'
-const JOURS_HISTORIQUE = 30
+const JOURS_HISTORIQUE = 7
 /** Taille brute maximale d'une partie. Le stockage refuse au-delà de 50 Mo. */
 const TAILLE_PARTIE = 38 * 1024 * 1024
 /** Durée de validité d'un lien de téléchargement. */
 const VALIDITE_LIEN_S = 3600
+/** Âge au-delà duquel un export est effacé : ses liens, signés jusqu'à
+ *  quelques minutes après l'horodatage du dossier, ont alors expiré. */
+const VIE_EXPORT_MS = (VALIDITE_LIEN_S + 900) * 1000
 
 export interface EntreeManifeste {
     key: string
@@ -56,13 +61,6 @@ export interface EntreeManifeste {
     resume: ClientSummary
     fichiers_manquants: string[]
     pdf_non_generes: string[]
-}
-
-export interface ArchiveComplete {
-    empreinte_globale: string
-    construit_le: string
-    parties: { chemin: string; taille: number }[]
-    clients: number
 }
 
 export interface Manifeste {
@@ -78,7 +76,6 @@ export interface Manifeste {
     exclusions: Collecte['exclusions']
     non_rattachees: Record<string, number>
     historique: string | null
-    complet: ArchiveComplete | null
     erreurs: string[]
 }
 
@@ -107,7 +104,7 @@ export async function lireManifeste(sb: SupabaseClient): Promise<Manifeste | nul
         const { data, error } = await sb.storage.from(BUCKET_SAUVEGARDES).download(CHEMIN_MANIFESTE)
         if (error || !data) return null
         const m = JSON.parse(await data.text()) as Manifeste
-        return m?.version === 1 ? { ...m, complet: m.complet ?? null } : null
+        return m?.version === 1 ? m : null
     } catch {
         return null
     }
@@ -131,26 +128,13 @@ export async function telechargerZipClient(sb: SupabaseClient, stockage: string)
 }
 
 async function supprimerDossier(sb: SupabaseClient, prefixe: string) {
-    // Garde-fou : seuls les sous-dossiers d'exports et d'archives complètes
-    // se suppriment. Un préfixe vide viderait la racine — manifeste compris.
+    // Garde-fou : seuls les sous-dossiers d'exports (et des anciennes
+    // archives complètes `complet/`, abandonnées) se suppriment. Un préfixe
+    // vide viderait la racine — manifeste compris.
     if (!/^(exports|complet)\/[^/]+$/.test(prefixe)) return
     const { data } = await sb.storage.from(BUCKET_SAUVEGARDES).list(prefixe, { limit: 1000 })
     const chemins = (data || []).filter(f => f.id).map(f => `${prefixe}/${f.name}`)
     if (chemins.length) await sb.storage.from(BUCKET_SAUVEGARDES).remove(chemins)
-}
-
-/**
- * Empreinte de l'ENSEMBLE : change dès qu'un client, ou une ligne sans
- * client, change. L'archive complète n'est réutilisable que si elle est
- * identique.
- */
-export function empreinteGlobale(collecte: Collecte): string {
-    const h = createHash('sha256')
-    for (const rec of [...collecte.clients].sort((a, b) => clientKey(a).localeCompare(clientKey(b)))) {
-        h.update(`${clientKey(rec)}=${empreinte(rec)};`)
-    }
-    h.update(JSON.stringify(collecte.nonRattachees))
-    return h.digest('hex')
 }
 
 /* ─────────────── Collecte incrémentale ─────────────── */
@@ -243,10 +227,15 @@ export async function executerCollecte(
         }))))
         historique = `historique/${jour}.json.gz`
         await deposer(sb, historique, instantane, 'application/gzip')
-        await purgerAnciens(sb, 'historique', JOURS_HISTORIQUE)
-        await purgerAnciens(sb, 'exports', 1)
+        await purgerAnciens(sb, 'historique', JOURS_HISTORIQUE * 86_400_000)
     } catch (e) {
         erreurs.push(`Instantané quotidien : ${e instanceof Error ? e.message : String(e)}`)
+    }
+    try {
+        await purgerAnciens(sb, 'exports', VIE_EXPORT_MS)
+        await purgerAnciens(sb, 'complet', 0)
+    } catch (e) {
+        erreurs.push(`Purge des exports : ${e instanceof Error ? e.message : String(e)}`)
     }
 
     const manifeste: Manifeste = {
@@ -261,43 +250,19 @@ export async function executerCollecte(
         exclusions: collecte.exclusions,
         non_rattachees: Object.fromEntries(Object.entries(collecte.nonRattachees).map(([t, r]) => [t, r.length])),
         historique,
-        complet: precedent?.complet ?? null,
         erreurs,
     }
-
-    /* Archive complète : seulement si TOUS les dossiers sont prêts et qu'il
-       reste du temps — sinon l'export la construira à la demande. */
-    if (!enAttente.length && Date.now() - debut < budget) {
-        const glob = empreinteGlobale(collecte)
-        if (opts.forcer || manifeste.complet?.empreinte_globale !== glob) {
-            try {
-                const res = await construireArchive(sb, collecte, manifeste, { prefixe: `complet/${Date.now()}` })
-                if (!res.nonInclus.length) {
-                    const ancien = manifeste.complet
-                    manifeste.complet = {
-                        empreinte_globale: glob, construit_le: new Date().toISOString(),
-                        parties: res.parties, clients: collecte.clients.length,
-                    }
-                    if (ancien) await supprimerDossier(sb, ancien.parties[0]?.chemin.split('/').slice(0, 2).join('/') || '')
-                }
-            } catch (e) {
-                erreurs.push(`Archive complète : ${e instanceof Error ? e.message : String(e)}`)
-            }
-        }
-    }
-
-    manifeste.duree_ms = Date.now() - debut
     await deposer(sb, CHEMIN_MANIFESTE, JSON.stringify(manifeste), 'application/json')
 
     return { manifeste, reconstruits, inchanges, collecte }
 }
 
-async function purgerAnciens(sb: SupabaseClient, dossier: string, jours: number) {
-    const limite = Date.now() - jours * 86_400_000
+async function purgerAnciens(sb: SupabaseClient, dossier: string, ageMaxMs: number) {
+    const limite = Date.now() - ageMaxMs
     const { data } = await sb.storage.from(BUCKET_SAUVEGARDES).list(dossier, { limit: 1000 })
     const vieux: string[] = []
     for (const f of data || []) {
-        // « historique/AAAA-MM-JJ.json.gz » ou sous-dossier « exports/<horodatage>-… »
+        // « historique/AAAA-MM-JJ.json.gz » ou sous-dossier « exports/<horodatage>-… » / « complet/<horodatage> »
         const date = /^\d{4}-\d{2}-\d{2}/.test(f.name) ? Date.parse(f.name.slice(0, 10)) : Number(f.name.split('-')[0])
         if (!isFinite(date) || date >= limite) continue
         if (f.id) vieux.push(`${dossier}/${f.name}`)
@@ -483,41 +448,22 @@ export async function signer(sb: SupabaseClient, parties: { chemin: string; tail
 
 /**
  * Export demandé depuis le panel. Toujours sur des données relues en
- * direct. L'archive complète préparée la nuit est servie telle quelle si
- * elle correspond encore exactement à la base ; sinon elle est reconstruite
- * (en réutilisant chaque dossier client resté identique) et remplace
- * l'ancienne, pour que le clic suivant soit instantané.
+ * direct, en réutilisant chaque dossier client resté identique. L'archive
+ * déposée sous `exports/` n'est pas gardée : les exports dont les liens ont
+ * expiré sont effacés ici et à chaque collecte.
  */
 export async function exporter(sb: SupabaseClient, opts: { cle?: string } = {}) {
     await assurerBucket(sb)
+    await purgerAnciens(sb, 'exports', VIE_EXPORT_MS)
     const collecte = await collecter(sb)
     const manifeste = await lireManifeste(sb)
 
-    if (opts.cle) {
-        const rec = collecte.clients.find(r => matchesKey(r, opts.cle!))
-        if (!rec) return null
-        const res = await construireArchive(sb, collecte, manifeste, {
-            prefixe: `exports/${Date.now()}-${randomBytes(6).toString('hex')}`, cibles: [rec],
-        })
-        return { ...res, liens: await signer(sb, res.parties), deja_pret: false, clients: 1 }
-    }
-
-    const glob = empreinteGlobale(collecte)
-    if (manifeste?.complet?.empreinte_globale === glob) {
-        try {
-            return {
-                parties: manifeste.complet.parties, repris: manifeste.complet.clients, reconstruits: 0, nonInclus: [],
-                liens: await signer(sb, manifeste.complet.parties), deja_pret: true, clients: manifeste.complet.clients,
-            }
-        } catch { /* parties absentes : on reconstruit */ }
-    }
-
-    const res = await construireArchive(sb, collecte, manifeste, { prefixe: `complet/${Date.now()}`, budgetMs: 200_000 })
-    if (!res.nonInclus.length && manifeste) {
-        const ancien = manifeste.complet
-        manifeste.complet = { empreinte_globale: glob, construit_le: new Date().toISOString(), parties: res.parties, clients: collecte.clients.length }
-        await deposer(sb, CHEMIN_MANIFESTE, JSON.stringify(manifeste), 'application/json')
-        if (ancien) await supprimerDossier(sb, ancien.parties[0]?.chemin.split('/').slice(0, 2).join('/') || '')
-    }
-    return { ...res, liens: await signer(sb, res.parties), deja_pret: false, clients: collecte.clients.length }
+    const cibles = opts.cle ? collecte.clients.filter(r => matchesKey(r, opts.cle!)).slice(0, 1) : undefined
+    if (cibles && !cibles.length) return null
+    const res = await construireArchive(sb, collecte, manifeste, {
+        prefixe: `exports/${Date.now()}-${randomBytes(6).toString('hex')}`,
+        cibles,
+        budgetMs: cibles ? undefined : 200_000,
+    })
+    return { ...res, liens: await signer(sb, res.parties), clients: cibles ? 1 : collecte.clients.length }
 }

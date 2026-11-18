@@ -44,9 +44,6 @@ export async function GET(req: NextRequest) {
             non_rattachees: manifeste.non_rattachees,
             erreurs: manifeste.erreurs,
             fichiers_manquants: manifeste.clients.reduce((n, c) => n + c.fichiers_manquants.length, 0),
-            complet: manifeste.complet
-                ? { construit_le: manifeste.complet.construit_le, parties: manifeste.complet.parties.length, taille: manifeste.complet.parties.reduce((n, p) => n + p.taille, 0) }
-                : null,
             empreintes: Object.fromEntries(manifeste.clients.map(c => [c.key, c.construit_le])),
         },
         historique: await listerHistorique(sb).catch(() => []),
