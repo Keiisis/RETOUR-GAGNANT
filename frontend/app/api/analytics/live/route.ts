@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         // ── Sessions actives (30 dernières minutes) ──────────────
         const { data: liveSessions } = await supabase
             .from('visitor_sessions')
-            .select('*')
+            .select('session_id, city, country, country_code, latitude, longitude, browser, browser_version, device_type, os, page, last_seen_at')
             .gte('last_seen_at', since30min)
             .order('last_seen_at', { ascending: false })
             .limit(300)
@@ -35,12 +35,18 @@ export async function GET(request: NextRequest) {
                 .map(s => s.session_id)
         ).size
 
-        // ── Toutes les rows 24h (select * pour les nouvelles colonnes) ──
-        const { data: all24h } = await supabase
+        // ── Toutes les rows 24h, seulement les colonnes agrégées ci-dessous ──
+        // Relu toutes les 2 min tant que la page est ouverte : select('*')
+        // pesait lourd sur le quota d'egress Supabase.
+        const lire24h = (colonnes: string) => supabase
             .from('visitor_sessions')
-            .select('*')
+            .select(colonnes)
             .gte('created_at', since24h)
             .limit(100000)
+        const COLONNES_BASE = 'session_id, page, country, country_code, latitude, longitude, device_type, browser, created_at'
+        const enrichi = await lire24h(`${COLONNES_BASE}, isp, language, connection_type, screen_resolution, is_returning, is_vpn, is_proxy, is_tor, scroll_depth, page_load_ms`)
+        // Colonnes enrichies absentes (migration ② pas encore jouée) : même repli que /api/analytics/track.
+        const { data: all24h } = enrichi.error ? await lire24h(COLONNES_BASE) : enrichi
 
         const rows = all24h || []
 

@@ -268,10 +268,10 @@ export default function AgentLayout({ children }: { children: React.ReactNode })
         // Initial fetch
         const fetchUnread = async () => {
             const [msgRes, notifRes, voiceRes, partRes] = await Promise.all([
-                supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false).neq('type', 'nationality'),
-                supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false).eq('type', 'nationality'),
-                supabase.from('voice_messages').select('id', { count: 'exact' }).eq('is_read', false),
-                supabase.from('partner_applications').select('id', { count: 'exact' }).eq('is_read', false),
+                supabase.from('messages').select('id', { count: 'exact', head: true }).eq('lu', false).neq('type', 'nationality'),
+                supabase.from('messages').select('id', { count: 'exact', head: true }).eq('lu', false).eq('type', 'nationality'),
+                supabase.from('voice_messages').select('id', { count: 'exact', head: true }).eq('is_read', false),
+                supabase.from('partner_applications').select('id', { count: 'exact', head: true }).eq('is_read', false),
             ])
             setUnreadMessages(msgRes.count || 0)
             setUnreadNotifications(notifRes.count || 0)
