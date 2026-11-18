@@ -26,9 +26,10 @@ export async function POST(request: NextRequest) {
                 section_key: 'form_settings',
                 title: 'Paramètres du formulaire de nationalité',
                 content: {
-                    amount: 250,
-                    currency: 'USD',
-                    payment_description: 'Frais de traitement de dossier de reconnaissance de nationalité béninoise',
+                    // Demande gratuite depuis l'agrément (nov. 2026) : aucun montant demandé au client.
+                    amount: 0,
+                    currency: 'EUR',
+                    payment_description: 'Demande de nationalité béninoise gratuite (agence agréée)',
                     required_documents: [
                         "Pièce d'identité en cours de validité",
                         'Justificatif de domicile',

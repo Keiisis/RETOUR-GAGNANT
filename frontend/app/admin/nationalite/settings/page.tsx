@@ -222,6 +222,7 @@ export default function NationaliteSettingsPage() {
                         <div>
                             <h2 className="text-lg font-black text-white"><T>Tarification</T></h2>
                             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold"><T>Montant et devise des frais de dossier</T></p>
+                                <p className="text-[11px] text-emerald-400 font-bold mt-1"><T>Depuis l’agrément, la demande de nationalité est gratuite : ce montant n’est plus affiché ni demandé aux clients. Il ne sert qu’aux dossiers saisis à la main avec un règlement.</T></p>
                         </div>
                     </div>
 

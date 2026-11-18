@@ -1,8 +1,6 @@
 'use strict'
 import React, { useState, useEffect, useRef } from 'react'
 import { toast } from '../../lib/feedback'
-import { montantAEncaisserXof } from '../../lib/tarif'
-import { TVA_ENABLED, TVA_LABEL } from '../../lib/tax'
 import {
     View, Text, ScrollView, StyleSheet, TouchableOpacity,
     TextInput, ActivityIndicator, Platform, KeyboardAvoidingView,
@@ -31,9 +29,7 @@ import { useLang } from '../../contexts/LangContext'
 import { supabase } from '../../config/supabase'
 import { avecMemoire } from '../../lib/memoire'
 import { fetchWithTimeout } from '../../lib/fetch'
-import KkiapayModal from '../../components/KkiapayModal'
 import { screenColors, typography, spacing, radius, shadows, fonts } from '../../config/theme'
-import { localeActuelle } from '../../lib/dates'
 import { envoyerOuMettreEnFile } from '../../lib/file-envois'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
@@ -82,18 +78,6 @@ const STEPS_META = [
     { key: 'proofs', label: 'Preuves', icon: 'document-attach' as const },
     { key: 'recap', label: 'Sceau', icon: 'ribbon' as const },
 ]
-
-/* Devise : Kkiapay n'encaisse QUE du XOF. Le franc CFA est fixé à l'euro à
-   1 EUR = 655,957 XOF (parité fixe garantie). On convertit donc tout montant
-   configuré en EUR vers XOF avant de charger Kkiapay, sinon 260 EUR devenait
-   260 XOF (~0,40 EUR) : perte sèche. L'affichage garde la devise d'origine. */
-const CURRENCY_SYMBOL: Record<string, string> = { EUR: '€', USD: '$', GBP: '£', XOF: 'FCFA', XAF: 'FCFA' }
-function fmtMoney(amount: number, currency: string): string {
-    const c = (currency || 'XOF').toUpperCase()
-    return `${amount.toLocaleString(localeActuelle())} ${CURRENCY_SYMBOL[c] || c}`
-}
-/* Conversion XOF + TVA en sus : lib/tarif (règle commune). L'ancienne
-   `toXof` traitait USD/GBP comme du XOF : 250 $ devenaient 250 XOF. */
 
 /* Masque de saisie de date : l'utilisateur tape seulement des chiffres, le « / »
    s'insère tout seul -> JJ/MM/AAAA. Gère aussi l'effacement (backspace). */
@@ -400,19 +384,9 @@ export default function NationaliteFormScreen({ navigation }: any) {
     // s'ouvrait au milieu (voire en bas) du nouveau formulaire.
     const scrollRef = useRef<ScrollView>(null)
     const [loading, setLoading] = useState(false)
-    const [showKkiapay, setShowKkiapay] = useState(false)
     const [savedRef, setSavedRef] = useState<string | null>(null)
 
     const [lawAccepted, setLawAccepted] = useState(false)
-    const [formAmount, setFormAmount] = useState(150000)
-    const [formCurrency, setFormCurrency] = useState('XOF')
-    /* Le tarif officiel vient de `page_sections` en asynchrone. Tant qu'il
-       n'est pas arrive, aucun paiement ne doit partir : le widget encaisserait
-       la valeur d'initialisation au lieu du tarif reel (incident du 2026-08-19,
-       0,39 EUR au lieu de 260 EUR cote web). */
-    const [tarifCharge, setTarifCharge] = useState(false)
-    // Montant TTC en XOF présenté à Kkiapay ; `null` = devise non convertible.
-    const montantKkiapay = montantAEncaisserXof(formAmount, formCurrency)
     // Forfait recherche ancestrale (configurable admin, même bloc form_settings).
     const [ancestralAmount, setAncestralAmount] = useState(250)
     const [ancestralCurrency, setAncestralCurrency] = useState('EUR')
@@ -430,10 +404,8 @@ export default function NationaliteFormScreen({ navigation }: any) {
     }))
 
     /* ── Settings ── */
-    /* Tarifs. Le montant connu est PEINT tout de suite pour que l'ecran s'ouvre
-       plein, mais `tarifCharge` — le verrou pose apres l'incident des 0,39 EUR —
-       ne bascule QUE sur une reponse fraiche du serveur. Affichage immediat,
-       encaissement jamais sur une valeur memorisee. */
+    /* La demande de nationalité est gratuite (agrément RGB) : seul le forfait
+       de la recherche ancestrale, proposé après l'envoi, est lu ici. */
     useEffect(() => {
         void avecMemoire<Record<string, unknown>>(
             'nationalite-tarifs',
@@ -444,18 +416,12 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     .eq('page', 'nationalite')
                     .eq('section_key', 'form_settings')
                     .single()
-                /* Lecture en échec : on LÈVE. Avant, `{}` était rendu comme une
-                   réponse fraîche : `tarifCharge` passait à vrai et le bouton
-                   « Payer » encaissait la valeur d'initialisation (150 000). */
                 if (error) throw new Error(error.message)
                 return (data?.content || {}) as Record<string, unknown>
             },
-            (c, depuisCache) => {
-                if (c.amount) setFormAmount(Number(c.amount))
-                if (c.currency) setFormCurrency(String(c.currency))
+            (c) => {
                 if (c.recherche_ancestrale_amount) setAncestralAmount(Number(c.recherche_ancestrale_amount))
                 if (c.recherche_ancestrale_currency) setAncestralCurrency(String(c.recherche_ancestrale_currency))
-                if (!depuisCache) setTarifCharge(true)
             },
             { fraicheurMs: 0 },
         )
@@ -566,21 +532,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
 
     const nextStep = () => {
         if (!validateStep()) return
-        if (currentStep === 5) {
-            // Tarif pas encore lu en base : refuser plutot qu'encaisser la
-            // valeur d'initialisation.
-            if (!tarifCharge) {
-                toast(t('Tarif en cours de chargement'), t('Patientez une seconde puis reessayez.'))
-                return
-            }
-            // Devise sans parité fixe (USD, GBP…) : aucun montant fiable à
-            // présenter à Kkiapay (XOF seulement) — refus plutôt que sous-paiement.
-            if (montantKkiapay === null) {
-                toast(t('Paiement indisponible'), t('Le tarif est configuré dans une devise non prise en charge par le paiement mobile. Contactez-nous.'))
-                return
-            }
-            setShowKkiapay(true)
-        }
+        if (currentStep === 5) void envoyerDossier()
         else setCurrentStep(prev => prev + 1)
     }
     const prevStep = () => setCurrentStep(prev => Math.max(0, prev - 1))
@@ -590,9 +542,8 @@ export default function NationaliteFormScreen({ navigation }: any) {
         scrollRef.current?.scrollTo({ y: 0, animated: false })
     }, [currentStep])
 
-    /* ── Soumission après paiement ── */
-    const handlePaymentSuccess = async (transactionId: string) => {
-        setShowKkiapay(false)
+    /* ── Envoi du dossier (demande gratuite, aucun paiement) ── */
+    const envoyerDossier = async () => {
         setLoading(true)
 
         /* Déclarés HORS du `try` : en cas d'échec, le bloc de rattrapage doit
@@ -674,11 +625,9 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     ...cleanedForm,
                     documents: uploadedUrls,
                     documents_uploaded: uploadedUrls,
-                    payment_method: 'kkiapay',
-                    payment_ref: transactionId,
-                    payment_status: 'payé',
-                    amount: formAmount,
-                    currency: formCurrency,
+                    payment_method: 'gratuit',
+                    payment_status: 'gratuit',
+                    amount: 0,
                     last_step_completed: 6,
                     source: 'mobile',
                 }),
@@ -690,8 +639,8 @@ export default function NationaliteFormScreen({ navigation }: any) {
             setSavedRef(result.reference || null)
             setCurrentStep(6)
 
-            /* Proposition Recherche Ancestrale : UNIQUEMENT après le paiement de
-               la nationalité ET l'enregistrement réussi du dossier, dès qu'il
+            /* Proposition Recherche Ancestrale : UNIQUEMENT après l'enregistrement
+               réussi du dossier de nationalité, dès qu'il
                manque AU MOINS UNE pièce ancestrale (grands-parents /
                arrière-grands-parents). Le client accepte (et paie le forfait) ou
                décline depuis AncestralProposalScreen — écran distinct de
@@ -718,28 +667,22 @@ export default function NationaliteFormScreen({ navigation }: any) {
 
                Les pièces sont déjà déposées dans le stockage à cet instant :
                si la fiche ne part pas, leurs chemins ne sont enregistrés nulle
-               part et les fichiers deviennent introuvables, alors même que le
-               filet du webhook recrée un dossier pour le paiement. C'est ce
-               qui rendait un dossier payé inexploitable.
+               part et les fichiers deviennent introuvables.
 
                Le dossier complet — champs ET chemins des pièces — est donc
                conservé sur le téléphone et rejoué jusqu'à ce que le serveur
-               l'accepte. La route reconnaît `payment_ref` et complète la fiche
-               existante au lieu d'en créer une seconde. */
+               l'accepte. */
             await envoyerOuMettreEnFile({
                 chemin: '/api/nationality',
                 besoinJeton: false,
                 service: 'Reconnaissance de nationalité',
-                reference: transactionId,
                 corps: {
                     ...cleanedForm,
                     documents: uploadedUrls,
                     documents_uploaded: uploadedUrls,
-                    payment_method: 'kkiapay',
-                    payment_ref: transactionId,
-                    payment_status: 'payé',
-                    amount: formAmount,
-                    currency: formCurrency,
+                    payment_method: 'gratuit',
+                    payment_status: 'gratuit',
+                    amount: 0,
                     last_step_completed: 6,
                     source: 'mobile',
                 },
@@ -747,9 +690,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
 
             toast(
                 t('Dossier en cours d’envoi'),
-                t('Votre paiement est enregistré (réf : {tx}). La connexion étant instable, l’envoi de votre dossier se terminera automatiquement dès le retour du réseau — vous n’avez rien à refaire.', {
-                    tx: transactionId,
-                }),
+                t('La connexion étant instable, l’envoi de votre dossier se terminera automatiquement dès le retour du réseau. Vous n’avez rien à refaire.'),
             )
         } finally {
             setLoading(false)
@@ -1123,7 +1064,7 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             </View>
                         </View>
                         <Text style={styles.stepIntro}>
-                            {t('Vérifiez vos informations avant de procéder au paiement sécurisé.')}
+                            {t('Vérifiez vos informations avant d’envoyer votre demande.')}
                         </Text>
 
                         {/* Section : Demandeur */}
@@ -1160,26 +1101,17 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <InfoRow label={t('Documents')} value={t('{n} pièce(s) jointe(s)', { n: rawDocs.length })} last />
                         </View>
 
-                        {/* Carte paiement premium */}
+                        {/* Demande gratuite : RGB est agréée, aucun frais de dossier. */}
                         <View style={styles.paymentCard}>
                             <View style={styles.paymentGlow} />
                             <View style={styles.paymentBadge}>
-                                <LucideIcon name="lock-closed" size={11} color={C.primaryText} />
-                                <Text style={styles.paymentBadgeText}>{t('PAIEMENT SÉCURISÉ')}</Text>
+                                <LucideIcon name="shield-checkmark" size={11} color={C.primaryText} />
+                                <Text style={styles.paymentBadgeText}>{t('AGENCE AGRÉÉE')}</Text>
                             </View>
-                            <Text style={styles.paymentLabel}>{t('Frais de dossier')}</Text>
-                            <Text style={styles.paymentAmount}>
-                                {formAmount.toLocaleString(localeActuelle())}{' '}
-                                <Text style={styles.paymentCurrency}>{CURRENCY_SYMBOL[(formCurrency || 'XOF').toUpperCase()] || formCurrency}</Text>
+                            <Text style={styles.paymentTitle}>{t('Demande gratuite')}</Text>
+                            <Text style={styles.paymentText}>
+                                {t('Retour Gagnant Bénin, désormais agréée, traite votre demande de nationalité sans aucun frais. Vérifiez vos informations puis envoyez votre dossier : il part directement à notre équipe.')}
                             </Text>
-                            {/* Montant réellement débité (XOF, TVA en sus comprise) dès
-                                qu'il diffère du tarif affiché. */}
-                            {montantKkiapay !== null && ((formCurrency || '').toUpperCase() !== 'XOF' || montantKkiapay !== formAmount) && (
-                                <Text style={styles.paymentXof}>
-                                    {t('Soit environ {x} FCFA', { x: montantKkiapay.toLocaleString(localeActuelle()) })}
-                                    {TVA_ENABLED ? ` (${t('dont')} ${TVA_LABEL})` : ''}
-                                </Text>
-                            )}
                             <View style={styles.paymentDivider} />
                             <View style={styles.paymentFeatures}>
                                 <View style={styles.paymentFeature}>
@@ -1340,11 +1272,11 @@ export default function NationaliteFormScreen({ navigation }: any) {
                             <>
                                 <Text style={styles.primaryBtnText}>
                                     {currentStep === 5
-                                        ? t('Payer {amount}', { amount: fmtMoney(formAmount, formCurrency) })
+                                        ? t('Envoyer ma demande')
                                         : t('Poursuivre')}
                                 </Text>
                                 <LucideIcon
-                                    name={currentStep === 5 ? 'lock-closed' : 'arrow-forward'}
+                                    name={currentStep === 5 ? 'send' : 'arrow-forward'}
                                     size={18}
                                     color={C.primaryText}
                                     style={{ marginLeft: 10 }}
@@ -1354,14 +1286,6 @@ export default function NationaliteFormScreen({ navigation }: any) {
                     </TouchableOpacity>
                 </View>
             )}
-
-            <KkiapayModal
-                visible={showKkiapay && montantKkiapay !== null}
-                amount={String(montantKkiapay ?? 0)}
-                serviceName="Nationalité béninoise"
-                onClose={() => setShowKkiapay(false)}
-                onSuccess={handlePaymentSuccess}
-            />
         </KeyboardAvoidingView>
     )
 }
@@ -2025,24 +1949,15 @@ const styles = StyleSheet.create({
         color: C.primaryText,
         letterSpacing: 1.2,
     },
-    paymentLabel: {
-        ...typography.caption,
-        color: 'rgba(255, 255, 255, 0.7)',
-        marginBottom: spacing.xs,
-    },
-    paymentAmount: {
-        ...typography.h1, fontSize: 38,
+    paymentTitle: {
+        ...typography.h1, fontSize: 28,
         color: C.primaryText,
-        letterSpacing: -1,
+        letterSpacing: -0.5,
     },
-    paymentCurrency: {
-        ...typography.h3, fontSize: 20,
-        color: C.primaryText,
-    },
-    paymentXof: {
-        ...typography.caption, fontSize: 12,
+    paymentText: {
+        ...typography.caption, fontSize: 13, lineHeight: 19,
         color: 'rgba(255, 255, 255, 0.85)',
-        marginTop: 4,
+        marginTop: spacing.xs,
     },
     paymentDivider: {
         height: 1,

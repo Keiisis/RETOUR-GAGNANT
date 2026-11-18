@@ -38,7 +38,7 @@ function relanceHtml(prenom: string, nom: string, ref: string, link: string) {
             <p>Afin que notre service juridique puisse instruire votre dossier <strong>(référence ${ref})</strong> dans les meilleures conditions et sans délai, il nous reste à réunir vos pièces justificatives. Pour vous simplifier au maximum cette étape, nous avons préparé un <strong>espace personnel sécurisé</strong> qui reprend l'intégralité de vos informations : vous n'aurez qu'à y déposer vos documents.</p>
 
             <p style="background:#f0fdf6;border-left:4px solid #008751;padding:14px 18px;border-radius:6px;color:#065f46;">
-                <strong>Aucun paiement ne vous sera redemandé.</strong> Vos frais de traitement sont déjà réglés : cet espace sert uniquement à joindre vos pièces en toute sérénité.
+                <strong>Aucun paiement ne vous sera demandé : la demande de nationalité est gratuite.</strong> Cet espace sert uniquement à joindre vos pièces en toute sérénité.
             </p>
 
             <div style="text-align:center;margin:32px 0;">

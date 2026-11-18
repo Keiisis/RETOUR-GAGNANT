@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { Globe as Globe2, FileText as FileCheck, Shield, Clock, CaretDown as ChevronDown, CaretUp as ChevronUp, ArrowRight, CheckCircle as CheckCircle2, Users, Scales as Scale, Fingerprint, MapPin } from '@phosphor-icons/react';
 import { useTranslation } from '@/lib/translation'
-import { CurrencyCode } from '@/lib/currency'
-import { Price } from '@/components/ui/Price'
 
 interface PageContent { section_key: string; content_fr: string }
 interface FAQ { id: string; question_fr: string; answer_fr: string; sort_order: number }
@@ -19,11 +17,6 @@ export default function NationalitePage() {
     const [docs, setDocs] = useState<RequiredDoc[]>([])
     const [openFaq, setOpenFaq] = useState<string | null>(null)
     const [loading, setLoading] = useState(true)
-    // `null` tant que le tarif officiel n'est pas revenu de la base : afficher
-    // une valeur d'attente était le bug — 250 XOF converti en euros donnait
-    // « 0,39 € », un prix qui n'a jamais existé.
-    const [formAmount, setFormAmount] = useState<number | null>(null)
-    const [formCurrency, setFormCurrency] = useState<CurrencyCode>('EUR')
     const { t } = useTranslation()
 
     useEffect(() => {
@@ -42,18 +35,6 @@ export default function NationalitePage() {
             setContent(map)
             setFaqs((fRes.data || []) as FAQ[])
             setDocs((dRes.data || []) as RequiredDoc[])
-
-            // Tarif officiel : ATTENDU, pas lancé en parallèle. La promesse
-            // flottante rendait la page avant la réponse, avec le tarif
-            // d'initialisation à l'écran.
-            const { data: fs } = await supabase.from('page_sections').select('content')
-                .eq('page', 'nationalite').eq('section_key', 'form_settings').single()
-            if (fs?.content) {
-                const c = fs.content as Record<string, unknown>
-                if (c.amount) setFormAmount(Number(c.amount))
-                if (c.currency) setFormCurrency(c.currency as CurrencyCode)
-            }
-
             setLoading(false)
         }
         load()
@@ -105,13 +86,9 @@ export default function NationalitePage() {
                             {t("Soumettre ma demande")} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
                         <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm border border-[#e7e1d8] shadow-[0_4px_20px_rgba(28,25,23,0.06)] rounded-2xl px-6 py-4">
-                            <span className="font-display text-3xl font-bold text-[#008751] tabular-nums">
-                                {formAmount === null
-                                    ? <span className="text-[#a8a29e]">…</span>
-                                    : <Price amount={formAmount} currency={formCurrency} />}
-                            </span>
+                            <span className="font-display text-3xl font-bold text-[#008751]">{t("Gratuit")}</span>
                             <div className="text-left">
-                                <p className="text-[10px] text-[#78716c] font-bold uppercase tracking-wider">{t("Frais de traitement")}</p>
+                                <p className="text-[10px] text-[#78716c] font-bold uppercase tracking-wider">{t("Agence agréée · aucun frais de dossier")}</p>
                                 <p className="text-[10px] text-[#a8a29e] flex items-center gap-1"><Clock size={10} /> {t(content.processing_time || '3 mois')}</p>
                             </div>
                         </div>
