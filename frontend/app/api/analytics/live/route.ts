@@ -10,6 +10,15 @@ const supabase = createClient(
 // ═══════════════════════════════════════════════════════
 // GET /api/analytics/live : Données live + stats 24h enrichies
 // ═══════════════════════════════════════════════════════
+// Colonnes lues sur 24 h ; les enrichies manquent tant que la migration ② n'est pas jouée.
+type Visite = {
+    session_id: string; page: string; country: string; country_code: string
+    latitude: number; longitude: number; device_type: string; browser: string; created_at: string
+    isp?: string; language?: string; connection_type?: string; screen_resolution?: string
+    is_returning?: boolean; is_vpn?: boolean; is_proxy?: boolean; is_tor?: boolean
+    scroll_depth?: number; page_load_ms?: number
+}
+
 export async function GET(request: NextRequest) {
     // Public jusqu'ici : IP, ville et coordonnées de chaque visiteur des 30 dernières minutes.
     const garde = await requireStaff(request, 'admin')
@@ -43,6 +52,7 @@ export async function GET(request: NextRequest) {
             .select(colonnes)
             .gte('created_at', since24h)
             .limit(100000)
+            .overrideTypes<Visite[], { merge: false }>()
         const COLONNES_BASE = 'session_id, page, country, country_code, latitude, longitude, device_type, browser, created_at'
         const enrichi = await lire24h(`${COLONNES_BASE}, isp, language, connection_type, screen_resolution, is_returning, is_vpn, is_proxy, is_tor, scroll_depth, page_load_ms`)
         // Colonnes enrichies absentes (migration ② pas encore jouée) : même repli que /api/analytics/track.

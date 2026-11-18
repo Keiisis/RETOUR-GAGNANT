@@ -5,13 +5,13 @@
 // panels (app/admin/fiches-suivi et app/agent/fiches-suivi), sans copie.
 //
 // Les fiches des inscrits sont créées par la base à l'inscription ;
-// l'agent peut aussi en ouvrir une à la main. Seul un admin supprime.
+// l'agent peut aussi en ouvrir une à la main. Aucune fiche ne se supprime.
 // Les suggestions ne sont jamais appliquées sans un clic.
 // ══════════════════════════════════════════════════════════════
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ClipboardText, MagnifyingGlass as Search, Plus, Printer, FloppyDisk as Save, Trash as Trash2,
+    ClipboardText, MagnifyingGlass as Search, Plus, DownloadSimple, FloppyDisk as Save,
     CaretLeft, CaretRight, ArrowClockwise as RefreshCw, Lightbulb, CircleNotch as Loader2, FileText, X,
     CheckCircle as CheckCircle2, WarningCircle as AlertCircle,
 } from '@phosphor-icons/react'
@@ -34,7 +34,46 @@ async function lire<T>(res: Response): Promise<T> {
     return corps as T
 }
 
-export default function FichesSuiviClient({ admin = false }: { admin?: boolean }) {
+// Télécharge la fiche en PDF, sans boîte d'impression : la page d'impression
+// (mêmes pages A4) est mise en page dans un cadre caché, puis chaque page est
+// photographiée et posée sur une page A4 du PDF.
+async function telechargerPdf(url: string, nomFichier: string) {
+    const res = await fetch(url, { cache: 'no-store' })
+    if (!res.ok) throw new Error((await res.text()) || `Erreur ${res.status}`)
+    const cadre = document.createElement('iframe')
+    cadre.style.cssText = 'position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0'
+    cadre.srcdoc = await res.text()
+    document.body.appendChild(cadre)
+    try {
+        const doc = await new Promise<Document>((ok, ko) => {
+            const debut = Date.now()
+            const attendre = () => {
+                const d = cadre.contentDocument
+                if (d?.documentElement.hasAttribute('data-pages')) ok(d)
+                else if (Date.now() - debut > 15000) ko(new Error('Mise en page de la fiche trop longue'))
+                else setTimeout(attendre, 100)
+            }
+            attendre()
+        })
+        cadre.style.height = `${doc.documentElement.scrollHeight}px`
+        const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import('html2canvas'), import('jspdf')])
+        const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
+        const pages = Array.from(doc.querySelectorAll<HTMLElement>('.page'))
+        for (let i = 0; i < pages.length; i++) {
+            const toile = await html2canvas(pages[i], {
+                scale: 2, backgroundColor: '#ffffff', logging: false,
+                onclone: (_d, el) => { el.style.boxShadow = 'none'; el.style.margin = '0' },
+            })
+            if (i) pdf.addPage()
+            pdf.addImage(toile.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297)
+        }
+        pdf.save(nomFichier)
+    } finally {
+        cadre.remove()
+    }
+}
+
+export default function FichesSuiviClient() {
     const { t } = useTranslation()
     const [fiches, setFiches] = useState<FicheSuivi[]>([])
     const [total, setTotal] = useState(0)
@@ -46,6 +85,7 @@ export default function FichesSuiviClient({ admin = false }: { admin?: boolean }
     const [fiche, setFiche] = useState<FicheSuivi | null>(null)
     const [modifie, setModifie] = useState(false)
     const [occupe, setOccupe] = useState(false)
+    const [pdfEnCours, setPdfEnCours] = useState(false)
     const [toast, setToast] = useState<Toast | null>(null)
 
     const notifier = (type: Toast['type'], message: string) => {
@@ -109,17 +149,14 @@ export default function FichesSuiviClient({ admin = false }: { admin?: boolean }
         }
     }
 
-    const supprimer = async () => {
-        if (!fiche || !confirm(`${t('Supprimer définitivement la fiche')} ${fiche.numero} ?`)) return
-        setOccupe(true)
+    const telecharger = async (id: string, nomFichier: string) => {
+        setPdfEnCours(true)
         try {
-            await lire(await fetch(`${API}/${fiche.id}`, { method: 'DELETE' }))
-            setFiche(null); setModifie(false); charger()
-            notifier('success', t('Fiche supprimée'))
+            await telechargerPdf(`${API}/${id}/print`, nomFichier)
         } catch (e) {
             notifier('error', e instanceof Error ? e.message : 'Erreur inconnue')
         } finally {
-            setOccupe(false)
+            setPdfEnCours(false)
         }
     }
 
@@ -155,16 +192,11 @@ export default function FichesSuiviClient({ admin = false }: { admin?: boolean }
                             <button onClick={fermer} className="flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 text-gray-300 font-bold text-xs px-4 py-3 rounded-xl">
                                 <CaretLeft size={14} /> {t('Retour à la liste')}
                             </button>
-                            <button onClick={() => window.open(`${API}/${fiche.id}/print`, '_blank')} disabled={modifie}
+                            <button onClick={() => telecharger(fiche.id, `Fiche-de-suivi-${fiche.numero}.pdf`)} disabled={modifie || pdfEnCours}
                                 title={modifie ? t('Enregistrez d’abord la fiche') : undefined}
                                 className="flex items-center gap-2 bg-[#FCD116]/10 border border-[#FCD116]/20 text-[#FCD116] font-bold text-xs px-4 py-3 rounded-xl disabled:opacity-40">
-                                <Printer size={14} /> {t('Imprimer')}
+                                {pdfEnCours ? <Loader2 size={14} className="animate-spin" /> : <DownloadSimple size={14} />} {t('Télécharger le PDF')}
                             </button>
-                            {admin && (
-                                <button onClick={supprimer} disabled={occupe} className="flex items-center gap-2 bg-[#E8112D]/10 border border-[#E8112D]/20 text-[#ff4d4d] font-bold text-xs px-4 py-3 rounded-xl disabled:opacity-40">
-                                    <Trash2 size={14} /> {t('Supprimer')}
-                                </button>
-                            )}
                             <button onClick={enregistrer} disabled={occupe || !modifie} className="flex items-center gap-2 bg-[#008751] hover:bg-[#006b40] text-white font-bold text-xs px-5 py-3 rounded-xl disabled:opacity-40">
                                 {occupe ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {t('Enregistrer')}
                             </button>
@@ -174,8 +206,8 @@ export default function FichesSuiviClient({ admin = false }: { admin?: boolean }
                             <button onClick={charger} title={t('Actualiser')} className="p-3 bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white rounded-xl">
                                 <RefreshCw size={16} className={chargement ? 'animate-spin' : undefined} />
                             </button>
-                            <button onClick={() => window.open(`${API}/vierge/print`, '_blank')} className="flex items-center gap-2 bg-[#FCD116]/10 border border-[#FCD116]/20 text-[#FCD116] font-bold text-xs px-4 py-3 rounded-xl">
-                                <FileText size={14} /> {t('Modèle vierge')}
+                            <button onClick={() => telecharger('vierge', 'Fiche-de-suivi-RGB-modele-vierge.pdf')} disabled={pdfEnCours} className="flex items-center gap-2 bg-[#FCD116]/10 border border-[#FCD116]/20 text-[#FCD116] font-bold text-xs px-4 py-3 rounded-xl">
+                                {pdfEnCours ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />} {t('Modèle vierge')}
                             </button>
                             <button onClick={creer} disabled={occupe} className="flex items-center gap-2 bg-[#008751] hover:bg-[#006b40] text-white font-bold text-xs px-5 py-3 rounded-xl disabled:opacity-40">
                                 {occupe ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} {t('Nouvelle fiche')}
