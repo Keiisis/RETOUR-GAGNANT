@@ -21,6 +21,9 @@ export interface FicheSuivi {
     date_fiche: string
     statut_dossier: 'nouveau' | 'myafro'
     date_depot: string | null
+    /** N° fiche récap MyAfroOrigins : numéro et date, imprimés « N°627920856 DU 2026-10-28 ». */
+    myafro_recap_numero: string | null
+    myafro_recap_date: string | null
     nom_complet: string | null
     telephone: string | null
     email: string | null
@@ -77,15 +80,17 @@ export function casesCochees(champ: keyof typeof OPTIONS, valeur: string | null 
 export const LIMITES = { court: 160, observation: 800, piece: 300, analyse: 20000, pieces: 200 } as const
 
 const TEXTES: Record<string, number> = {
-    nom_complet: LIMITES.court, telephone: 60, email: LIMITES.court, pays: 80, ville: 80,
+    nom_complet: LIMITES.court, telephone: 60, email: LIMITES.court, pays: 80, ville: 80, myafro_recap_numero: 40,
     observation: LIMITES.observation, analyse_suivi: LIMITES.analyse,
 }
-const DATES = ['date_fiche', 'date_depot', 'date_etat_lieux', 'accueil_date_reclamation', 'accueil_date_reception',
+const DATES = ['date_fiche', 'date_depot', 'myafro_recap_date', 'date_etat_lieux', 'accueil_date_reclamation', 'accueil_date_reception',
     'frais_date', 'guichet_date', 'ceremonie_date']
 const CHOIX = ['statut_dossier', 'reclamation_statut', 'accueil_statut', 'frais_statut', 'guichet_statut', 'ceremonie_statut'] as const
 
 const estDate = (v: unknown): v is string =>
+    // Aller-retour : le 31 février passe Date.parse, pas toISOString (Postgres le refuserait).
     typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v + 'T00:00:00Z'))
+    && new Date(v + 'T00:00:00Z').toISOString().slice(0, 10) === v
 
 /**
  * Garde seulement les champs modifiables, au bon format. Un champ invalide
@@ -103,6 +108,13 @@ export function nettoyerSaisie(corps: unknown): { ok: true; valeurs: Record<stri
         if (typeof v !== 'string') return { ok: false, erreur: `${champ} : texte attendu` }
         const t = v.trim()
         if (t.length > max) return { ok: false, erreur: `${champ} : ${max} caractères au plus` }
+        if (champ === 'myafro_recap_numero') {
+            const n = numeroRecap(t)
+            if (n && !/^[A-Za-z0-9][A-Za-z0-9 ./-]{2,39}$/.test(n))
+                return { ok: false, erreur: 'N° fiche récap MyAfroOrigins : chiffres, lettres, tirets (3 à 40 caractères)' }
+            out[champ] = n || null
+            continue
+        }
         out[champ] = champ === 'email' ? t.toLowerCase() : (t || null)
     }
 
@@ -200,6 +212,15 @@ export function suggestions(f: FicheSuivi, aujourdhui: string): Suggestion[] {
     const out: Suggestion[] = []
     const pieces = f.pieces || []
 
+    if (f.myafro_recap_numero && f.statut_dossier === 'nouveau') {
+        out.push({
+            id: 'recap',
+            texte: 'N° fiche récap MyAfroOrigins renseigné : statut « Déjà inséré sur MyAfroOrigins »'
+                + (!f.date_depot && f.myafro_recap_date ? ', dépôt au ' + f.myafro_recap_date : ''),
+            changement: { statut_dossier: 'myafro', date_depot: f.date_depot || f.myafro_recap_date },
+        })
+    }
+
     if (f.statut_dossier === 'myafro' && f.date_depot && f.reclamation_statut !== 'attestation') {
         const mois = moisEcoules(f.date_depot, aujourdhui)
         const attendu = mois >= 6 ? 'aucune_6m' : mois >= 3 ? 'aucune_3m' : 'aucune'
@@ -249,6 +270,31 @@ export function suggestions(f: FicheSuivi, aujourdhui: string): Suggestion[] {
     }
 
     return out
+}
+
+// ─── N° fiche récap MyAfroOrigins ─────────────────────────────
+
+/** Numéro seul : « N°627920856 », « n° 627920856 » → « 627920856 ». */
+export const numeroRecap = (v: string) => v.trim().replace(/^N\s*[°ºo]\s*\.?\s*/i, '').trim()
+
+/**
+ * Lit une ligne collée telle qu'elle figure sur la fiche MyAfroOrigins :
+ * « N°627920856 DU 2026-10-28 », « 627920856 du 28/10/2026 »… Renvoie le
+ * numéro et, si elle y est, la date (AAAA-MM-JJ). Sans date, `date` est null.
+ */
+export function lireLigneRecap(texte: string): { numero: string; date: string | null } {
+    const t = texte.trim()
+    const m = /^(.*?)\s+(?:du|le|en date du)\s+(\d{4}-\d{2}-\d{2}|\d{1,2}[/.-]\d{1,2}[/.-]\d{4})\s*$/i.exec(t)
+    if (!m) return { numero: numeroRecap(t), date: null }
+    let date = m[2]
+    const fr = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/.exec(date)
+    if (fr) date = `${fr[3]}-${fr[2].padStart(2, '0')}-${fr[1].padStart(2, '0')}`
+    return { numero: numeroRecap(m[1]), date: estDate(date) ? date : null }
+}
+
+/** « N°627920856 DU 2026-10-28 » ; parties manquantes en pointillés (modèle à remplir à la main). */
+export function ligneRecap(numero: string | null | undefined, date: string | null | undefined): string {
+    return `N°${numero || '______________'} DU ${date || '____-__-__'}`
 }
 
 export function libelle(champ: keyof typeof OPTIONS, valeur: string | null | undefined): string {

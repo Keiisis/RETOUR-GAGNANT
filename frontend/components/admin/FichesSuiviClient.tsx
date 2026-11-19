@@ -18,7 +18,7 @@ import {
 import { useTranslation } from '@/lib/translation'
 import { cn } from '@/lib/utils'
 import {
-    LIMITES, OPTIONS, aujourdhuiCotonou, avancement, casesCochees, suggestions,
+    LIMITES, OPTIONS, aujourdhuiCotonou, avancement, casesCochees, ligneRecap, lireLigneRecap, suggestions,
     type FicheSuivi, type PieceReclamee,
 } from '@/lib/fiche-suivi'
 
@@ -237,7 +237,14 @@ export default function FichesSuiviClient() {
                                     return (
                                         <li key={f.id}>
                                             <button onClick={() => ouvrir(f)} className="w-full grid grid-cols-1 md:grid-cols-[170px_1fr_160px_110px] gap-2 md:gap-4 items-center text-left px-5 py-4 hover:bg-white/[0.04]">
-                                                <span className="font-mono text-xs text-[#FCD116]">{f.numero}</span>
+                                                <span className="min-w-0">
+                                                    <span className="block font-mono text-xs text-[#FCD116]">{f.numero}</span>
+                                                    {f.myafro_recap_numero && (
+                                                        <span className="block font-mono text-[10px] text-gray-400 truncate" title={t('N° fiche récap MyAfroOrigins')}>
+                                                            {ligneRecap(f.myafro_recap_numero, f.myafro_recap_date)}
+                                                        </span>
+                                                    )}
+                                                </span>
                                                 <span className="min-w-0">
                                                     <span className="block text-sm font-bold text-white truncate">{f.nom_complet || t('Sans nom')}</span>
                                                     <span className="block text-xs text-gray-500 truncate">{[f.email, f.telephone].filter(Boolean).join(' · ') || '—'}</span>
@@ -292,6 +299,10 @@ function Editeur({ fiche: f, changer }: { fiche: FicheSuivi; changer: (patch: Pa
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{t('Dossier N°')}</p>
                         <p className="font-mono text-lg text-[#FCD116]">{f.numero}</p>
+                        <p className="font-mono text-xs text-gray-300 mt-0.5">
+                            <span className="font-sans font-bold text-gray-500">{t('N° fiche récap MyAfroOrigins')} : </span>
+                            {ligneRecap(f.myafro_recap_numero, f.myafro_recap_date)}
+                        </p>
                         <p className="text-xs text-gray-500">{f.source === 'inscription' ? t('Créée à l’inscription du client') : t('Créée manuellement')}</p>
                     </div>
                     <div className="min-w-[220px] flex-1 max-w-sm">
@@ -308,6 +319,10 @@ function Editeur({ fiche: f, changer }: { fiche: FicheSuivi; changer: (patch: Pa
                     <Champ label={t('Date')}><Date_ valeur={f.date_fiche} change={v => changer({ date_fiche: v ?? f.date_fiche })} /></Champ>
                     <Champ label={t('Statut')}><Choix champ="statut_dossier" valeur={f.statut_dossier} requis change={v => changer({ statut_dossier: (v ?? f.statut_dossier) as FicheSuivi['statut_dossier'] })} /></Champ>
                     <Champ label={t('Date du dépôt')}><Date_ valeur={f.date_depot} change={v => changer({ date_depot: v })} /></Champ>
+                    <Champ label={t('N° fiche récap MyAfroOrigins')} large>
+                        <NumeroRecap numero={f.myafro_recap_numero} change={changer} />
+                    </Champ>
+                    <Champ label={t('Date de la fiche récap')}><Date_ valeur={f.myafro_recap_date} change={v => changer({ myafro_recap_date: v })} /></Champ>
                 </div>
             </Bloc>
 
@@ -439,6 +454,24 @@ function Texte({ valeur, max, type = 'text', change }: { valeur: string | null; 
 
 function Zone({ valeur, max, lignes, placeholder, change }: { valeur: string | null; max: number; lignes: number; placeholder?: string; change: (v: string | null) => void }) {
     return <textarea value={valeur ?? ''} maxLength={max} rows={lignes} placeholder={placeholder} onChange={e => change(e.target.value || null)} className={cn(champ, 'resize-y')} />
+}
+
+// Accepte la ligne telle qu'elle figure sur la fiche MyAfroOrigins, collée ou
+// tapée : « N°627920856 DU 2026-10-28 » remplit le numéro ET la date. En
+// quittant le champ, le préfixe « N° » est retiré du numéro.
+function NumeroRecap({ numero, change }: { numero: string | null; change: (patch: Partial<FicheSuivi>) => void }) {
+    return (
+        <input value={numero ?? ''} maxLength={60} placeholder="N°627920856 DU 2026-10-28"
+            onChange={e => {
+                const l = lireLigneRecap(e.target.value)
+                change(l.date ? { myafro_recap_numero: l.numero || null, myafro_recap_date: l.date } : { myafro_recap_numero: e.target.value || null })
+            }}
+            onBlur={e => {
+                const n = lireLigneRecap(e.target.value).numero
+                if (n !== (numero ?? '')) change({ myafro_recap_numero: n || null })
+            }}
+            className={cn(champ, 'font-mono')} />
+    )
 }
 
 // Le suffixe évite l'homonymie avec l'objet global Date.
