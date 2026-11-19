@@ -103,10 +103,10 @@ describe('sauvegarde — stockage limité', () => {
         expect(res!.parties[0].chemin).toMatch(/^exports\/\d+-[0-9a-f]{12}\/sauvegarde-/)
     })
 
-    it('la collecte de nuit : historique 7 jours, exports expirés et ancien complet/ purgés, manifeste sans complet', async () => {
+    it('la collecte de nuit : historique 2 mois, exports expirés et ancien complet/ purgés, manifeste sans complet', async () => {
         const jour = (ms: number) => new Date(Date.now() - ms).toISOString().slice(0, 10)
-        const hist8 = `historique/${jour(8 * JOUR)}.json.gz`
-        const hist6 = `historique/${jour(6 * JOUR)}.json.gz`
+        const hist8 = `historique/${jour(63 * JOUR)}.json.gz`
+        const hist6 = `historique/${jour(60 * JOUR)}.json.gz`
         const complet = `complet/${Date.now() - JOUR}/sauvegarde-clients-RGB.zip`
         const exportVieux = `exports/${Date.now() - 2 * HEURE}-cccccc/partie.zip`
         const client = 'clients/kevin.zip'
