@@ -117,6 +117,10 @@ const nextConfig: NextConfig = {
     { source: '/services/nationalite-vip', destination: '/services/nationalite-beninoise', permanent: true },
   ],
   images: {
+    // Images Supabase optimisées gardées 31 jours par Vercel (défaut : 4 h) :
+    // chaque re-optimisation re-téléchargeait l'original sur le quota d'egress.
+    // Les fichiers déposés portent un nom unique : pas de version périmée.
+    minimumCacheTTL: 2678400,
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
