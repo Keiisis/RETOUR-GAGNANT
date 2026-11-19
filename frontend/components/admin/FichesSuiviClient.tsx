@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-    ClipboardText, MagnifyingGlass as Search, Plus, DownloadSimple, FloppyDisk as Save,
+    ClipboardText, MagnifyingGlass as Search, Plus, DownloadSimple, FloppyDisk as Save, Trash,
     CaretLeft, CaretRight, ArrowClockwise as RefreshCw, Lightbulb, CircleNotch as Loader2, FileText, X,
     CheckCircle as CheckCircle2, WarningCircle as AlertCircle,
 } from '@phosphor-icons/react'
@@ -73,6 +73,17 @@ async function telechargerPdf(url: string, nomFichier: string) {
     }
 }
 
+function nouvelleFiche(): FicheSuivi {
+    return {
+        id: '', numero: '', client_id: null, source: 'manuel', date_fiche: aujourdhuiCotonou(), statut_dossier: 'nouveau',
+        date_depot: null, myafro_recap_numero: null, myafro_recap_date: null, nom_complet: null, telephone: null, email: null,
+        pays: null, ville: null, canaux: [], reclamation_statut: null, date_etat_lieux: null, observation: null,
+        accueil_statut: null, accueil_date_reclamation: null, accueil_date_reception: null, frais_statut: null, frais_date: null,
+        frais_justificatif: false, pieces: [], analyse_suivi: null, guichet_statut: null, guichet_date: null,
+        ceremonie_statut: null, ceremonie_date: null, created_at: '', updated_at: '',
+    }
+}
+
 export default function FichesSuiviClient() {
     const { t } = useTranslation()
     const [fiches, setFiches] = useState<FicheSuivi[]>([])
@@ -120,28 +131,25 @@ export default function FichesSuiviClient() {
     }
     const changer = (patch: Partial<FicheSuivi>) => { setFiche(p => (p ? { ...p, ...patch } : p)); setModifie(true) }
 
-    const creer = async () => {
-        setOccupe(true)
-        try {
-            const r = await lire<{ fiche: FicheSuivi }>(await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }))
-            ouvrir(r.fiche)
-            notifier('success', `${t('Fiche créée')} : ${r.fiche.numero}`)
-        } catch (e) {
-            notifier('error', e instanceof Error ? e.message : 'Erreur inconnue')
-        } finally {
-            setOccupe(false)
-        }
+    // Une nouvelle fiche reste un brouillon local, sans numéro, jusqu'au premier
+    // « Enregistrer » : la supprimer ne consomme aucun numéro. Une fiche
+    // enregistrée ne se supprime plus.
+    const creer = () => { setFiche(nouvelleFiche()); setModifie(true) }
+    const abandonner = () => {
+        if (!confirm(t('Supprimer cette fiche non enregistrée ?'))) return
+        setFiche(null); setModifie(false)
     }
 
     const enregistrer = async () => {
         if (!fiche) return
         setOccupe(true)
         try {
-            const r = await lire<{ fiche: FicheSuivi }>(await fetch(`${API}/${fiche.id}`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fiche),
+            const nouvelle = !fiche.id
+            const r = await lire<{ fiche: FicheSuivi }>(await fetch(nouvelle ? API : `${API}/${fiche.id}`, {
+                method: nouvelle ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(fiche),
             }))
             setFiche(r.fiche); setModifie(false)
-            notifier('success', t('Fiche enregistrée'))
+            notifier('success', nouvelle ? `${t('Fiche enregistrée')} : ${r.fiche.numero}` : t('Fiche enregistrée'))
         } catch (e) {
             notifier('error', e instanceof Error ? e.message : 'Erreur inconnue')
         } finally {
@@ -197,6 +205,11 @@ export default function FichesSuiviClient() {
                                 className="flex items-center gap-2 bg-[#FCD116]/10 border border-[#FCD116]/20 text-[#FCD116] font-bold text-xs px-4 py-3 rounded-xl disabled:opacity-40">
                                 {pdfEnCours ? <Loader2 size={14} className="animate-spin" /> : <DownloadSimple size={14} />} {t('Télécharger le PDF')}
                             </button>
+                            {!fiche.id && (
+                                <button onClick={abandonner} className="flex items-center gap-2 bg-[#E8112D]/10 border border-[#E8112D]/20 text-[#ff4d4d] font-bold text-xs px-4 py-3 rounded-xl">
+                                    <Trash size={14} /> {t('Supprimer la fiche non enregistrée')}
+                                </button>
+                            )}
                             <button onClick={enregistrer} disabled={occupe || !modifie} className="flex items-center gap-2 bg-[#008751] hover:bg-[#006b40] text-white font-bold text-xs px-5 py-3 rounded-xl disabled:opacity-40">
                                 {occupe ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} {t('Enregistrer')}
                             </button>
@@ -298,7 +311,7 @@ function Editeur({ fiche: f, changer }: { fiche: FicheSuivi; changer: (patch: Pa
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">{t('Dossier N°')}</p>
-                        <p className="font-mono text-lg text-[#FCD116]">{f.numero}</p>
+                        <p className="font-mono text-lg text-[#FCD116]">{f.numero || t('Attribué à l’enregistrement')}</p>
                         <p className="font-mono text-xs text-gray-300 mt-0.5">
                             <span className="font-sans font-bold text-gray-500">{t('N° fiche récap MyAfroOrigins')} : </span>
                             {ligneRecap(f.myafro_recap_numero, f.myafro_recap_date)}
