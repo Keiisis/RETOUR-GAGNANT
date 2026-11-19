@@ -35,8 +35,8 @@ const IMG_BY_SLUG: Record<string, string> = {
 
 // Liste de repli COMPLÈTE (affichée si l'API `services` est vide).
 const FALLBACK_SERVICES: ServiceItem[] = [
-    { id: 'f-7', slug: 'nationalite-vip', title: 'Nationalité béninoise', description: "Obtention de la nationalité béninoise : dossier complet monté par nos experts, suivi prioritaire et accompagnement de bout en bout.", imageUrl: IMG_BY_SLUG['nationalite-vip'] },
-    { id: 'f-1', slug: 'passeport', title: 'Passeport & Documents', description: "Passeport, acte de naissance, légalisation et apostille : vos démarches officielles prises en charge de bout en bout.", imageUrl: IMG_BY_SLUG.passeport },
+    { id: 'f-7', slug: 'nationalite-vip', title: 'Nationalité béninoise', description: "Demande et accompagnement complet gratuits par une agence agréée : dossier monté par nos experts, suivi jusqu'à la cérémonie officielle de remise.", imageUrl: IMG_BY_SLUG['nationalite-vip'] },
+    { id: 'f-1', slug: 'passeport', title: 'Passeport & Documents', description: "Passeport inclus et gratuit : l'État le remet lors de la cérémonie officielle, au terme de la demande de nationalité.", imageUrl: IMG_BY_SLUG.passeport },
     { id: 'f-2', slug: 'logement', title: 'Acheter ou Louer', description: "Acquisition, location longue durée et sécurisation foncière de vos biens au Bénin.", imageUrl: IMG_BY_SLUG.logement },
     { id: 'f-3', slug: 'business', title: "Création d'Entreprise", description: "Immatriculation RCCM, compte professionnel et formalités de création.", imageUrl: IMG_BY_SLUG.business },
     { id: 'f-4', slug: 'culture', title: 'Tourisme & Culture', description: "Circuits, visites patrimoniales et séjours dans le Bénin authentique.", imageUrl: IMG_BY_SLUG.culture },

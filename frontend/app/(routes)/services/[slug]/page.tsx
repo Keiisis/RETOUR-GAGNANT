@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, Calendar, CircleNotch as Loader2, Sparkle as Sparkles } from '@phosphor-icons/react';
+import { CheckCircle as CheckCircle2, CaretRight as ChevronRight, Calendar, CircleNotch as Loader2 } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { GoldenIcon } from '@/components/ui/GoldenIcon'
@@ -28,30 +28,6 @@ interface ServiceData {
 
 // Contenu de référence utilisé si la DB est inaccessible
 const FALLBACK_SERVICES: Record<string, ServiceData> = {
-    passeport: {
-        title: 'Passeport & Documents',
-        subtitle: 'Documents officiels et accompagnement pour la diaspora béninoise',
-        description: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre : un accompagnement structuré, sans improvisation.",
-        features: [
-            "Copie intégrale du passeport en cours de validité",
-            "Acte de naissance certifié conforme délivré par la mairie béninoise",
-            "Certificat de nationalité béninoise (Tribunal de Première Instance)",
-            "Carte d'Identité Personnelle (CIP A) en cours de validité",
-            "Extrait de casier judiciaire béninois : Bulletin n°3 (moins de 3 mois)",
-            "Justificatif de domicile de moins de 3 mois (quittance ou bail)",
-            "4 photos d'identité biométriques (fond blanc, 3,5 × 4,5 cm, sans lunettes)",
-            "Formulaire officiel de demande de passeport rempli et signé",
-        ],
-        price: 'À partir de 50 000 FCFA',
-        color: '#008751',
-        icon_type: 'passport',
-        image_url: '/assets/icones/icone_Passeport_Documents.png',
-        pricing_options: [
-            { label: 'Pack Standard : Passeport ordinaire', price: '75 000 FCFA' },
-            { label: 'Pack VIP : Traitement express jour-J', price: '350 000 FCFA' },
-            { label: 'Renouvellement accompagné', price: '50 000 FCFA' },
-        ],
-    },
     logement: {
         title: 'Acheter ou Louer',
         subtitle: 'Vérifiez, informez-vous et Sécurisez vos transactions foncières et immobilières',
@@ -186,27 +162,6 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
             { label: 'Recherche complète : archives, bases de données & associations', price: '250 €' },
         ],
     },
-    'nationalite-vip': {
-        title: 'Nationalité béninoise',
-        subtitle: 'Obtenir la nationalité béninoise pour la diaspora afro-descendante',
-        description: "Accompagnement personnalisé pour les membres de la diaspora souhaitant obtenir la nationalité béninoise. Suivi de dossier, coordination avec les autorités compétentes et prise en charge prioritaire.",
-        features: [
-            'Constitution et vérification du dossier complet',
-            'Liaison avec le Ministère de la Justice',
-            'Suivi administratif pas à pas',
-            "Accompagnement pour l'apostille et traductions certifiées",
-            'Formule prioritaire : suivi avec référent dédié',
-        ],
-        price: 'À partir de 150 000 FCFA',
-        color: '#FCD116',
-        icon_type: 'recade',
-        image_url: '',
-        pricing_options: [
-            { label: 'Accompagnement dossier standard', price: '150 000 FCFA' },
-            { label: 'Formule prioritaire : suivi complet', price: '350 000 FCFA' },
-            { label: 'Consultation initiale', price: 'Gratuit' },
-        ],
-    },
     'consultation-fa-racines': {
         title: 'Consultation Fa & Racines',
         subtitle: 'Rencontrez un Bokonon : la sagesse du Fa, dans un cadre organisé et respectueux',
@@ -267,25 +222,6 @@ const FALLBACK_SERVICES: Record<string, ServiceData> = {
     },
 }
 
-// Étapes du Pack VIP Passeport (affichées uniquement sur /services/passeport)
-const PACK_VIP_STEPS = [
-    {
-        num: '01',
-        title: 'Enrôlement État Civil',
-        desc: "Obtention de votre extrait de naissance certifié conforme auprès des autorités de l'état civil béninois.",
-    },
-    {
-        num: '02',
-        title: "Carte d'Identité Personnelle (CIP A)",
-        desc: "Constitution du dossier et enrôlement biométrique pour votre titre d'identité officiel béninois.",
-    },
-    {
-        num: '03',
-        title: 'Passeport Express Jour-J',
-        desc: "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même.",
-    },
-]
-
 export default function ServiceDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { t } = useTranslation()
     const { slug } = use(params)
@@ -337,21 +273,13 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
         fetchService()
     }, [slug])
 
-    // Chargement du paramètre calculateur (global pour tous les services, + clé
-    // historique propre au passeport / nationalité-vip pour rétro-compatibilité)
+    // Chargement du paramètre calculateur (global pour tous les services)
     useEffect(() => {
         fetch('/api/settings/frontend')
             .then(r => r.json())
             .then(json => {
-                const global = json.settings?.services_show_calculator
-                const legacy = json.settings?.passeport_show_calculator
-                // Le toggle global a priorité ; s'il est désactivé, calculateur masqué partout.
-                if (global === 'false') {
-                    setShowCalculator(false)
-                } else if (global === undefined && (slug === 'passeport' || slug === 'nationalite-vip') && legacy === 'false') {
-                    // Aucun réglage global défini : on respecte l'ancien réglage passeport.
-                    setShowCalculator(false)
-                }
+                // S'il est désactivé, calculateur masqué partout.
+                if (json.settings?.services_show_calculator === 'false') setShowCalculator(false)
             })
             .catch(() => { /* défaut : calculateur visible */ })
     }, [slug])
@@ -444,14 +372,9 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                     <p className="text-gray-600 leading-relaxed text-lg">{t(service.description)}</p>
                                 </div>
 
-                                {/* Features : renommé "Pièces à fournir" pour le passeport */}
+                                {/* Features */}
                                 <div>
-                                    <h2 className="text-2xl font-bold text-[#1a2332] mb-6">
-                                        {slug === 'passeport'
-                                            ? <T>Pièces à fournir pour les afro-descendants</T>
-                                            : <T>Ce que nous proposons</T>
-                                        }
-                                    </h2>
+                                    <h2 className="text-2xl font-bold text-[#1a2332] mb-6"><T>Ce que nous proposons</T></h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {service.features.map((item, i) => (
                                             <motion.div
@@ -467,38 +390,6 @@ export default function ServiceDetailPage({ params }: { params: Promise<{ slug: 
                                         ))}
                                     </div>
                                 </div>
-
-                                {/* Section Pack VIP : uniquement pour le passeport */}
-                                {slug === 'passeport' && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.5 }}
-                                        className="rounded-2xl border border-[#FCD116]/40 bg-gradient-to-br from-[#FCD116]/5 to-[#008751]/5 p-6 md:p-8"
-                                    >
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <Sparkles className="text-[#FCD116]" size={22} />
-                                            <h2 className="text-xl font-bold text-[#1a2332]">
-                                                <T>Pack VIP Retour Gagnant</T>
-                                            </h2>
-                                        </div>
-                                        <p className="text-gray-500 text-sm mb-6">
-                                            <T>Un accompagnement intégral en une seule journée : de l&apos;état civil à la délivrance de votre passeport.</T>
-                                        </p>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {PACK_VIP_STEPS.map((step) => (
-                                                <div
-                                                    key={step.num}
-                                                    className="bg-white rounded-xl p-5 shadow-sm border border-[#FCD116]/20 flex flex-col gap-2"
-                                                >
-                                                    <span className="text-4xl font-black text-[#FCD116]/30 leading-none">{step.num}</span>
-                                                    <h4 className="text-sm font-bold text-[#1a2332]">{t(step.title)}</h4>
-                                                    <p className="text-xs text-gray-500 leading-relaxed">{t(step.desc)}</p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </motion.div>
-                                )}
 
                                 {/* Section réservation : uniquement Consultation Fa & Racines */}
                                 {/* Annuaire des Prêtres Fa : alimenté par /api/fa-priests

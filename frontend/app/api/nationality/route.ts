@@ -344,7 +344,7 @@ export async function POST(request: NextRequest) {
 
         // ── Anti-fraude : vérification Kkiapay côté serveur si payment_ref fourni ──
         // Évite qu'un client envoie un faux transaction_id et obtienne un dossier
-        // nationalité (150 000 FCFA) sans avoir vraiment payé.
+        // nationalité sans avoir vraiment payé.
         // Si payment_method = 'kkiapay' et payment_ref renseigné, on vérifie.
         // Fiche « filet webhook » à compléter (créée par /api/webhooks/kkiapay
         // AVANT que le formulaire n'aboutisse : marquée last_step_completed = 0).

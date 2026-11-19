@@ -3,11 +3,8 @@
 /**
  * Dépôt d'une demande de « Récap de dossier MyAfroOrigins ».
  *
- * Le client raconte sa situation, règle 50 €, et le serveur enregistre —
- * dans cet ordre. Le paiement est PROUVÉ côté serveur avant la moindre
- * écriture : transaction confrontée à la passerelle, puis montant comparé au
- * tarif lu en base (leçon du 2026-08-19, où un tarif d'attente affiché dans
- * le navigateur avait donné « 0,39 € » à l'écran).
+ * Le client raconte sa situation et envoie sa demande. Le récap est gratuit
+ * depuis novembre 2026 (agence agréée) : aucune étape de règlement.
  *
  * Données personnelles : consentement explicite, jamais pré-coché, précédé de
  * l'information complète (loi n° 2017-20 portant Code du numérique en
@@ -17,32 +14,16 @@
  * l'équipe. Son dossier existe déjà chez MyAfroOrigins — on le VÉRIFIE, on
  * ne le refait pas. Mêmes champs que la page publique, plus la possibilité
  * de joindre toutes les pièces du dossier de nationalité, aucune n'étant
- * obligatoire. Si l'équipe a déjà encaissé les frais, aucun paiement n'est
- * demandé : le serveur l'a établi en lisant la facture, pas le navigateur.
+ * obligatoire. Un lien émis avant la gratuité avec une facture réglée garde
+ * sa mention « déjà réglé » : le serveur l'a établi en lisant la facture.
  */
 import { useEffect, useState } from 'react'
-import Script from 'next/script'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ArrowRight, CheckCircle2, ShieldCheck, Lock, Mail, Phone, User, Paperclip, X, FileText, Plus } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Lock, Mail, Phone, User, Paperclip, X, FileText, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { chargerDocSlots, DOC_SLOTS_DEFAUT, type DocSlot } from '@/lib/nationality-docs'
 import { useTranslation } from '@/lib/translation'
-import { Price } from '@/components/ui/Price'
-import { CurrencyCode, convertCurrency } from '@/lib/currency'
-import { ttcFromHt } from '@/lib/tax'
-import { ouvrirKkiapay } from '@/lib/kkiapay'
-
-declare global {
-    interface Window {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        openKkiapayWidget: (config: any) => void
-        addKkiapayListener: (event: string, callback: (data: Record<string, unknown>) => void) => void
-        FedaPay: { init: (selector: string, config: Record<string, unknown>) => void }
-    }
-}
-
-type Provider = 'kkiapay' | 'fedapay'
 
 /** Ce que le serveur a établi en lisant le lien de reprise. */
 export interface RepriseInfo {
@@ -63,12 +44,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
     const { t } = useTranslation()
     const prepaye = !!reprise?.prepaye
 
-    // Tarif officiel : `null` tant que la base n'a pas répondu. Aucun montant
-    // d'attente n'est affiché ni facturé.
-    const [tarif, setTarif] = useState<number | null>(null)
-    const [devise, setDevise] = useState<CurrencyCode>('EUR')
     const [delai, setDelai] = useState('48 heures ouvrées')
-    const [reglages, setReglages] = useState<Record<string, string>>({})
 
     const [form, setForm] = useState({
         prenom: '', nom: '', email: '', telephone: '', pays_residence: '',
@@ -76,17 +52,12 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
     })
     const [consentement, setConsentement] = useState(false)
 
-    const [paiementFait, setPaiementFait] = useState(false)
-    const [txId, setTxId] = useState('')
-    const [provider, setProvider] = useState<Provider>('kkiapay')
-    const [enCours, setEnCours] = useState(false)
     const [erreur, setErreur] = useState('')
     const [envoi, setEnvoi] = useState(false)
     const [reference, setReference] = useState('')
 
     // Pièces jointes : proposées APRÈS l'enregistrement, quand la référence
-    // existe. Les demander avant obligerait à stocker des fichiers pour une
-    // demande qui pourrait ne jamais être payée.
+    // existe.
     const [pieces, setPieces] = useState<{ id: string; file_name: string }[]>([])
     const [depot, setDepot] = useState(false)
     const [erreurPiece, setErreurPiece] = useState('')
@@ -148,104 +119,19 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
     }
 
     useEffect(() => {
-        fetch('/api/settings/payment').then(r => r.json()).then(setReglages).catch(() => { })
         supabase.from('page_sections').select('content')
             .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').single()
             .then(({ data }) => {
                 const c = (data?.content || {}) as Record<string, unknown>
-                setTarif(Number(c.amount) > 0 ? Number(c.amount) : 50)
-                if (c.currency) setDevise(String(c.currency) as CurrencyCode)
                 if (c.delai) setDelai(String(c.delai))
             })
     }, [])
 
-    /* Ne proposer que ce qui est réellement activé côté admin. Afficher un
-       bouton grisé pour une passerelle désactivée ne sert à rien : le client
-       ne peut pas s'en servir, et cela suggère une panne. */
-    const moyens = [
-        {
-            id: 'kkiapay' as const,
-            actif: reglages.kkiapay_enabled === 'true'
-                && !!(reglages.kkiapay_sandbox === 'true'
-                    ? (reglages.kkiapay_sandbox_public_key || reglages.kkiapay_public_key)
-                    : reglages.kkiapay_public_key),
-            label: 'Mobile Money / Carte bancaire',
-        },
-        {
-            id: 'fedapay' as const,
-            actif: reglages.fedapay_enabled === 'true' && !!reglages.fedapay_public_key,
-            label: 'Carte bancaire',
-        },
-    ].filter(m => m.actif)
-
     const champsRemplis = !!(form.prenom.trim() && form.nom.trim() && form.email.trim()
         && form.telephone.trim() && form.situation.trim().length >= 40)
-    const pretAPayer = champsRemplis && consentement && tarif !== null
     const pretAEnvoyer = champsRemplis && consentement
 
-    const montantXof = tarif === null
-        ? 0
-        : ttcFromHt(devise === 'XOF' ? tarif : convertCurrency(tarif, devise, 'XOF'), 'XOF')
-
-    const payerKkiapay = () => {
-        setErreur('')
-        // Tarif pas encore lu en base : refuser plutôt qu'encaisser une valeur d'attente.
-        if (tarif === null) { setErreur(t('Tarif en cours de chargement. Réessayez dans un instant.')); return }
-        if (typeof window.openKkiapayWidget !== 'function') {
-            setErreur(t('Le module de paiement n’est pas encore chargé. Patientez une seconde.')); return
-        }
-        const sandbox = reglages.kkiapay_sandbox === 'true'
-        const cle = sandbox ? (reglages.kkiapay_sandbox_public_key || reglages.kkiapay_public_key) : reglages.kkiapay_public_key
-        if (!cle) { setErreur(t('Paiement momentanément indisponible. Contactez-nous.')); return }
-
-        setProvider('kkiapay'); setEnCours(true)
-        try {
-            ouvrirKkiapay({
-                amount: montantXof,
-                position: 'center',
-                key: cle,
-                sandbox,
-                email: form.email || undefined,
-                phone: form.telephone || undefined,
-                name: `${form.prenom} ${form.nom}`.trim() || undefined,
-                data: JSON.stringify({ context: 'recap-myafroorigins', email: form.email }),
-            }, {
-                onSucces: (tx: string) => { setTxId(tx); setPaiementFait(true); setEnCours(false) },
-                onEchec: () => {
-                    setErreur(t('Le paiement n’a pas abouti. Si votre carte est hors zone UEMOA, essayez le Mobile Money.'))
-                    setEnCours(false)
-                },
-                onAnnule: () => {
-                    setErreur(t('Paiement annulé. Rien n’a été débité — votre demande n’a pas été enregistrée.'))
-                    setEnCours(false)
-                },
-            })
-        } catch { setErreur(t('Impossible d’ouvrir le module de paiement.')); setEnCours(false) }
-    }
-
-    const payerFedapay = () => {
-        setErreur('')
-        if (tarif === null) { setErreur(t('Tarif en cours de chargement. Réessayez dans un instant.')); return }
-        if (!reglages.fedapay_public_key) { setErreur(t('FedaPay indisponible.')); return }
-        setProvider('fedapay'); setEnCours(true)
-        try {
-            window.FedaPay.init('#fedapay-recap-btn', {
-                public_key: reglages.fedapay_public_key,
-                environment: reglages.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
-                transaction: { amount: montantXof, description: `Récap de dossier MyAfroOrigins — ${form.prenom} ${form.nom}` },
-                customer: { email: form.email || undefined, phone_number: { number: form.telephone } },
-                onComplete: (resp: Record<string, unknown>) => {
-                    const tx = resp.transaction as Record<string, unknown> | undefined
-                    if (resp.reason === 'APPROVED' || (tx && tx.status === 'approved')) {
-                        setTxId(String(tx?.id || resp.id || '')); setPaiementFait(true)
-                    } else { setErreur(t('Paiement FedaPay non approuvé.')) }
-                    setEnCours(false)
-                },
-            })
-        } catch { setErreur(t('Impossible d’initialiser FedaPay.')); setEnCours(false) }
-    }
-
-    const enregistrer = async (paiement?: { provider: Provider; ref: string }) => {
+    const enregistrer = async () => {
         if (envoi || reference) return
         setEnvoi(true); setErreur('')
         try {
@@ -255,7 +141,6 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                 body: JSON.stringify({
                     ...form,
                     consentement,
-                    ...(paiement ? { payment_provider: paiement.provider, payment_ref: paiement.ref } : {}),
                     ...(reprise ? { reprise_token: reprise.token } : {}),
                 }),
             })
@@ -266,13 +151,6 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
             setErreur(e instanceof Error ? e.message : t('Enregistrement impossible.'))
         } finally { setEnvoi(false) }
     }
-
-    /* Le dépôt part APRÈS le paiement : le serveur revérifie la transaction et
-       le montant avant d'enregistrer la moindre donnée. */
-    useEffect(() => {
-        if (!paiementFait || !txId || envoi || reference) return
-        enregistrer({ provider, ref: txId })
-    }, [paiementFait, txId]) // eslint-disable-line react-hooks/exhaustive-deps
 
     /* Dès que la demande existe, les pièces choisies partent une à une, sous
        leur intitulé. Une pièce qui échoue n'arrête pas les autres : elle est
@@ -385,9 +263,6 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
 
     return (
         <section id="demande" className="max-w-3xl mx-auto px-5 md:px-8 py-12 scroll-mt-16">
-            <Script src="https://cdn.kkiapay.me/k.js" strategy="lazyOnload" />
-            <Script src="https://cdn.fedapay.com/checkout.js?v=1.1.7" strategy="lazyOnload" />
-
             <div className="mb-8">
                 <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[#008751] mb-2">{t('Votre demande')}</p>
                 <h2 className="font-display text-3xl md:text-4xl font-bold text-[#1c1917]">{t('Racontez-nous')}</h2>
@@ -414,7 +289,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                                     type={ch.type}
                                     value={form[ch.k]}
                                     onChange={e => setForm(f => ({ ...f, [ch.k]: e.target.value }))}
-                                    disabled={paiementFait}
+                                    disabled={envoi}
                                     className="w-full bg-transparent text-sm font-semibold text-[#1c1917] outline-none disabled:opacity-60"
                                 />
                             </div>
@@ -434,7 +309,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                                 value={form[ch.k]}
                                 onChange={e => setForm(f => ({ ...f, [ch.k]: e.target.value }))}
                                 placeholder={t(ch.ph)}
-                                disabled={paiementFait}
+                                disabled={envoi}
                                 className="w-full bg-[#fdfbf7] border border-[#e7e1d8] rounded-xl px-4 py-3 text-sm font-semibold text-[#1c1917] outline-none focus:border-[#008751] transition-colors placeholder:font-normal placeholder:text-[#a8a29e] disabled:opacity-60"
                             />
                         </div>
@@ -450,7 +325,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                         onChange={e => setForm(f => ({ ...f, situation: e.target.value }))}
                         rows={7}
                         maxLength={4000}
-                        disabled={paiementFait}
+                        disabled={envoi}
                         placeholder={t('Quand avez-vous déposé votre demande ? Qu’avez-vous fourni ? Qu’est-ce qu’on vous a répondu, s’il y a eu une réponse ? Qu’est-ce qui vous semble bloquer ?')}
                         className="w-full bg-[#fdfbf7] border border-[#e7e1d8] rounded-xl px-4 py-3 text-sm text-[#1c1917] leading-relaxed outline-none focus:border-[#008751] transition-colors placeholder:text-[#a8a29e] disabled:opacity-60"
                     />
@@ -471,7 +346,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                         onChange={e => setForm(f => ({ ...f, attentes: e.target.value }))}
                         rows={3}
                         maxLength={2000}
-                        disabled={paiementFait}
+                        disabled={envoi}
                         className="w-full bg-[#fdfbf7] border border-[#e7e1d8] rounded-xl px-4 py-3 text-sm text-[#1c1917] outline-none focus:border-[#008751] transition-colors disabled:opacity-60"
                     />
                 </div>
@@ -497,7 +372,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                                             <p className="text-[12.5px] font-semibold text-[#1c1917]">{t(slot.label)}</p>
                                             {slot.hint && <p className="text-[11px] text-[#a8a29e]">{t(slot.hint)}</p>}
                                         </div>
-                                        <label className={`shrink-0 inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#008751] border border-[#008751]/30 hover:bg-[#008751]/5 rounded-lg px-3 py-1.5 cursor-pointer ${paiementFait || envoi ? 'opacity-50 pointer-events-none' : ''}`}>
+                                        <label className={`shrink-0 inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#008751] border border-[#008751]/30 hover:bg-[#008751]/5 rounded-lg px-3 py-1.5 cursor-pointer ${envoi ? 'opacity-50 pointer-events-none' : ''}`}>
                                             <Plus size={13} /> {choisies.length && !slot.multi ? t('Remplacer') : t('Ajouter')}
                                             <input
                                                 type="file"
@@ -540,7 +415,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                                     placeholder={t('Nom du document (ex. capture de mon espace MyAfroOrigins)')}
                                     className="flex-1 bg-[#fdfbf7] border border-[#e7e1d8] rounded-lg px-3 py-2 text-[12.5px] text-[#1c1917] outline-none focus:border-[#008751]"
                                 />
-                                <label className={`shrink-0 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-bold text-[#008751] border border-[#008751]/30 hover:bg-[#008751]/5 rounded-lg px-3 py-2 cursor-pointer ${!autreTitre.trim() || paiementFait || envoi ? 'opacity-50 pointer-events-none' : ''}`}>
+                                <label className={`shrink-0 inline-flex items-center justify-center gap-1.5 text-[11.5px] font-bold text-[#008751] border border-[#008751]/30 hover:bg-[#008751]/5 rounded-lg px-3 py-2 cursor-pointer ${!autreTitre.trim() || envoi ? 'opacity-50 pointer-events-none' : ''}`}>
                                     <Plus size={13} /> {t('Ajouter')}
                                     <input
                                         type="file"
@@ -596,7 +471,7 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                             type="checkbox"
                             checked={consentement}
                             onChange={e => setConsentement(e.target.checked)}
-                            disabled={paiementFait}
+                            disabled={envoi}
                             className="mt-0.5 w-4 h-4 accent-[#008751] shrink-0"
                         />
                         <span className="text-[12.5px] text-[#1c1917] leading-relaxed">
@@ -612,11 +487,13 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                     </div>
                 )}
 
-                {/* ── Règlement ── */}
-                {prepaye ? (
-                    <div className="border-t border-[#e7e1d8] pt-6">
-                        <div className="bg-[#008751]/8 border border-[#008751]/25 rounded-2xl px-5 py-4 mb-5 flex items-start gap-3">
-                            <CheckCircle2 size={20} className="text-[#008751] shrink-0 mt-0.5" />
+                {/* ── Envoi : le récap est gratuit (agence agréée). Un lien de
+                       reprise émis « déjà payé » avant la gratuité garde sa
+                       mention : la facture existe, le client l'a réglée. ── */}
+                <div className="border-t border-[#e7e1d8] pt-6">
+                    <div className="bg-[#008751]/8 border border-[#008751]/25 rounded-2xl px-5 py-4 mb-5 flex items-start gap-3">
+                        <CheckCircle2 size={20} className="text-[#008751] shrink-0 mt-0.5" />
+                        {prepaye ? (
                             <div>
                                 <p className="text-sm font-bold text-[#1c1917]">{t('Vos frais de reprise sont déjà réglés.')}</p>
                                 <p className="text-[12px] text-[#57534e] mt-0.5">
@@ -624,91 +501,38 @@ export default function RecapMyafroForm({ reprise }: { reprise?: RepriseInfo } =
                                     {reprise?.factureNumero ? ` ${t('Facture')} ${reprise.factureNumero}.` : ''}
                                 </p>
                             </div>
-                        </div>
-                        {envoi ? (
-                            <div className="flex items-center justify-center gap-3 py-4 text-[#008751] font-bold text-sm">
-                                <span className="w-4 h-4 border-2 border-[#008751]/30 border-t-[#008751] rounded-full animate-spin" />
-                                {t('Enregistrement de votre demande…')}
-                            </div>
                         ) : (
-                            <button
-                                type="button"
-                                onClick={() => enregistrer()}
-                                disabled={!pretAEnvoyer}
-                                className="w-full font-bold text-sm px-6 py-4 rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#008751] hover:bg-[#007445] text-white"
-                            >
-                                {t('Envoyer ma demande')}
-                            </button>
-                        )}
-                        {!pretAEnvoyer && !envoi && (
-                            <p className="text-[11px] text-[#a8a29e] text-center mt-3">
-                                {!champsRemplis
-                                    ? t('Complétez les champs obligatoires pour continuer.')
-                                    : t('Votre consentement est nécessaire pour poursuivre.')}
-                            </p>
+                            <div>
+                                <p className="text-sm font-bold text-[#1c1917]">{t('Gratuit · agence agréée')}</p>
+                                <p className="text-[12px] text-[#57534e] mt-0.5">
+                                    {t('Retour Gagnant Bénin traite votre récap MyAfroOrigins sans aucun frais.')}
+                                </p>
+                            </div>
                         )}
                     </div>
-                ) : (
-                <div className="border-t border-[#e7e1d8] pt-6">
-                    <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
-                        <div>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#78716c]">{t('Montant à régler')}</p>
-                            <p className="font-display text-3xl font-bold text-[#008751] mt-1">
-                                {tarif === null ? '…' : <Price amount={tarif} currency={devise} />}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 text-[11px] text-[#78716c]">
-                            <ShieldCheck size={14} className="text-[#008751]" />
-                            {t('Paiement sécurisé, vérifié avant validation')}
-                        </div>
-                    </div>
-
                     {envoi ? (
                         <div className="flex items-center justify-center gap-3 py-4 text-[#008751] font-bold text-sm">
                             <span className="w-4 h-4 border-2 border-[#008751]/30 border-t-[#008751] rounded-full animate-spin" />
                             {t('Enregistrement de votre demande…')}
                         </div>
-                    ) : moyens.length === 0 ? (
-                        <div className="bg-[#fdfbf7] border border-[#e7e1d8] rounded-xl px-4 py-4 text-center">
-                            <p className="text-sm text-[#57534e]">
-                                {t('Le paiement en ligne est momentanément indisponible. Écrivez-nous, nous prenons votre demande autrement.')}
-                            </p>
-                        </div>
                     ) : (
-                        <div className={moyens.length > 1 ? 'grid sm:grid-cols-2 gap-3' : ''}>
-                            {moyens.map((m, i) => (
-                                <button
-                                    key={m.id}
-                                    id={m.id === 'fedapay' ? 'fedapay-recap-btn' : undefined}
-                                    onClick={m.id === 'kkiapay' ? payerKkiapay : payerFedapay}
-                                    disabled={!pretAPayer || enCours || paiementFait}
-                                    className={`w-full font-bold text-sm px-6 py-4 rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${i === 0
-                                        ? 'bg-[#008751] hover:bg-[#007445] text-white'
-                                        : 'bg-white border border-[#e7e1d8] hover:border-[#008751]/40 text-[#1c1917]'}`}
-                                >
-                                    {enCours && provider === m.id
-                                        ? t('Ouverture du paiement…')
-                                        : moyens.length === 1
-                                            // Un seul moyen : le montant suffit, nommer le
-                                            // canal n'apporte rien au client.
-                                            ? `${t('Payer')} ${tarif === null ? '' : `${tarif} ${devise === 'EUR' ? '€' : devise}`}`.trim()
-                                            : t(m.label)}
-                                </button>
-                            ))}
-                        </div>
+                        <button
+                            type="button"
+                            onClick={() => enregistrer()}
+                            disabled={!pretAEnvoyer}
+                            className="w-full font-bold text-sm px-6 py-4 rounded-2xl transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-[#008751] hover:bg-[#007445] text-white"
+                        >
+                            {t('Envoyer mon récap')}
+                        </button>
                     )}
-
-                    {!pretAPayer && !envoi && (
+                    {!pretAEnvoyer && !envoi && (
                         <p className="text-[11px] text-[#a8a29e] text-center mt-3">
-                            {tarif === null
-                                ? t('Chargement du tarif…')
-                                : !champsRemplis
-                                    ? t('Complétez les champs obligatoires pour continuer.')
-                                    : t('Votre consentement est nécessaire pour poursuivre.')}
+                            {!champsRemplis
+                                ? t('Complétez les champs obligatoires pour continuer.')
+                                : t('Votre consentement est nécessaire pour poursuivre.')}
                         </p>
                     )}
                 </div>
-                )}
             </div>
         </section>
     )

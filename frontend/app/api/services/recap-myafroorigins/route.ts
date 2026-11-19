@@ -3,12 +3,16 @@
 //
 //  Jusqu'ici, reprendre un dossier bloqué chez MyAfroOrigins supposait qu'un
 //  agent envoie un lien au client. Le client ne pouvait pas venir de lui-même.
-//  Cette route ouvre la porte dans l'autre sens : il décrit sa situation,
-//  règle 50 €, et une fiche d'analyse est produite puis remise à l'équipe.
+//  Cette route ouvre la porte dans l'autre sens : il décrit sa situation, et
+//  une fiche d'analyse est produite puis remise à l'équipe.
 //
-//  Le paiement est PROUVÉ avant la moindre écriture — la leçon du 2026-08-19 :
-//  vérifier qu'une transaction existe ne suffit pas, il faut vérifier qu'elle
-//  couvre le tarif lu en base.
+//  Agence agréée (novembre 2026) : le récap est GRATUIT. Une demande sans
+//  référence de paiement est enregistrée « gratuit », montant 0, sans
+//  facture. Deux cas portent encore un règlement et restent vérifiés :
+//  le lien de reprise émis « déjà payé » (la facture en fait foi) et
+//  l'ancienne version de l'application, qui encaissait avant d'envoyer —
+//  la transaction est alors PROUVÉE avant la moindre écriture (leçon du
+//  2026-08-19 : vérifier qu'elle couvre le tarif lu en base).
 //
 //  Données personnelles (Code du numérique béninois, loi n° 2017-20) :
 //  consentement explicite exigé et horodaté, collecte minimale, échéance de
@@ -203,10 +207,30 @@ export async function POST(request: NextRequest) {
         )
     }
 
-    const tarif = await tarifRecapXof()
+    /* L'application à jour envoie `payment_method` / `payment_status`
+       « gratuit », `amount` 0 et aucune référence : rien à vérifier. */
+    const paymentRef = txt(body.payment_ref, LIMITES.moyen)
+    const annonceGratuit = body.payment_method === 'gratuit' || body.payment_status === 'gratuit'
+    const gratuit = !reprise?.paid && (!paymentRef || annonceGratuit)
+    const tarif = gratuit ? { xof: 0, montant: 0, devise: 'EUR' } : await tarifRecapXof()
     let facturePrepayee: { id: string; numero: string } | null = null
 
-    if (reprise?.paid) {
+    if (gratuit) {
+        /* Sans référence de paiement, plus rien ne distingue un renvoi
+           (réponse perdue, double clic, file hors ligne de l'app) d'une
+           nouvelle demande : un récap gratuit du même email reçu dans les
+           15 dernières minutes est le même. `paiement_moyen` sert de repère
+           parce qu'il vaut « gratuit » avant comme après la migration. */
+        const { data: recent } = await supabase
+            .from('myafro_recap_requests').select('reference')
+            .eq('email', email).eq('paiement_moyen', 'gratuit')
+            .gte('created_at', new Date(Date.now() - 15 * 60_000).toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1).maybeSingle()
+        if (recent?.reference) {
+            return NextResponse.json({ success: true, reference: recent.reference, deja_enregistre: true })
+        }
+    } else if (reprise?.paid) {
         const verdict = await factureDeReprise(reprise.invoice_id, email)
         if ('refus' in verdict) {
             if (verdict.reference) {
@@ -263,8 +287,10 @@ export async function POST(request: NextRequest) {
         attentes: txt(body.attentes, LIMITES.long) || null,
         montant: tarif.montant,
         devise: tarif.devise,
-        paiement_statut: 'paye',
-        ...(facturePrepayee
+        paiement_statut: gratuit ? 'gratuit' : 'paye',
+        ...(gratuit
+            ? { paiement_ref: null, paiement_moyen: 'gratuit' }
+            : facturePrepayee
             ? {
                 // Réglé avant l'invitation : la facture émise en est la preuve.
                 paiement_ref: `facture:${facturePrepayee.numero}`,
@@ -283,13 +309,30 @@ export async function POST(request: NextRequest) {
         purge_apres: purge.toISOString().slice(0, 10),
     }
 
-    const { data: cree, error } = await supabase
+    let { data: cree, error } = await supabase
         .from('myafro_recap_requests').insert(donnees).select('id, reference').single()
 
-    if (error) {
+    /* Filet : tant que la migration 20261118_recap_myafro_gratuit.sql n'est
+       pas jouée, la contrainte CHECK refuse « gratuit ». La demande est alors
+       écrite « paye » mais reste reconnaissable (paiement_moyen « gratuit »,
+       montant 0) : aucun dépôt n'est perdu. */
+    if (error && gratuit && (error.code === '23514' || error.message?.includes('paiement_statut'))) {
+        ({ data: cree, error } = await supabase
+            .from('myafro_recap_requests').insert({ ...donnees, paiement_statut: 'paye' })
+            .select('id, reference').single())
+    }
+
+    if (error || !cree) {
+        if (gratuit) {
+            console.error('[recap-myafro] INSERT ÉCHOUÉ (gratuit)', { reference, email, erreur: error?.message })
+            return NextResponse.json(
+                { error: 'L’enregistrement de votre demande a échoué. Réessayez dans un instant ou écrivez-nous.' },
+                { status: 500 },
+            )
+        }
         // L'argent est encaissé : la trace doit survivre à l'échec d'insertion.
         console.error('[recap-myafro] INSERT ÉCHOUÉ — paiement encaissé', {
-            reference, email, tx: donnees.paiement_ref, erreur: error.message,
+            reference, email, tx: donnees.paiement_ref, erreur: error?.message,
         })
         return NextResponse.json(
             {
@@ -347,8 +390,8 @@ export async function POST(request: NextRequest) {
        d'apposer le paraphe enregistré sur le « Bon pour accord ». */
     const compteClient = await getMobileUserId(request).catch(() => null)
     // Reprise prépayée : la facture existe déjà — en émettre une seconde
-    // doublerait la recette.
-    if (!facturePrepayee) void facturerPaiementService({
+    // doublerait la recette. Récap gratuit : rien à facturer.
+    if (!facturePrepayee && !gratuit) void facturerPaiementService({
         transactionId: String(donnees.paiement_ref),
         montantXof: Number(tarif.xof) || 0,
         libelle: 'Récap de dossier MyAfroOrigins',
@@ -381,11 +424,13 @@ export async function POST(request: NextRequest) {
 
     const corpsClient = await EMAIL_WRAPPER(
         `<p style="margin:0 0 16px">Bonjour ${prenom},</p>
-         <p style="margin:0 0 16px">Votre demande de <strong>récap de dossier MyAfroOrigins</strong> est enregistrée
-         et votre règlement est confirmé. Un analyste reprend votre situation.</p>
+         <p style="margin:0 0 16px">Votre demande de <strong>récap de dossier MyAfroOrigins</strong> est enregistrée${gratuit ? '' : `
+         et votre règlement est confirmé`}. Un analyste reprend votre situation.</p>
          ${emailInfoCard([
             ['Référence', reference],
-            ['Montant réglé', `${tarif.montant} ${tarif.devise}`],
+            gratuit
+                ? ['Frais', 'Gratuit — Retour Gagnant Bénin, agence agréée']
+                : ['Montant réglé', `${tarif.montant} ${tarif.devise}`],
             ['Délai de réponse', '48 heures ouvrées'],
         ])}
          <p style="margin:16px 0 0;font-size:13px;color:#666">
@@ -404,7 +449,7 @@ export async function POST(request: NextRequest) {
 
     if (staff) {
         const corpsStaff = await EMAIL_WRAPPER(
-            `<p style="margin:0 0 16px"><strong>Nouveau récap de dossier MyAfroOrigins réglé.</strong></p>
+            `<p style="margin:0 0 16px"><strong>Nouveau récap de dossier MyAfroOrigins${gratuit ? '' : ' réglé'}.</strong></p>
              ${emailInfoCard([
                 ['Référence', reference],
                 ['Client', `${prenom} ${nom}`],
@@ -412,7 +457,9 @@ export async function POST(request: NextRequest) {
                 ['Téléphone', telephone],
                 ['Depuis', donnees.depuis_quand || 'non précisé'],
                 ['Réf. MyAfroOrigins', donnees.myafro_reference || 'non communiquée'],
-                ['Montant', facturePrepayee
+                ['Montant', gratuit
+                    ? 'Gratuit'
+                    : facturePrepayee
                     ? `réglé avant l’invitation — facture ${facturePrepayee.numero}`
                     : `${tarif.montant} ${tarif.devise}`],
                 ['Origine', reprise ? 'Lien de reprise envoyé par l’équipe' : 'Page publique du service'],

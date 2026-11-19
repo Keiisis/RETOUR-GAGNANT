@@ -1,7 +1,7 @@
 import type { ServiceLandingContent } from './serviceLanding'
 
 // Contenu par défaut de la page « Permis de Conduire Béninois » (style logement /
-// VIP). Éditable en admin via page_sections(page='permis-conduire',
+// nationalité). Éditable en admin via page_sections(page='permis-conduire',
 // section_key='page_content'). Aucun tiret cadratin dans les textes.
 export const DEFAULT_PERMIS: ServiceLandingContent = {
     hero_badge: "Permis de Conduire Béninois",

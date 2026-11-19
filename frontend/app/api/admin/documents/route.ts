@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/admin/documents : actions :
-//   { action: 'invite', email, name }     → email d'invitation au client (lien 50 €)
+//   { action: 'invite', email, name }     → email d'invitation au client (reprise gratuite)
 //   { action: 'link', paid: boolean, invoice_id?: string }                    → génère juste le lien (copier/coller)
 //   { action: 'approve', id }             → bascule le dossier vers la file Nationalité
 export async function POST(request: NextRequest) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Cocher « déjà payé » SANS rattacher une facture réelle marquerait le
     // dossier comme réglé alors qu'aucun encaissement n'existe (ni argent,
     // ni facture, ni trace en comptabilité). On l'interdit.
-    // Non coché  → le client paie les 50 € en ligne (montant imposé serveur).
+    // Non coché  → reprise gratuite (agence agréée, novembre 2026).
     if ((action === 'link' || action === 'invite') && paid) {
         if (!invoiceId) {
             return NextResponse.json(
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
                     <strong>Vos frais de reprise sont déjà réglés.</strong> Aucun paiement ne vous sera demandé.
                 </p>`
                     : `<p style="background:#f0fdf6;border-left:4px solid #008751;padding:14px 18px;border-radius:6px;color:#065f46;">
-                    <strong>Frais de reprise : 50 €</strong>. Ce montant couvre la vérification complète de votre dossier par notre service juridique.
+                    <strong>Reprise gratuite.</strong> Retour Gagnant Bénin, agence agréée, vérifie votre dossier sans aucun frais.
                 </p>`}
                 <div style="text-align:center;margin:32px 0;">
                     <a href="${link}" style="display:inline-block;background:#008751;color:#fff;text-decoration:none;padding:15px 42px;border-radius:10px;font-weight:700;font-size:15px;">Reprendre mon dossier</a>

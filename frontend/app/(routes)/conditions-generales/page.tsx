@@ -37,14 +37,14 @@ export default function ConditionsGeneralesPage() {
                         <div className="text-gray-600 pl-4 space-y-3">
                             <p><T>Retour Gagnant Bénin propose les services suivants :</T></p>
                             <ul className="list-disc pl-6 space-y-1.5">
-                                <li><T>Accompagnement Passeport &amp; Documents administratifs</T></li>
+                                <li><T>Information sur le passeport béninois, inclus dans la demande de nationalité</T></li>
                                 <li><T>Accompagnement Immobilier (achat, location, sécurisation foncière)</T></li>
                                 <li><T>Création et immatriculation d&apos;entreprise</T></li>
                                 <li><T>Guide culturel et tourisme patrimonial</T></li>
                                 <li><T>Suivi de chantier de construction</T></li>
                                 <li><T>Conseil en investissement</T></li>
                                 <li><T>Recherche ancestrale et généalogie</T></li>
-                                <li><T>Accompagnement à la nationalité béninoise</T></li>
+                                <li><T>Accompagnement complet et gratuit à la nationalité béninoise</T></li>
                                 <li><T>Vente de produits artisanaux (boutique en ligne)</T></li>
                             </ul>
                         </div>

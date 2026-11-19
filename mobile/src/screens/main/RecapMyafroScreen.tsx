@@ -7,8 +7,8 @@
    `ServiceRdvLanding`.
 
    `primaryScreen` renvoie vers l'écran de demande, qui recueille le récit de
-   la situation, le consentement et le règlement — un simple rendez-vous ne
-   suffirait pas ici. */
+   la situation et le consentement — un simple rendez-vous ne suffirait pas
+   ici. Service gratuit depuis l'agrément de l'agence (18/11/2026). */
 import React from 'react'
 import {
     FileSearch, AlertTriangle, ListOrdered, HandHeart, ShieldCheck, Clock,
@@ -29,7 +29,7 @@ const CONTENT: RdvLandingContent = {
         { icon: Clock, label: 'Réponse sous 48 h ouvrées' },
         { icon: Lock, label: 'Données protégées' },
     ],
-    trust: ['Aucune pièce à fournir maintenant', 'Fiche écrite', 'Sous 48 h ouvrées'],
+    trust: ['Gratuit — agence agréée', 'Aucune pièce à fournir maintenant', 'Sous 48 h ouvrées'],
 
     piliers: [
         { icon: FileSearch, title: 'Situation reformulée', desc: 'Écrite noir sur blanc.' },
@@ -111,16 +111,16 @@ const CONTENT: RdvLandingContent = {
     ],
 
     finalTitle: 'Votre dossier mérite une réponse',
-    finalText: "Décrivez votre situation, réglez la fiche d'analyse, et recevez-la sous 48 heures ouvrées.",
-    finalNote: 'Analyse écrite • Aucune pièce à fournir maintenant • Données protégées',
+    finalText: "Décrivez votre situation et recevez gratuitement votre fiche d'analyse sous 48 heures ouvrées.",
+    finalNote: 'Gratuit — agence agréée • Aucune pièce à fournir maintenant • Données protégées',
 
     // Une demande de récap ne se règle pas par un simple rendez-vous : elle
-    // suppose le récit de la situation, le consentement au traitement des
-    // données et le paiement. D'où l'écran dédié.
+    // suppose le récit de la situation et le consentement au traitement des
+    // données. D'où l'écran dédié.
     primaryScreen: 'RecapMyafroDemande',
     primaryCtaLabel: 'Demander mon récap',
     stickyLabel: "Fiche d'analyse",
-    stickyValue: 'Réponse sous 48 h ouvrées',
+    stickyValue: 'Gratuit — sous 48 h ouvrées',
     stickyBtnLabel: 'Demander',
 }
 

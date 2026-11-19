@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-//  Schéma GÉNÉRIQUE d'une landing de service (style logement / VIP)
+//  Schéma GÉNÉRIQUE d'une landing de service (style logement / nationalité)
 //  Réutilisé par plusieurs pages (passeport, business, …). Chaque page
 //  fournit ses valeurs par défaut et stocke ses overrides dans
 //  page_sections(page='<slug>', section_key='page_content').content.

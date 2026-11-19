@@ -30,7 +30,7 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
         prenom: '', nom: '', email: '', telephone: '',
         pays_residence: '', myafro_reference: '', depuis_quand: '',
         situation: '', attentes: '', notes_agent: '',
-        paiement_statut: 'en_attente', montant: '50', devise: 'EUR',
+        paiement_statut: 'gratuit', montant: '0', devise: 'EUR',
         paiement_moyen: '', paiement_ref: '',
         consentement: false, consentement_canal: 'Téléphone',
     })
@@ -47,7 +47,7 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
             const res = await fetch('/api/admin/myafro-recap', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...f, montant: Number(f.montant) || 50 }),
+                body: JSON.stringify({ ...f, montant: Number(f.montant) || 0 }),
             })
             const json = await res.json().catch(() => ({}))
             if (!res.ok) throw new Error(json.error || 'Enregistrement impossible.')
@@ -202,31 +202,34 @@ export default function RecapMyafroAjout({ ouvert, onFermer, onCree }: Props) {
                                         <div>
                                             <label className={etiquette} style={styleEtiquette}>Règlement</label>
                                             <select value={f.paiement_statut} onChange={e => maj('paiement_statut', e.target.value)} className={champ} style={styleChamp} title="Statut du règlement">
+                                                <option value="gratuit">Gratuit</option>
                                                 <option value="en_attente">En attente</option>
                                                 <option value="paye">Payé</option>
                                             </select>
                                         </div>
-                                        <div>
-                                            <label className={etiquette} style={styleEtiquette}>Montant</label>
-                                            <input type="number" min="0" step="any" value={f.montant} onChange={e => maj('montant', e.target.value)} className={champ} style={styleChamp} title="Montant" />
-                                        </div>
-                                        <div>
-                                            <label className={etiquette} style={styleEtiquette}>Devise</label>
-                                            <select value={f.devise} onChange={e => maj('devise', e.target.value)} className={champ} style={styleChamp} title="Devise">
-                                                <option value="EUR">EUR</option>
-                                                <option value="XOF">XOF</option>
-                                                <option value="USD">USD</option>
-                                                <option value="GBP">GBP</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className={etiquette} style={styleEtiquette}>Référence</label>
-                                            <input value={f.paiement_ref} onChange={e => maj('paiement_ref', e.target.value)} className={champ} style={styleChamp} placeholder="N° reçu" />
-                                        </div>
+                                        {f.paiement_statut !== 'gratuit' && (<>
+                                            <div>
+                                                <label className={etiquette} style={styleEtiquette}>Montant</label>
+                                                <input type="number" min="0" step="any" value={f.montant} onChange={e => maj('montant', e.target.value)} className={champ} style={styleChamp} title="Montant" />
+                                            </div>
+                                            <div>
+                                                <label className={etiquette} style={styleEtiquette}>Devise</label>
+                                                <select value={f.devise} onChange={e => maj('devise', e.target.value)} className={champ} style={styleChamp} title="Devise">
+                                                    <option value="EUR">EUR</option>
+                                                    <option value="XOF">XOF</option>
+                                                    <option value="USD">USD</option>
+                                                    <option value="GBP">GBP</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className={etiquette} style={styleEtiquette}>Référence</label>
+                                                <input value={f.paiement_ref} onChange={e => maj('paiement_ref', e.target.value)} className={champ} style={styleChamp} placeholder="N° reçu" />
+                                            </div>
+                                        </>)}
                                     </div>
                                     <p className="text-[11px]" style={{ color: 'var(--panel-text-muted)' }}>
-                                        Un dossier saisi à la main n’est pas réputé payé : laissez « en attente » tant que
-                                        l’encaissement n’est pas fait, pour ne pas gonfler les recettes.
+                                        Le récap est gratuit depuis novembre 2026 (agence agréée). « En attente » ou
+                                        « Payé » ne servent qu’à reprendre un ancien dossier payant.
                                     </p>
                                 </div>
                             )}

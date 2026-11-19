@@ -26,7 +26,7 @@ const PREVIEW_DATA: Record<string, string> = {
     nationalite: 'Française',
     ref: 'RG-000042',
     message: 'Votre profil est excellent et notre équipe souhaite vous rencontrer.',
-    service: 'Passeport Béninois',
+    service: 'Nationalité béninoise',
     date: '15 mars 2026',
     heure: '14h00',
     montant: '45 000 FCFA',

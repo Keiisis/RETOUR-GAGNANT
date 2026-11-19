@@ -6,7 +6,7 @@ import { pageMeta } from '@/lib/seo'
 // via leur propre layout).
 export const metadata = pageMeta(
     'Nos services : accompagnement diaspora au Bénin | Retour Gagnant',
-    "Passeport, nationalité, logement, entreprise, investissement, culture : tous les services pour réussir votre retour au Bénin.",
+    "Nationalité béninoise (passeport inclus), logement, entreprise, investissement, culture : tous les services pour réussir votre retour au Bénin.",
     '/services',
 )
 

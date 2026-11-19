@@ -8,6 +8,8 @@ import type { ServiceLandingContent } from './serviceLanding'
  * nationalité : il remet au client la seule chose qui lui manque vraiment,
  * un état des lieux écrit de son dossier.
  *
+ * Gratuit depuis novembre 2026 : Retour Gagnant Bénin est agence agréée.
+ *
  * Surchargeable depuis l'admin via page_sections(page='recap-myafroorigins',
  * section_key='page_content').
  */
@@ -15,7 +17,7 @@ export const DEFAULT_RECAP_MYAFRO: ServiceLandingContent = {
     hero_badge: "Reprise de dossier bloqué",
     hero_title: "Votre dossier MyAfroOrigins n'avance plus ?",
     hero_subtitle: "Vous avez déposé votre demande, et depuis, le silence. Nous reprenons votre situation, nous l'analysons, et nous vous remettons une fiche claire : ce qui bloque, ce qui manque, et par quoi commencer.",
-    hero_chips: ["Analyse par un humain", "Fiche écrite à conserver", "Aucune pièce à fournir maintenant", "Réponse sous 48 h ouvrées"],
+    hero_chips: ["Gratuit · agence agréée", "Analyse par un humain", "Fiche écrite à conserver", "Réponse sous 48 h ouvrées"],
     hero_image: "/assets/icones/icone_recap-myafroorigins.png",
     cta1_label: "Demander mon récap",
     cta1_href: "#demande",
@@ -84,6 +86,10 @@ export const DEFAULT_RECAP_MYAFRO: ServiceLandingContent = {
             r: "Non. À cette étape, nous ne demandons que votre identité de contact et le récit de votre situation. Les pièces ne sont réclamées qu'ensuite, si l'analyse montre qu'elles sont nécessaires.",
         },
         {
+            q: "Combien coûte le récap ?",
+            r: "Rien. Retour Gagnant Bénin est une agence agréée : nous traitons votre récap MyAfroOrigins sans aucun frais. Votre demande part dès que vous l'envoyez.",
+        },
+        {
             q: "Sous combien de temps ai-je la fiche ?",
             r: "Sous 48 heures ouvrées. Vous recevez d'abord un email de confirmation avec votre référence, puis la fiche relue par un analyste.",
         },
@@ -98,6 +104,6 @@ export const DEFAULT_RECAP_MYAFRO: ServiceLandingContent = {
     ],
 
     final_title: "Votre dossier mérite une réponse",
-    final_text: "Décrivez votre situation, réglez 50 €, et recevez votre fiche d'analyse sous 48 heures ouvrées.",
-    final_note: "Analyse écrite · Aucune pièce à fournir maintenant · Données protégées",
+    final_text: "Décrivez votre situation, envoyez votre récap, et recevez votre fiche d'analyse sous 48 heures ouvrées. C'est gratuit.",
+    final_note: "Gratuit · Analyse écrite · Aucune pièce à fournir maintenant · Données protégées",
 }

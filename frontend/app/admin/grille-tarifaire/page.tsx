@@ -98,7 +98,7 @@ export default function AdminGrilleTarifaire() {
                         title: 'DOCUMENTS & IDENTITÉ',
                         rows: [
                             { no: '1', service: 'Acte de naissance béninois (sécurisé)', details: 'Copie intégrale certifiée conforme', price_fcfa: '15 000 FCFA', price_eur: '23 €' },
-                            { no: '2', service: 'Passeport Biométrique Béninois', details: 'Demande complète, photos, suivi', price_fcfa: '75 000 FCFA', price_eur: '115 €' },
+                            { no: '2', service: 'Passeport Biométrique Béninois', details: 'Inclus dans la demande de nationalité, remis par l\'État lors de la cérémonie officielle', price_fcfa: 'Gratuit', price_eur: 'Gratuit' },
                             { no: '3', service: 'Carte Nationale d\'Identité (CNIB)', details: 'Inscription, prise d\'empreintes, retrait', price_fcfa: '30 000 FCFA', price_eur: '46 €' },
                             { no: '4', service: 'Certificat d\'Identification Personnelle (CIP)', details: 'Vérification d\'identité officielle', price_fcfa: '10 000 FCFA', price_eur: '15 €' },
                             { no: '5', service: 'Casier Judiciaire Béninois', details: 'Extrait de casier judiciaire B3', price_fcfa: '12 000 FCFA', price_eur: '18 €' }

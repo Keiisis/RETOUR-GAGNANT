@@ -47,6 +47,16 @@ const PROVIDER_MODELS: Record<string, string> = {
     google: 'gemini-2.0-flash',
 }
 
+// Décision du dirigeant (18/11/2026), Retour Gagnant Bénin étant agréée.
+const SERVICES_GRATUITS = `
+=== SERVICES GRATUITS (AGENCE AGRÉÉE) ===
+- Demande de nationalité béninoise : gratuite, formulaire sur /nationalite/formulaire.
+- Accompagnement complet à la nationalité : gratuit.
+- Passeport béninois : gratuit et inclus dans la demande de nationalité. L'État le remet directement lors de la cérémonie officielle de remise. Aucune démarche passeport séparée, aucun frais : oriente vers la demande de nationalité.
+- Récap de dossier MyAfroOrigins : gratuit.
+- La Recherche Ancestrale reste payante.
+N'emploie jamais le mot « VIP » pour ces services.`
+
 const CONTEXT_PROMPTS: Record<string, string> = {
     frontend: `
 === MODE CLIENT (FRONTEND) ===
@@ -56,7 +66,7 @@ Tu parles à un visiteur/client du site web.
 - Ne divulgue JAMAIS d'informations confidentielles (données clients, finances, processus internes)
 - Redirige vers un rendez-vous gratuit quand pertinent
 - Sois concis : 3-4 phrases max
-- Ne donne JAMAIS de prix précis, di que c'est sur devis personnalisé`,
+- Ne donne JAMAIS de prix précis, dis que c'est sur devis personnalisé (sauf pour les services gratuits listés plus bas, que tu présentes comme gratuits)`,
 
     agent: `
 === MODE AGENT ===
@@ -284,7 +294,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Use env fallback with Groq
-            const fallbackPrompt = `Tu es l'Assistant Virtuel de Retour Gagnant Bénin.${languageInstruction}${CONTEXT_PROMPTS[context] || CONTEXT_PROMPTS.frontend}`
+            const fallbackPrompt = `Tu es l'Assistant Virtuel de Retour Gagnant Bénin.${languageInstruction}${CONTEXT_PROMPTS[context] || CONTEXT_PROMPTS.frontend}${SERVICES_GRATUITS}`
             const reply = await callGroqOrOpenAI(
                 PROVIDER_ENDPOINTS.groq,
                 envKey,
@@ -314,6 +324,7 @@ ${dbServices ? JSON.stringify(dbServices, null, 2) : 'Aucun service configuré.'
 INFORMATIONS IMPORTANTES (L'ORACLE):
 Nous proposons un service phare nommé "L'Oracle" ou "Test d'Éligibilité" directement sur la page d'accueil (section #nationalite).
 Si un client te demande s'il est éligible, s'il a le droit à la nationalité, comment obtenir le passeport, ou affiche une hésitation sur ses origines : Encourage-le VIVEMENT et chaleureusement à passer ce test d'éligibilité en allant vers la section "Identité & Citoyenneté". L'Oracle analysera son profil gratuitement et enverra ses données aux agents !
+${SERVICES_GRATUITS}
 
 INSTRUCTION STRICTE : Utilise ces données json pour répondre directement aux questions de manière fluide et naturelle. Par exemple, si on te demande les articles disponibles, cite-les avec style, ne donne pas du code JSON à l'utilisateur. Refuse poliment de donner des informations administratives ou des données utilisateurs confidentielles.
 `

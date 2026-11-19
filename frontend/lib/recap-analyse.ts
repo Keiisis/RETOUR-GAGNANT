@@ -61,7 +61,7 @@ export async function genererRecap(d: Record<string, string>): Promise<string | 
         return String(json?.choices?.[0]?.message?.content || '').trim() || null
     } catch {
         // L'analyse est un confort, pas la prestation : l'équipe la rédige à la
-        // main si le modèle est indisponible. On n'échoue pas le dépôt payé.
+        // main si le modèle est indisponible. On n'échoue pas le dépôt.
         return null
     }
 }
