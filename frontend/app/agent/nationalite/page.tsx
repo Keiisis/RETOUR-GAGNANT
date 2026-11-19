@@ -300,7 +300,7 @@ function VueAgentNationalite() {
                                     <td className="p-4">
                                         <div className="flex items-center gap-1.5">
                                             <span className={`w-2 h-2 rounded-full ${nationalitePayee(app.payment_status) ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 opacity-50'}`} />
-                                            <span className="text-xs font-bold uppercase tracking-widest text-white/80">{app.amount} {app.currency}</span>
+                                            <span className="text-xs font-bold uppercase tracking-widest text-white/80">{app.payment_status === 'gratuit' ? 'Gratuit' : `${app.amount} ${app.currency}`}</span>
                                         </div>
                                     </td>
                                     <td className="p-4">
@@ -514,7 +514,7 @@ function VueAgentNationalite() {
                                     <h3 className="text-[10px] font-black text-[#FCD116] uppercase tracking-[0.3em] mb-3">Paiement</h3>
                                     <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {[['Montant', `${showDetail.amount || 0} ${showDetail.currency || 'USD'}`], ['Statut', showDetail.payment_status], ['Passerelle', showDetail.payment_method], ['Réf. TX', showDetail.payment_ref]].map(([k, v], i) => v && (
+                                            {[['Montant', showDetail.payment_status === 'gratuit' ? 'Gratuit' : `${showDetail.amount || 0} ${showDetail.currency || 'USD'}`], ['Statut', showDetail.payment_status], ['Passerelle', showDetail.payment_method], ['Réf. TX', showDetail.payment_ref]].map(([k, v], i) => v && (
                                                 <div key={i}><p className="text-[9px] text-gray-500 uppercase font-black mb-1">{k}</p><p className="text-xs text-white font-bold">{v}</p></div>
                                             ))}
                                         </div>

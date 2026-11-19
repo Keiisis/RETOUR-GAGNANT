@@ -576,7 +576,7 @@ export default function AdminNationalitePage() {
         // Motivation
         motivation_lettre: '',
         // Règlement + interne
-        payment_method: 'momo', payment_ref: '', payment_status: 'paye',
+        payment_method: 'gratuit', payment_ref: '', payment_status: 'gratuit',
         amount: '', currency: '', agent_notes: '',
     }
     const [creationOuverte, setCreationOuverte] = useState(false)
@@ -1031,9 +1031,9 @@ export default function AdminNationalitePage() {
                                                             <div className="bg-white/[0.03] border border-white/10 rounded-xl p-3">
                                                                 <div className="flex items-center justify-between mb-1.5">
                                                                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider"><T>Demande de nationalité</T></span>
-                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${natPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{justif === false ? 'À JUSTIFIER' : natPaid ? 'PAYÉ' : (a.payment_status || 'EN ATTENTE')}</span>
+                                                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${natPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{justif === false ? 'À JUSTIFIER' : a.payment_status === 'gratuit' ? 'GRATUIT' : natPaid ? 'PAYÉ' : (a.payment_status || 'EN ATTENTE')}</span>
                                                                 </div>
-                                                                <p className="text-lg font-black text-white">{natAmt} {natCur}</p>
+                                                                <p className="text-lg font-black text-white">{a.payment_status === 'gratuit' ? 'Gratuit' : `${natAmt} ${natCur}`}</p>
                                                                 <p className="text-[10px] text-gray-500">{[a.payment_method, a.payment_ref].filter(Boolean).join(' · ') || '-'}</p>
                                                                 {justif === false && (
                                                                     <div className="mt-2.5 pt-2.5 border-t border-white/10">
@@ -1245,6 +1245,7 @@ export default function AdminNationalitePage() {
                                 <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Statut du paiement</label>
                                 <select value={String(editForm.payment_status ?? '')} onChange={e => setEditForm(f => ({ ...f, payment_status: e.target.value }))} title="Statut paiement" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500/50">
                                     <option value="payé">payé</option>
+                                    <option value="gratuit">gratuit</option>
                                     <option value="en_attente">en_attente</option>
                                     <option value="a_verifier">a_verifier</option>
                                 </select>
@@ -1636,7 +1637,7 @@ export default function AdminNationalitePage() {
 
                             <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-4">
                                 Un dossier ouvert par code d’invitation ne génère <strong>aucune facture</strong> :
-                                rien n’est encaissé, et inscrire 260 € au compte de résultat créerait une recette
+                                rien n’est encaissé, et inscrire des frais au compte de résultat créerait une recette
                                 que la banque ne verra jamais. Le dossier reste tracé par son moyen de paiement
                                 et par le code inscrit dans sa référence. Il apparaît <strong>« paiement à justifier »</strong>
                                 jusqu’à ce que vous lui rattachiez la facture émise quand le client règle.

@@ -57,12 +57,16 @@ CE QUI SE RÈGLE DIRECTEMENT DANS L'APP (paiement en ligne immédiat) :
 · Logement — on parcourt le catalogue du partenaire, on remplit une demande, et
   on règle les FRAIS DE CONSTITUTION DE DOSSIER (le prix du bien lui-même se
   traite avec le partenaire, jamais dans l'app).
-· Nationalité béninoise — formulaire dédié, pièces à joindre, puis règlement.
 · Séjour sur mesure — quand un conseiller a envoyé une proposition, on la
   retrouve dans « Mes propositions » (onglet Profil) ; on garde ou retire des
   prestations, puis on règle l'ensemble en une fois.
 · Places d'événement — depuis la fiche d'un événement.
 · Boutique — artisanat et objets du patrimoine ; panier puis paiement.
+
+CE QUI EST GRATUIT :
+· Demande de nationalité béninoise — Retour Gagnant Bénin est agréée : la
+  demande est gratuite, sans aucun frais de dossier. Formulaire dédié, pièces
+  à joindre, puis envoi direct, sans paiement.
 
 CE QUI SE FAIT SUR DEVIS OU PAR L'ÉQUIPE (pas de prix fixe, pas de paiement
 immédiat dans l'app) : la création d'entreprise, l'investissement, la

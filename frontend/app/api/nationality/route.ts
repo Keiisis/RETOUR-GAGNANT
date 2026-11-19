@@ -57,7 +57,7 @@ async function verifyKkiapayTransaction(transactionId: string): Promise<{ ok: bo
  * L'autorité est `page_sections` (réglée en admin), jamais le montant envoyé
  * par le navigateur. Sans cette lecture, le serveur ne faisait que vérifier
  * qu'une transaction Kkiapay existait : un dossier payé 250 FCFA (≈ 0,39 €)
- * passait exactement comme un dossier payé 260 €.
+ * passait exactement comme un dossier payé au tarif.
  *
  * Renvoie `null` si le tarif ou le taux de change est introuvable — l'appelant
  * doit alors s'abstenir de rejeter, faute de référence fiable.
@@ -464,25 +464,54 @@ export async function POST(request: NextRequest) {
         const tarifBase = Number(fsContent.amount)
         const deviseBase = String(fsContent.currency || 'EUR').toUpperCase()
 
-        const secureAmount = isMyafro
+        const isPrepaid = myafroPayload?.paid ?? false
+        /* Agence agréée (novembre 2026) : la demande de nationalité est
+           GRATUITE. Sans règlement porté par la requête (ancienne version de
+           l'app, fiche du webhook) ni facture MyAfroOrigins déjà émise, le
+           dossier est enregistré « gratuit », montant 0 : rien à encaisser,
+           rien à facturer. */
+        const gratuit = !invitation && !isPrepaid && !body.payment_ref
+
+        /* Sans référence de paiement, plus rien ne distingue un renvoi (réponse
+           perdue, file hors ligne de l'app) d'une nouvelle demande : un dossier
+           gratuit du même email reçu dans les 15 dernières minutes est le même. */
+        if (gratuit && !isMyafro) {
+            const { data: recent } = await supabase
+                .from('nationality_applications')
+                .select('application_ref')
+                .eq('email', email)
+                .eq('payment_status', 'gratuit')
+                .gte('submitted_at', new Date(Date.now() - 15 * 60_000).toISOString())
+                .order('submitted_at', { ascending: false })
+                .limit(1)
+                .maybeSingle()
+            if (recent?.application_ref) {
+                return NextResponse.json({
+                    success: true,
+                    reference: recent.application_ref,
+                    message: 'Demande déjà enregistrée.',
+                })
+            }
+        }
+
+        const secureAmount = gratuit ? 0 : isMyafro
             ? 50
             : (isFinite(tarifBase) && tarifBase > 0 ? tarifBase : (body.amount ?? 250))
-        const secureCurrency = isMyafro
+        const secureCurrency = gratuit ? 'EUR' : isMyafro
             ? 'EUR'
             : (isFinite(tarifBase) && tarifBase > 0 ? deviseBase : (body.currency || 'USD'))
-
-        const isPrepaid = myafroPayload?.paid ?? false
         const invoiceRef = myafroPayload?.invoice_id ? `facture_${myafroPayload.invoice_id}` : null
 
         /* Un code d'invitation vaut règlement : le dossier est « payé » et
            entre dans la file normale. Mais le MOYEN reste nommé pour ce qu'il
            est — `invitation` — et la référence porte le code. Deux raisons :
-           la comptabilité ne doit jamais compter 260 € jamais encaissés
+           la comptabilité ne doit jamais compter des frais jamais encaissés
            (voir plus bas, la facturation est écartée pour ce cas), et « qui a
            obtenu un dossier gratuit, avec quel code » doit rester lisible. */
-        const paymentStatus = invitation ? 'payé' : (isPrepaid ? 'payé' : (body.payment_ref ? 'payé' : 'en_attente'))
+        const paymentStatus = gratuit ? 'gratuit' : 'payé'
         const paymentRef = invitation ? `invitation:${invitation.code}` : (isPrepaid ? (invoiceRef || 'manuel_prepaid') : (body.payment_ref || null))
-        const paymentMethod = invitation ? 'invitation' : (isPrepaid ? 'manuel' : (body.payment_method || null))
+        const paymentMethod = gratuit ? 'gratuit' : invitation ? 'invitation' : (isPrepaid ? 'manuel' : (body.payment_method || null))
+        const montantLu = gratuit ? 'Gratuit (agence agréée)' : `${secureAmount} ${secureCurrency}`
 
         const insertData: Record<string, unknown> = {
             application_ref: ref,
@@ -659,7 +688,7 @@ export async function POST(request: NextRequest) {
             /* Aucun montant de repli : « 250 » écrit ici quand la requête n'en
                portait pas donnait une note interne qui affirmait un tarif
                jamais encaissé. Quand le montant est absent, on le dit. */
-            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant (tarif) : ${secureAmount} ${secureCurrency}\nPaiement: ${body.payment_ref ? 'Payé (' + body.payment_ref + ')' : 'En attente'}`,
+            notes_internes: `Dossier créé automatiquement depuis le formulaire en ligne.\nMontant (tarif) : ${montantLu}\nPaiement: ${gratuit ? 'Aucun (demande gratuite)' : 'Payé (' + paymentRef + ')'}`,
         }).then(({ error: trackError }) => {
             if (trackError) console.error('[TRACKER] Erreur création dossier_tracking:', trackError.message)
             else console.log(`[TRACKER] Dossier ${ref} créé dans le Nexus Tracker`)
@@ -671,7 +700,7 @@ export async function POST(request: NextRequest) {
             email,
             telephone: body.telephone || null,
             sujet: `Demande de nationalité #${ref}`,
-            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant (tarif) : ${secureAmount} ${secureCurrency}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${body.payment_ref ? 'Payé' : 'En attente'}`,
+            message: `Nouvelle demande de nationalité béninoise.\n\nNom: ${prenom} ${nom}\nEmail: ${email}\nTéléphone: ${body.telephone || 'N/A'}\nRéférence: ${ref}\nMontant (tarif) : ${montantLu}\n\nAfro-descendance: ${body.afro_descendant_description || 'Non précisée'}\n\nStatut Paiement: ${gratuit ? 'Gratuit' : 'Payé'}`,
             type: 'nationality',
             lu: false,
         }])
@@ -751,7 +780,7 @@ export async function POST(request: NextRequest) {
                · `isPrepaid` — une facture réelle existe déjà, la doubler
                  gonflerait le chiffre d'affaires ;
                · `invitation` — RIEN n'a été encaissé. Émettre une facture
-                 payée de 260 € inscrirait au compte de résultat une recette
+                 payée inscrirait au compte de résultat une recette
                  que la banque ne verra jamais. Le dossier reste tracé par
                  son moyen de paiement (`invitation`) et par le code inscrit
                  dans sa référence. */

@@ -10,6 +10,15 @@ const supabase = createClient(
 // ═══════════════════════════════════════════════════════
 // GET /api/analytics/live : Données live + stats 24h enrichies
 // ═══════════════════════════════════════════════════════
+// Colonnes lues sur 24 h ; les enrichies manquent tant que la migration ② n'est pas jouée.
+type Visite = {
+    session_id: string; page: string; country: string; country_code: string
+    latitude: number; longitude: number; device_type: string; browser: string; created_at: string
+    isp?: string; language?: string; connection_type?: string; screen_resolution?: string
+    is_returning?: boolean; is_vpn?: boolean; is_proxy?: boolean; is_tor?: boolean
+    scroll_depth?: number; page_load_ms?: number
+}
+
 export async function GET(request: NextRequest) {
     // Public jusqu'ici : IP, ville et coordonnées de chaque visiteur des 30 dernières minutes.
     const garde = await requireStaff(request, 'admin')
@@ -23,7 +32,7 @@ export async function GET(request: NextRequest) {
         // ── Sessions actives (30 dernières minutes) ──────────────
         const { data: liveSessions } = await supabase
             .from('visitor_sessions')
-            .select('*')
+            .select('session_id, city, country, country_code, latitude, longitude, browser, browser_version, device_type, os, page, last_seen_at')
             .gte('last_seen_at', since30min)
             .order('last_seen_at', { ascending: false })
             .limit(300)
@@ -35,12 +44,19 @@ export async function GET(request: NextRequest) {
                 .map(s => s.session_id)
         ).size
 
-        // ── Toutes les rows 24h (select * pour les nouvelles colonnes) ──
-        const { data: all24h } = await supabase
+        // ── Toutes les rows 24h, seulement les colonnes agrégées ci-dessous ──
+        // Relu toutes les 2 min tant que la page est ouverte : select('*')
+        // pesait lourd sur le quota d'egress Supabase.
+        const lire24h = (colonnes: string) => supabase
             .from('visitor_sessions')
-            .select('*')
+            .select(colonnes)
             .gte('created_at', since24h)
             .limit(100000)
+            .overrideTypes<Visite[], { merge: false }>()
+        const COLONNES_BASE = 'session_id, page, country, country_code, latitude, longitude, device_type, browser, created_at'
+        const enrichi = await lire24h(`${COLONNES_BASE}, isp, language, connection_type, screen_resolution, is_returning, is_vpn, is_proxy, is_tor, scroll_depth, page_load_ms`)
+        // Colonnes enrichies absentes (migration ② pas encore jouée) : même repli que /api/analytics/track.
+        const { data: all24h } = enrichi.error ? await lire24h(COLONNES_BASE) : enrichi
 
         const rows = all24h || []
 

@@ -78,6 +78,9 @@ const PAYMENT_STATUS: Record<string, { label: string; color: string }> = {
     succeeded: { label: 'Réglé',       color: 'text-emerald-400' },
     failed:    { label: 'Échoué',      color: 'text-red-400' },
     refunded:  { label: 'Remboursé',   color: 'text-gray-400' },
+    en_attente: { label: 'En attente', color: 'text-amber-400' },
+    'payé':    { label: 'Réglé',       color: 'text-emerald-400' },
+    gratuit:   { label: 'Gratuit',     color: 'text-emerald-400' },
 }
 
 const SERVICE_TYPE_LABEL: Record<string, string> = {
@@ -225,7 +228,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
 
                 {/* Note de l'agent */}
                 {dossier.notes && !expanded && (
-                    <p className="text-gray-500 text-[11px] italic line-clamp-1 mb-3">"{dossier.notes}"</p>
+                    <p className="text-gray-500 text-[11px] italic line-clamp-1 mb-3">« {dossier.notes} »</p>
                 )}
 
                 {/* Toggle étapes */}
@@ -269,7 +272,7 @@ function DossierCard({ dossier, expanded, onToggle }: {
 
                             {dossier.notes && (
                                 <div className="mt-2 p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-1">Note de l'agent</p>
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.15em] mb-1">Note de l’agent</p>
                                     <p className="text-sm text-gray-300 leading-relaxed">{dossier.notes}</p>
                                 </div>
                             )}
@@ -477,7 +480,7 @@ export default function ClientServicesPage() {
                                             <p className={`text-xs font-bold ${PAYMENT_STATUS[app.payment_status]?.color || 'text-gray-400'}`}>
                                                 {PAYMENT_STATUS[app.payment_status]?.label || app.payment_status}
                                             </p>
-                                            <p className="text-white font-mono font-black text-sm">{fmtN(app.amount)} {app.currency}</p>
+                                            <p className="text-white font-mono font-black text-sm">{app.payment_status === 'gratuit' || !Number(app.amount) ? 'Gratuit' : `${fmtN(app.amount)} ${app.currency}`}</p>
                                         </div>
                                     </div>
 
@@ -553,7 +556,7 @@ export default function ClientServicesPage() {
                                     <Briefcase size={28} className="text-[var(--panel-accent)]" />
                                 </div>
                                 <h2 className="text-white font-bold text-lg mb-2">Aucun service actif</h2>
-                                <p className="text-gray-500 text-sm mb-6">Vous n'avez pas encore de service en cours.<br />Découvrez ce que nous pouvons faire pour vous.</p>
+                                <p className="text-gray-500 text-sm mb-6">Vous n’avez pas encore de service en cours.<br />Découvrez ce que nous pouvons faire pour vous.</p>
                                 <button type="button" onClick={() => setActiveSection('catalogue')}
                                     style={{ background: 'var(--panel-accent)' }}
                                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:-translate-y-px active:translate-y-0">
@@ -679,7 +682,7 @@ export default function ClientServicesPage() {
                         {/* CTA contact */}
                         <div className="bg-gradient-to-br from-[var(--panel-accent-soft)] to-[var(--panel-accent-soft)] border border-[var(--panel-accent)]/20 rounded-2xl p-6 text-center">
                             <Users size={24} className="text-[var(--panel-accent)] mx-auto mb-3" />
-                            <h3 className="text-white font-black text-lg mb-2">Besoin d'un conseil personnalisé ?</h3>
+                            <h3 className="text-white font-black text-lg mb-2">Besoin d’un conseil personnalisé ?</h3>
                             <p className="text-gray-400 text-sm mb-4">Notre équipe vous accompagne dans le choix du service adapté à votre situation.</p>
                             <Link href="/client/messages"
                                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:-translate-y-px active:translate-y-0">

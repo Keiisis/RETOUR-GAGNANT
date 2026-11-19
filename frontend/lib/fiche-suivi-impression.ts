@@ -8,7 +8,7 @@
 //  ligne, avec la mention « (suite) » : aucune longueur ne déborde.
 // ══════════════════════════════════════════════════════════════
 import { escapeHtml } from './security'
-import { OPTIONS, casesCochees, type FicheSuivi } from './fiche-suivi'
+import { OPTIONS, casesCochees, ligneRecap, type FicheSuivi } from './fiche-suivi'
 
 const e = (v: string | null | undefined) => escapeHtml(v ?? '')
 
@@ -57,6 +57,7 @@ body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;background:#e8edf2;color:
 .meta-type{font-size:20px;font-weight:900;color:#008751;letter-spacing:1px}
 .meta-sub{font-size:12px;font-weight:800;color:#E8112D;margin-top:5px;text-transform:uppercase}
 .meta-ref{font-size:12px;font-weight:700;margin-top:6px;font-family:monospace}
+.meta-recap{font-size:10px;font-weight:700;margin-top:3px;font-family:monospace;color:#3a4656}
 .meta-date{font-size:11px;font-weight:700;margin-top:5px}
 .body{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:12px 32px 14px}
 .footer{margin-top:auto;padding:10px 32px 14px;text-align:center;border-top:2px solid #dde3ee;flex-shrink:0}
@@ -170,6 +171,7 @@ type Imprimable = Omit<FicheSuivi, 'statut_dossier'> & { statut_dossier: FicheSu
 // Modèle vierge à remplir à la main : aucune case cochée, numéro et dates en pointillés.
 export const FICHE_VIERGE: Imprimable = {
     id: '', numero: '', client_id: null, source: 'manuel', date_fiche: '', statut_dossier: null, date_depot: null,
+    myafro_recap_numero: null, myafro_recap_date: null,
     nom_complet: null, telephone: null, email: null, pays: null, ville: null, canaux: [],
     reclamation_statut: null, date_etat_lieux: null, observation: null,
     accueil_statut: null, accueil_date_reclamation: null, accueil_date_reception: null,
@@ -182,7 +184,8 @@ export function ficheSuiviHtml(f: Imprimable, opts: { logoUrl: string; genereLe:
     const dateLongue = f.date_fiche
         ? new Date(f.date_fiche + 'T12:00:00Z').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
         : '_____________________'
-    const numero = e(f.numero || 'RGB-20___-______')
+    const numero = e(f.numero || 'RGB-20___-76_____')
+    const recap = e(ligneRecap(f.myafro_recap_numero, f.myafro_recap_date))
 
     const pieces = [...(f.pieces || [])]
     // Comme le modèle : au moins 5 lignes, les vides restent à remplir à la main.
@@ -216,6 +219,7 @@ export function ficheSuiviHtml(f: Imprimable, opts: { logoUrl: string; genereLe:
       <div class="meta-type">FICHE DE SUIVI CLIENT</div>
       <div class="meta-sub">Nationalité béninoise</div>
       <div class="meta-ref">N° ${numero}</div>
+      <div class="meta-recap">Récap MyAfroOrigins : ${recap}</div>
       <div class="meta-date">Date : Cotonou, le ${e(dateLongue)}</div>
     </div>
   </div>
@@ -231,6 +235,7 @@ export function ficheSuiviHtml(f: Imprimable, opts: { logoUrl: string; genereLe:
   <div class="titre">Demande de Nationalité Béninoise et Accompagnement Administratif à l'Obtention de la Nationalité</div>
   <div class="dossier">
     <div class="l"><span><b>Dossier N° :</b> <span class="mono">${numero}</span></span><span><b>Date :</b> ${dateFr(f.date_fiche)}</span></div>
+    <div class="l"><span><b>N° fiche récap MyAfroOrigins :</b> <span class="mono">${recap}</span></span></div>
     <div class="l"><span style="display:flex;align-items:center;gap:10px"><b>Statut :</b>${cases('statut_dossier', f.statut_dossier)}</span><span><b>Date du dépôt :</b> ${dateFr(f.date_depot)}</span></div>
   </div>
 </div>

@@ -17,7 +17,7 @@ export function titreDemande(m: { sujet?: string | null; nom?: string | null; pr
     return qui ? `${nature} : ${qui}` : nature
 }
 
-/** « Nouvelle demande de nationalité béninoise · Réf. RG-NAT-2026-8925 · 260 EUR ». */
+/** « Nouvelle demande de nationalité béninoise · Réf. RG-NAT-2026-8925 · Gratuit (agence agréée) ». */
 export function resumeDemande(m: { message?: string | null; sujet?: string | null }): string {
     const texte = String(m.message || '')
     const premiere = propre(texte.split('\n').find(l => l.trim()) || '')

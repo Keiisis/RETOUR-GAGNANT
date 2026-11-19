@@ -193,10 +193,11 @@ export function statutNationalite(v?: string | null): DefStatut {
 }
 
 /** nationality_applications.payment_status : la base contient `payé` (accent,
- *  écrit par le webhook Kkiapay et /api/nationality) et `en_attente`. */
+ *  écrit par le webhook Kkiapay et /api/nationality), `en_attente`, et `gratuit`
+ *  (demande sans frais depuis l'agrément de nov. 2026, mêmes droits qu'un dossier réglé). */
 export function nationalitePayee(v?: string | null): boolean {
     const s = String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok'].includes(s)
+    return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok', 'gratuit'].includes(s)
 }
 
 // ──────────────────────────────────────────────────────────────

@@ -20,8 +20,8 @@
    · langues-racines        → choix Présentiel/Visio puis rendez-vous
                               (premier rendez-vous gratuit, devis ensuite).
    · recherche-ancestrale   → /rendez-vous?service=recherche-ancestrale
-   · nationalite-vip        → parcours dédié /nationalite (le paiement se fait
-                              dans le formulaire, pas sur la fiche service).
+   · nationalite-vip        → parcours dédié /nationalite (le dossier s'envoie
+                              depuis le formulaire, sans frais).
 
    Conséquence : le mode par défaut est « rendez-vous », PAS « paiement ».
    C'est l'inverse de ce que faisait l'app mobile, qui affichait « Payer avec

@@ -107,7 +107,8 @@ export async function POST(request: NextRequest) {
     }
     const moyen = moyenBrut as MoyenPaiement
     const referencePaiement = texte(body.payment_ref, 120)
-    const paye = body.payment_status !== 'en_attente'
+    const gratuit = moyen === 'gratuit'
+    const paye = !gratuit && body.payment_status !== 'en_attente'
 
     /* Un règlement « autre » sans précision est ingérable en comptabilité :
        on exige alors une note. */
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
 
     // '' et null valaient Number(...) = 0 : dossier créé à 0 au lieu du tarif.
     const montantSaisi = body.amount === '' || body.amount === null || body.amount === undefined ? NaN : Number(body.amount)
-    const montant = isFinite(montantSaisi) && montantSaisi >= 0
+    const montant = gratuit ? 0 : isFinite(montantSaisi) && montantSaisi >= 0
         ? montantSaisi
         : (isFinite(tarifConfig) && tarifConfig > 0 ? tarifConfig : null)
     const devise = texte(body.currency, 8)?.toUpperCase() || deviseConfig
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
         documents_uploaded: [],
         amount: montant,
         currency: devise,
-        payment_status: paye ? 'payé' : 'en_attente',
+        payment_status: gratuit ? 'gratuit' : paye ? 'payé' : 'en_attente',
         payment_method: moyen,
         payment_ref: referencePaiement,
         last_step_completed: 6,
@@ -256,7 +257,7 @@ export async function POST(request: NextRequest) {
          → facture au statut payé, avec le moyen employé ;
 
        · un dossier OFFERT par code d'invitation, ou encore en attente
-         → aucune facture. Facturer 260 € qui n'ont jamais été encaissés
+         → aucune facture. Facturer des frais jamais encaissés
          inventerait une recette : la comptabilité afficherait un revenu
          que la banque ne verra jamais. Le dossier reste tracé par sa note
          interne et son moyen de paiement.

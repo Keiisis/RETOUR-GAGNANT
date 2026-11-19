@@ -89,8 +89,8 @@ function AdminLayoutContent({
         // Initial fetch
         const fetchUnread = async () => {
             const [msgRes, notifRes, partRes] = await Promise.all([
-                supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false).neq('type', 'nationality'),
-                supabase.from('messages').select('id', { count: 'exact' }).eq('lu', false).eq('type', 'nationality'),
+                supabase.from('messages').select('id', { count: 'exact', head: true }).eq('lu', false).neq('type', 'nationality'),
+                supabase.from('messages').select('id', { count: 'exact', head: true }).eq('lu', false).eq('type', 'nationality'),
                 // Candidatures partenaires non lues : même compteur que le panel agent
                 supabase.from('partner_applications').select('id', { count: 'exact', head: true }).eq('is_read', false),
             ])

@@ -5,18 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 import { compressImage } from '@/lib/compress-image'
 import { trackEvent } from '@/lib/analytics'
-import Script from 'next/script'
-import { ArrowLeft, ArrowRight, CheckCircle as CheckCircle2, FileText, PaperPlaneTilt as Send, CaretLeft as ChevronLeft, CircleNotch as Loader2, WarningCircle as AlertCircle, CreditCard, Heart, Shield, CaretRight as ChevronRight, X, User, Envelope as Mail, Phone, MapPin, Globe as Globe2, Calendar } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowRight, CheckCircle as CheckCircle2, FileText, PaperPlaneTilt as Send, CaretLeft as ChevronLeft, CircleNotch as Loader2, WarningCircle as AlertCircle, Heart, Shield, X, User, Envelope as Mail, Phone, MapPin, Globe as Globe2, Calendar } from '@phosphor-icons/react';
 import Link from 'next/link'
-import { Price, useCurrency } from '@/components/ui/Price'
-import { CurrencyCode, convertCurrency } from '@/lib/currency'
-import { ttcFromHt, fromHt, TVA_ENABLED, TVA_RATE } from '@/lib/tax'
 import { useTranslation, T } from '@/lib/translation'
-import PaymentPrivacyNotice from '@/components/shared/PaymentPrivacyNotice'
 import { natFetch } from '@/lib/nationality-flow'
-import { ouvrirKkiapay } from '@/lib/kkiapay'
-
-type PaymentProvider = 'kkiapay' | 'fedapay' | 'zeyow'
 
 interface NationaliteForm {
     knows_about_law: boolean
@@ -30,15 +22,6 @@ interface NationaliteForm {
     type_document_identite: string; autorite_delivrance: string; numero_document: string; pays_delivrance: string; date_expiration_document: string; lieu_delivrance: string
     pere_nom: string; pere_prenom: string; pere_date_naissance: string
     mere_nom: string; mere_prenom: string; mere_date_naissance: string
-}
-
-declare global {
-    interface Window {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        openKkiapayWidget: (config: any) => void
-        addKkiapayListener: (event: string, callback: (data: Record<string, unknown>) => void) => void
-        FedaPay: { init: (selector: string, config: Record<string, unknown>) => void }
-    }
 }
 
 
@@ -80,7 +63,6 @@ export default function NationaliteFormPage() {
         { num: 3, label: t('Document & Parents') },
         { num: 4, label: t('Pièces jointes') },
         { num: 5, label: t('Récapitulatif') },
-        { num: 6, label: t('Paiement & Soumission') },
     ]
 
     const COUNTRIES = ['Bénin', 'France', 'États-Unis', 'Brésil', 'Haïti', 'Canada', 'Royaume-Uni', 'Jamaïque', 'Trinidad et Tobago', 'Colombie', 'Cuba', 'Guadeloupe', 'Martinique', 'Guyane française', 'Suriname', 'Barbade', 'Bahamas', 'République Dominicaine', 'Porto Rico', 'Antigua-et-Barbuda', 'Allemagne', 'Belgique', 'Suisse', 'Pays-Bas', 'Italie', 'Espagne', 'Portugal', 'Ghana', 'Togo', 'Nigeria', 'Sénégal', 'Côte d\'Ivoire', 'Cameroun', 'Congo', 'Gabon', 'Mali', 'Burkina Faso', 'Guinée', 'Niger', 'Tchad', 'Autre']
@@ -98,63 +80,8 @@ export default function NationaliteFormPage() {
     const [preInscriptionSubmitting, setPreInscriptionSubmitting] = useState(false)
     const [preInscriptionError, setPreInscriptionError] = useState('')
     const [preInscription, setPreInscription] = useState({ prenom: '', nom: '', email: '', telephone: '', pays_residence: '' })
-    const [paymentSettings, setPaymentSettings] = useState<Record<string, string>>({})
-    const [paymentDone, setPaymentDone] = useState(false)
-    const [paymentProvider, setPaymentProvider] = useState<PaymentProvider | null>(null)
-    const [paymentTxId, setPaymentTxId] = useState('')
-    const [paymentProcessing, setPaymentProcessing] = useState(false)
-    const [paymentError, setPaymentError] = useState('')
-
-    /* ── Code d'invitation ──────────────────────────────────────────
-       Une carte émise hors zone UEMOA est fréquemment refusée par la banque
-       émettrice, avant même toute authentification. Le client se retrouvait
-       alors sans solution : soit il abandonnait, soit l'agence saisissait le
-       dossier à sa place, ce qui lui retirait la maîtrise de ses pièces.
-
-       Le code lui rend le formulaire. Ce que vérifie cet écran est un
-       CONFORT — savoir tout de suite si le code sera accepté. La gratuité,
-       elle, est accordée par le serveur au moment de la soumission : rien de
-       ce que dit ce composant ne l'engage. */
-    const [codeInvitationOuvert, setCodeInvitationOuvert] = useState(false)
-    const [codeInvitation, setCodeInvitation] = useState('')
-    const [codeInvitationBusy, setCodeInvitationBusy] = useState(false)
-    const [codeInvitationErreur, setCodeInvitationErreur] = useState('')
-    const [codeInvitationValide, setCodeInvitationValide] = useState<{ couvre_ancestrale: boolean } | null>(null)
-
-    const verifierInvitation = async () => {
-        setCodeInvitationBusy(true)
-        setCodeInvitationErreur('')
-        try {
-            const res = await natFetch('/api/nationality/invitation', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: codeInvitation, email: form.email }),
-            })
-            const json = await res.json().catch(() => ({}))
-            if (res.status === 429) {
-                setCodeInvitationErreur(t('Trop d’essais. Patientez quelques minutes avant de réessayer.'))
-                return
-            }
-            if (!json.valide) {
-                setCodeInvitationErreur(json.motif || t('Code refusé.'))
-                return
-            }
-            setCodeInvitationValide({ couvre_ancestrale: !!json.couvre_ancestrale })
-        } catch {
-            setCodeInvitationErreur(t('Vérification impossible. Vérifiez votre connexion.'))
-        } finally {
-            setCodeInvitationBusy(false)
-        }
-    }
-    // Garde : les listeners Kkiapay ne doivent être enregistrés qu'UNE fois
-    // (sinon empilement de callbacks à chaque clic : piège connu du SDK k.js)
-    const kkiapayBound = useRef(false)
-    // Garde : la soumission auto post-paiement ne doit se déclencher qu'UNE fois.
-    // (Incident nationalité : des clients ont payé mais la fiche n'était créée
-    //  qu'au clic manuel « Confirmer » : perdue si l'étape n'était pas franchie.)
-    const autoSubmitRef = useRef(false)
-    // Mode « reprise » : le client complète un dossier DÉJÀ PAYÉ via un lien signé
-    // (relance depuis le panel). Aucun paiement redemandé, on met à jour la fiche.
+    // Mode « reprise » : le client complète un dossier existant via un lien signé
+    // (relance depuis le panel). On met à jour la fiche au lieu d'en créer une.
     const [resumeMode, setResumeMode] = useState(false)
     const resumeTokenRef = useRef('')
     // Reprise « documents seuls » (lien ?mode=docs) : écran léger, on n'affiche
@@ -162,14 +89,9 @@ export default function NationaliteFormPage() {
     const [docsOnly, setDocsOnly] = useState(false)
     // Clés des pièces DÉJÀ reçues (Storage) → masquées en mode docs-only.
     const [alreadyOkKeys, setAlreadyOkKeys] = useState<string[]>([])
-    // Mode MyAfroOrigins : reprise d'un dossier bloqué, tarif réduit 50 €,
-    // dépôt libre de documents nommés. Le jeton (dans l'URL) autorise le tarif.
+    // Mode MyAfroOrigins : reprise d'un dossier bloqué, dépôt libre de
+    // documents nommés. Le jeton (dans l'URL) est vérifié par le serveur.
     const [myafroMode, setMyafroMode] = useState(false)
-    /* Lien MyAfroOrigins « déjà payé » : le règlement existe AVANT que le
-       client ait rempli quoi que ce soit. Ce n'est pas un paiement qui vient
-       d'aboutir — il ne doit ni déclencher la soumission automatique (qui
-       partait à l'ouverture, formulaire vide), ni afficher un montant à payer. */
-    const [prepayeMyafro, setPrepayeMyafro] = useState(false)
     const myafroTokenRef = useRef('')
     const [customDocs, setCustomDocs] = useState<{ name: string; file: File }[]>([])
 
@@ -186,22 +108,19 @@ export default function NationaliteFormPage() {
 
     const [rawDocs, setRawDocs] = useState<{ key: string, label: string, name: string, file: File }[]>([])
 
-    /* ── Pièces DÉPOSÉES avant le paiement ─────────────────────────────
-       Incident du 15/09/2026 : paiement par carte depuis un iPhone,
-       validation 3-D Secure dans l'application bancaire, retour dans Safari…
-       et plus rien. Les pièces n'existaient que dans la mémoire de l'onglet
-       (`rawDocs`), le formulaire n'est jamais parti. Désormais les pièces
-       partent au stockage dès l'étape 4 : ce qui est déposé l'est pour de
-       bon, et un rechargement de page ne le fait pas perdre. */
+    /* ── Pièces DÉPOSÉES dès l'étape 4 ─────────────────────────────────
+       Les pièces ne vivent pas seulement dans la mémoire de l'onglet
+       (`rawDocs`) : elles partent au stockage dès l'étape 4. Ce qui est
+       déposé l'est pour de bon, et un rechargement de page ne le fait pas
+       perdre. */
     type PieceDeposee = { key: string; label: string; name: string; empreinte: string; line: string }
     const [piecesDeposees, setPiecesDeposees] = useState<PieceDeposee[]>([])
     const [depotEnCours, setDepotEnCours] = useState<{ fait: number; total: number } | null>(null)
     /* Jeton du brouillon serveur : 128 bits tirés au sort ici, jamais
-       recalculables. Transmis à Kkiapay avec le paiement, il permet au
-       webhook de reconstituer le dossier si ce navigateur ne revient pas. */
+       recalculables. Il identifie le brouillon (formulaire + pièces
+       déposées) enregistré côté serveur. */
     const jetonBrouillonRef = useRef('')
     const brouillonRestaureRef = useRef(false)
-    const essaisSoumissionRef = useRef(0)
     const [uploadProgress, setUploadProgress] = useState(0)
     const [docWarnings, setDocWarnings] = useState<string[]>([])
 
@@ -229,13 +148,6 @@ export default function NationaliteFormPage() {
     ]
     const [docSlots, setDocSlots] = useState<DocSlot[]>(DEFAULT_DOC_SLOTS)
     const [bgImageUrl, setBgImageUrl] = useState<string>('/images/bg-default-afro.jpg')
-    const [formAmount, setFormAmount] = useState(250)
-    const [formCurrency, setFormCurrency] = useState<CurrencyCode>('USD')
-    /* Le tarif officiel arrive de `page_sections` en asynchrone. Tant qu'il
-       n'est pas là, AUCUNE passerelle ne doit s'ouvrir : sinon elle encaisse la
-       valeur d'initialisation (250 XOF ≈ 0,39 €) au lieu du tarif réel. */
-    const [tarifCharge, setTarifCharge] = useState(false)
-    const { format } = useCurrency()
 
     const [form, setForm] = useState({
         knows_about_law: false, is_afro_descendant: true, afro_descendant_description: '',
@@ -282,22 +194,13 @@ export default function NationaliteFormPage() {
             }
         } catch { /* ignore */ }
 
-        fetch('/api/settings/payment').then(r => r.json()).then(d => setPaymentSettings(d)).catch(() => { })
         supabase.from('nationality_page_content').select('content_fr').eq('section_key', 'form_bg_image').single()
             .then(({ data }) => { if (data?.content_fr) setBgImageUrl(data.content_fr) })
-        // Tarif officiel. TANT QU'IL N'EST PAS REVENU, aucun paiement n'est
-        // possible (cf. `tarifCharge`) : sans ce verrou, le widget partait avec
-        // le tarif d'initialisation — 250 XOF, soit ~0,39 € encaissés au lieu
-        // de 260 €.
+        // Liste des pièces demandées (réglable depuis l'admin).
         supabase.from('page_sections').select('content').eq('page', 'nationalite').eq('section_key', 'form_settings').single()
             .then(({ data }) => {
-                setTarifCharge(true)
                 if (data?.content) {
                     const c = data.content as Record<string, unknown>
-                    // En mode MyAfroOrigins, le tarif (50 €) est imposé : ne pas l'écraser.
-                    const isMyafroUrl = new URLSearchParams(window.location.search).has('myafro')
-                    if (c.amount && !isMyafroUrl) setFormAmount(Number(c.amount))
-                    if (c.currency && !isMyafroUrl) setFormCurrency(c.currency as CurrencyCode)
                     if (c.doc_slots && Array.isArray(c.doc_slots)) {
                         setDocSlots(c.doc_slots as DocSlot[])
                     }
@@ -305,40 +208,18 @@ export default function NationaliteFormPage() {
             })
     }, [])
 
-    // ── Mode MyAfroOrigins (?myafro=<token>) : tarif de reprise 50 € ──────────
+    // ── Mode MyAfroOrigins (?myafro=<token>) ───────────────────────────────────
     useEffect(() => {
         const token = new URLSearchParams(window.location.search).get('myafro')
         if (!token) return
         myafroTokenRef.current = token
         setMyafroMode(true)
         setPreInscriptionDone(true)
-        setFormAmount(50)
-        setFormCurrency('EUR')
-
-        // Détection de paiement manuel déjà associé
-        try {
-            const [bodyHex] = token.split('.')
-            if (bodyHex) {
-                let decodedStr = ''
-                for (let i = 0; i < bodyHex.length; i += 2) {
-                    decodedStr += String.fromCharCode(parseInt(bodyHex.substring(i, i + 2), 16))
-                }
-                const payload = JSON.parse(decodedStr)
-                if (payload && payload.paid) {
-                    setPrepayeMyafro(true)
-                    setPaymentDone(true)
-                    setPaymentProvider('facture' as any)
-                    setPaymentTxId(payload.invoice_id ? `facture_${payload.invoice_id}` : 'manuel')
-                }
-            }
-        } catch (e) {
-            console.error('[MYAFRO] Erreur décodage jeton:', e)
-        }
     }, [])
 
-    // ── Mode « reprise » : lien de complément (dossier déjà payé) ──────────────
+    // ── Mode « reprise » : lien de complément (dossier existant) ───────────────
     // Si l'URL porte ?resume=<token>, on charge la fiche existante, on pré-remplit,
-    // on saute la pré-inscription + le paiement, et la soumission mettra à jour la
+    // on saute la pré-inscription, et la soumission mettra à jour la
     // fiche au lieu d'en créer une nouvelle.
     useEffect(() => {
         const params = new URLSearchParams(window.location.search)
@@ -355,7 +236,6 @@ export default function NationaliteFormPage() {
                     setForm(prev => ({ ...prev, ...data.prefill }))
                     setPreInscriptionDone(true)
                     setLawAccepted(true)
-                    setPaymentDone(true)
                     if (data.application_ref) setAppRef(data.application_ref)
                     // Pièces déjà reçues (lignes succès) → clé = préfixe avant le 1er « : ».
                     const prior: string[] = Array.isArray(data.documents_uploaded) ? data.documents_uploaded : []
@@ -387,11 +267,10 @@ export default function NationaliteFormPage() {
             localStorage.setItem('rgb_nat_pre_inscription', JSON.stringify(preInscription))
         } catch { /* quota ignoré */ }
 
-        /* Le lead identifie le client si le paiement arrive sans formulaire.
-           Il était envoyé « sans attendre » : un échec réseau passait
-           inaperçu et la fiche de secours naissait sans nom. On l'attend,
-           avec deux nouvelles tentatives ; s'il échoue encore, on ne bloque
-           pas le client (le paiement transmet aussi son identité). */
+        /* Le lead identifie le client même si le formulaire n'est jamais
+           envoyé. Il était envoyé « sans attendre » : un échec réseau passait
+           inaperçu. On l'attend, avec deux nouvelles tentatives ; s'il échoue
+           encore, on ne bloque pas le client. */
         for (let essai = 0; essai < 3; essai++) {
             try {
                 const r = await natFetch('/api/nationality/lead', {
@@ -413,129 +292,6 @@ export default function NationaliteFormPage() {
     const IC = "w-full bg-gray-50 border border-gray-200 rounded-xl py-3 px-4 text-gray-900 text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 placeholder:text-gray-400 transition-all"
     const LC = "text-xs font-bold text-gray-500 mb-1.5 block"
     const RQ = "text-red-400 ml-0.5"
-
-    // Payment providers from existing settings
-    const providers = [
-        { id: 'kkiapay' as PaymentProvider, name: 'Kkiapay', subtitle: t('Mobile Money / Carte'), color: 'bg-[#4A90D9]/20 border-[#4A90D9]/40 text-[#4A90D9]', isReady: paymentSettings.kkiapay_enabled === 'true' && !!paymentSettings.kkiapay_public_key },
-        { id: 'fedapay' as PaymentProvider, name: 'FedaPay', subtitle: t('Mobile Money / Carte'), color: 'bg-[#2ECC71]/20 border-[#2ECC71]/40 text-[#2ECC71]', isReady: paymentSettings.fedapay_enabled === 'true' && !!paymentSettings.fedapay_public_key },
-        { id: 'zeyow' as PaymentProvider, name: 'Zeyow', subtitle: t('Carte Virtuelle'), color: 'bg-[#FF6B35]/20 border-[#FF6B35]/40 text-[#FF6B35]', isReady: paymentSettings.zeyow_enabled === 'true' && !!paymentSettings.zeyow_redirect_url },
-    ].filter(p => p.isReady)
-
-    // Enregistre les listeners Kkiapay une seule fois (idempotent)
-    const handleKkiapay = () => {
-        if (typeof window.openKkiapayWidget !== 'function') {
-            setPaymentError(t('Le module de paiement n\'est pas encore chargé. Patientez quelques secondes puis réessayez.'))
-            return
-        }
-        const isSandbox = paymentSettings.kkiapay_sandbox === 'true'
-        const kkiapayKey = isSandbox
-            ? (paymentSettings.kkiapay_sandbox_public_key || paymentSettings.kkiapay_public_key)
-            : paymentSettings.kkiapay_public_key
-        // Kkiapay exige un montant ENTIER positif en FCFA (XOF, sans décimales).
-        // TVA EN SUS : le tarif est HORS TAXE, on charge le TTC (HT × 1,18).
-        const rawXOF = formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF')
-        const amountXOF = ttcFromHt(Math.round(Number(rawXOF)), 'XOF')
-
-        // Le tarif officiel n'est pas encore arrivé : on refuse d'ouvrir le
-        // widget plutôt que d'encaisser une valeur d'attente.
-        if (!tarifCharge) {
-            setPaymentError(t('Tarif en cours de chargement. Patientez une seconde puis réessayez.'))
-            return
-        }
-
-        // Garde-fous : éviter le « Paramètres manquants ou invalides » du widget
-        if (!kkiapayKey) {
-            setPaymentError(t('Clé de paiement Kkiapay manquante. Contactez-nous pour finaliser votre paiement.'))
-            return
-        }
-        if (!Number.isFinite(amountXOF) || amountXOF <= 0) {
-            setPaymentError(t('Montant de paiement invalide. Veuillez rafraîchir la page et réessayer.'))
-            return
-        }
-
-        setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('kkiapay')
-        // Dernier état du dossier enregistré côté serveur avant de quitter la page pour payer.
-        void enregistrerBrouillon(6)
-        try {
-            // Listeners enregistrés AVANT l'ouverture, une seule fois (pas d'empilement)
-            // Configuration minimale et conforme : pas de `paymentmethod` (tableau
-            // rejeté par le widget → « paramètres invalides ») ni de `callback`
-            // (forcerait une redirection qui contourne le listener de succès).
-            // Le widget propose nativement Mobile Money ET carte bancaire.
-            // Succès, échec ET abandon : refermer la fenêtre sans payer
-            // laissait auparavant le bouton figé sur « paiement en cours ».
-            ouvrirKkiapay({
-                amount: amountXOF,
-                position: 'center',
-                key: kkiapayKey,
-                sandbox: isSandbox,
-                phone: form.telephone || undefined,
-                email: form.email || undefined,
-                name: `${form.prenom || ''} ${form.nom || ''}`.trim() || undefined,
-                /* Tout ce qu'il faut pour que le webhook reconstitue le dossier
-                   sans ce navigateur : identité, et jeton du brouillon (formulaire
-                   + pièces déjà déposées). */
-                data: JSON.stringify({
-                    context: 'nationality',
-                    email: form.email,
-                    nom: form.nom,
-                    prenom: form.prenom,
-                    telephone: form.telephone,
-                    draft: jetonBrouillonRef.current || undefined,
-                }),
-            }, {
-                onSucces: (tx: string) => {
-                    // Noté AVANT tout le reste : si l'onglet meurt dans la seconde,
-                    // le rechargement saura que le paiement est passé.
-                    memoriserPaiement('kkiapay', tx)
-                    setPaymentTxId(tx); setPaymentDone(true); setPaymentProcessing(false)
-                },
-                onEchec: () => {
-            setPaymentError(t('Le paiement a échoué ou a été refusé. Si vous utilisez une carte bancaire hors zone UEMOA (Canada, Europe…), essayez le Mobile Money ou un autre moyen de paiement.'))
-            setPaymentProcessing(false)
-                },
-                onAnnule: () => {
-                    setPaymentError(t('Paiement annulé. Rien n’a été débité — vous pouvez reprendre quand vous voulez.'))
-                    setPaymentProcessing(false)
-                },
-            })
-        } catch { setPaymentError(t('Impossible d\'ouvrir Kkiapay')); setPaymentProcessing(false) }
-    }
-
-    const handleFedapay = () => {
-        if (!tarifCharge) { setPaymentError(t('Tarif en cours de chargement. Patientez une seconde puis réessayez.')); return }
-        setPaymentProcessing(true); setPaymentError(''); setPaymentProvider('fedapay')
-        // Convertir en FCFA + TVA en sus (on charge le TTC).
-        const amountXOF = ttcFromHt(formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF'), 'XOF')
-        try {
-            window.FedaPay.init('#fedapay-nat-btn', {
-                public_key: paymentSettings.fedapay_public_key,
-                environment: paymentSettings.fedapay_sandbox === 'true' ? 'sandbox' : 'live',
-                transaction: { amount: amountXOF, description: `Reconnaissance Nationalité : ${form.prenom} ${form.nom}` },
-                customer: { email: form.email || undefined, phone_number: { number: form.telephone } },
-                onComplete: (resp: Record<string, unknown>) => {
-                    const tx = resp.transaction as Record<string, unknown> | undefined
-                    if (resp.reason === 'APPROVED' || (tx && tx.status === 'approved')) {
-                        memoriserPaiement('fedapay', String(tx?.id || resp.id || ''))
-                        setPaymentTxId(String(tx?.id || resp.id || '')); setPaymentDone(true)
-                    } else { setPaymentError(t('Paiement FedaPay non approuvé.')) }
-                    setPaymentProcessing(false)
-                },
-            })
-        } catch { setPaymentError(t('Impossible d\'initialiser FedaPay')); setPaymentProcessing(false) }
-    }
-
-    const handleZeyow = () => {
-        if (!tarifCharge) { setPaymentError(t('Tarif en cours de chargement. Patientez une seconde puis réessayez.')); return }
-        setPaymentProvider('zeyow')
-        const redirectUrl = paymentSettings.zeyow_redirect_url
-        if (!redirectUrl) { setPaymentError(t('Zeyow non configuré.')); return }
-        // Convertir en FCFA + TVA en sus (on charge le TTC).
-        const amountXOF = ttcFromHt(formCurrency === 'XOF' ? formAmount : convertCurrency(formAmount, formCurrency, 'XOF'), 'XOF')
-        window.location.href = `${redirectUrl}?amount=${amountXOF}&phone=${form.telephone}&email=${form.email}&context=nationality`
-    }
-
-    const payHandlers: Record<PaymentProvider, () => void> = { kkiapay: handleKkiapay, fedapay: handleFedapay, zeyow: handleZeyow }
 
     const validate = (): string[] => {
         const e: string[] = []
@@ -588,7 +344,7 @@ export default function NationaliteFormPage() {
     const next = async () => {
         const e = validate(); if (e.length > 0) { setErrors(e); return }
         setErrors([])
-        // Les pièces partent AVANT le paiement (voir `piecesDeposees`). En mode
+        // Les pièces partent dès l'étape 4 (voir `piecesDeposees`). En mode
         // reprise, le dépôt se fait à l'envoi final, comme avant.
         if (step === 4 && !resumeMode) {
             const { echecs } = await deposerPieces()
@@ -599,7 +355,7 @@ export default function NationaliteFormPage() {
         } else if (!resumeMode) {
             void enregistrerBrouillon(step + 1)
         }
-        setStep(s => Math.min(s + 1, 6))
+        setStep(s => Math.min(s + 1, 5))
     }
     const prev = () => { setErrors([]); setStep(s => Math.max(s - 1, 1)) }
 
@@ -612,15 +368,6 @@ export default function NationaliteFormPage() {
         const octets = new Uint8Array(16)
         crypto.getRandomValues(octets)
         return Array.from(octets, b => b.toString(16).padStart(2, '0')).join('')
-    }
-
-    /** Le paiement est noté dans le navigateur à la seconde où il aboutit. */
-    const memoriserPaiement = (provider: PaymentProvider, tx: string) => {
-        try {
-            const brut = localStorage.getItem(CLE_BROUILLON_LOCAL)
-            const b = brut ? JSON.parse(brut) : {}
-            localStorage.setItem(CLE_BROUILLON_LOCAL, JSON.stringify({ ...b, jeton: jetonBrouillonRef.current, paiement: { provider, tx, le: Date.now() } }))
-        } catch { /* stockage indisponible : le brouillon serveur et le webhook prennent le relais */ }
     }
 
     const effacerBrouillonLocal = () => { try { localStorage.removeItem(CLE_BROUILLON_LOCAL) } catch { /* ignoré */ } }
@@ -769,7 +516,7 @@ export default function NationaliteFormPage() {
     }
 
     /* Mémoire locale du dossier : un rechargement de page (onglet évincé par
-       iOS pendant la validation bancaire, retour arrière, coupure) ne fait plus
+       iOS, retour arrière, coupure) ne fait plus
        repartir de zéro. Le texte du formulaire et les pièces DÉJÀ déposées
        sont conservés ; seules les pièces non encore envoyées sont à rechoisir. */
     useEffect(() => {
@@ -790,11 +537,11 @@ export default function NationaliteFormPage() {
     useEffect(() => {
         const params = new URLSearchParams(window.location.search)
         if (params.has('resume') || params.has('myafro')) { brouillonRestaureRef.current = true; return }
-        let b: { jeton?: string; form?: Partial<NationaliteForm>; pieces?: PieceDeposee[]; step?: number; maj?: number; paiement?: { provider: PaymentProvider; tx: string } } = {}
+        let b: { jeton?: string; form?: Partial<NationaliteForm>; pieces?: PieceDeposee[]; step?: number; maj?: number } = {}
         try { b = JSON.parse(localStorage.getItem(CLE_BROUILLON_LOCAL) || '{}') } catch { b = {} }
         const frais = b.maj && Date.now() - b.maj < 30 * 86_400_000
-        jetonBrouillonRef.current = (b.jeton && /^[a-f0-9]{32}$/.test(b.jeton) && (frais || b.paiement)) ? b.jeton : nouveauJeton()
-        if ((frais || b.paiement) && b.form && b.form.email) {
+        jetonBrouillonRef.current = (b.jeton && /^[a-f0-9]{32}$/.test(b.jeton) && frais) ? b.jeton : nouveauJeton()
+        if (frais && b.form && b.form.email) {
             // Seules les clés connues du formulaire sont reprises.
             setForm(p => ({ ...p, ...Object.fromEntries(Object.entries(b.form || {}).filter(([k]) => k in p)) }))
             const pieces = Array.isArray(b.pieces) ? b.pieces.filter(x => x && typeof x.line === 'string') : []
@@ -802,18 +549,11 @@ export default function NationaliteFormPage() {
             setPiecesDeposees(pieces)
             setPreInscriptionDone(true)
             setLawAccepted(true)
-            if (b.step && b.step >= 1) setStep(Math.min(Number(b.step), 6))
-            if (b.paiement?.tx) {
-                /* Le paiement avait abouti avant que l'onglet ne meure : la
-                   soumission automatique repart avec les pièces déjà déposées. */
-                setPaymentProvider(b.paiement.provider)
-                setPaymentTxId(b.paiement.tx)
-                setPaymentDone(true)
-                setStep(6)
-            } else if (b.jeton) {
-                /* Pas de trace de paiement ici — mais le paiement a pu passer
-                   sans que la page le sache (3-D Secure, onglet évincé). Si le
-                   webhook a déjà reconstitué le dossier, on l'annonce. */
+            if (b.step && b.step >= 1) setStep(Math.min(Number(b.step), 5))
+            if (b.jeton) {
+                /* Le dossier a pu être créé côté serveur à partir de ce
+                   brouillon sans que la page le sache : si c'est le cas, on
+                   l'annonce. */
                 natFetch(`/api/nationality/brouillon?t=${b.jeton}`)
                     .then(r => r.json())
                     .then(j => {
@@ -829,20 +569,16 @@ export default function NationaliteFormPage() {
         brouillonRestaureRef.current = true
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Quitter pendant un envoi ou juste après paiement = risque de perte : on prévient.
+    // Quitter pendant un envoi = risque de perte : on prévient.
     useEffect(() => {
-        const risque = !!depotEnCours || submitting || paymentProcessing || (paymentDone && !showWelcome && !resumeMode && !prepayeMyafro)
+        const risque = !!depotEnCours || submitting
         if (!risque) return
         const avertir = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
         window.addEventListener('beforeunload', avertir)
         return () => window.removeEventListener('beforeunload', avertir)
-    }, [depotEnCours, submitting, paymentProcessing, paymentDone, showWelcome, resumeMode, prepayeMyafro])
+    }, [depotEnCours, submitting])
 
     const submit = async () => {
-        if (!paymentDone) {
-            setErrors([t('Veuillez effectuer le paiement avant de soumettre.')])
-            return
-        }
         setSubmitting(true)
         setErrors([])
         setUploadProgress(10)
@@ -860,8 +596,8 @@ export default function NationaliteFormPage() {
         dateFields.forEach(key => { if (!cleanedForm[key]) cleanedForm[key] = null })
 
         // Submit via secure API route (Service Role Key, bypasses RLS).
-        // En mode reprise (dossier déjà payé) → on MET À JOUR la fiche existante
-        // via /api/nationality/complete (jeton signé, aucun paiement redemandé).
+        // En mode reprise (dossier existant) → on MET À JOUR la fiche existante
+        // via /api/nationality/complete (jeton signé).
         try {
             const res = resumeMode
                 ? await natFetch('/api/nationality/complete', {
@@ -884,18 +620,14 @@ export default function NationaliteFormPage() {
                         ...cleanedForm,
                         documents: finalUploadedUrls,
                         documents_uploaded: finalUploadedUrls,
-                        payment_method: paymentProvider || 'none',
-                        payment_ref: paymentTxId,
-                        payment_status: paymentDone ? 'payé' : 'non_payé',
-                        amount: formAmount,
-                        currency: formCurrency,
+                        // Demande gratuite (agence agréée) : le serveur classe
+                        // lui-même le dossier en « gratuit », montant 0.
+                        payment_method: 'gratuit',
+                        payment_status: 'gratuit',
+                        amount: 0,
                         last_step_completed: 6,
-                        // Mode MyAfroOrigins : le serveur vérifie le jeton et impose le tarif 50 €
+                        // Mode MyAfroOrigins : le serveur vérifie le jeton
                         myafro_token: myafroMode ? myafroTokenRef.current : undefined,
-                        /* Le code n'est qu'une chaîne de caractères tant que le
-                           serveur ne l'a pas validé lui-même : c'est lui qui
-                           décide de la gratuité, et lui qui consomme le code. */
-                        invitation_code: codeInvitationValide ? codeInvitation : undefined,
                     })
                 })
 
@@ -926,37 +658,12 @@ export default function NationaliteFormPage() {
                 setErrors([result.error || t('Erreur lors de la soumission. Veuillez réessayer.')])
             }
         } catch {
-            // Échec réseau APRÈS paiement : ne pas perdre le dossier en silence.
-            // On réarme la soumission auto pour permettre un nouvel essai (bouton + effet).
-            autoSubmitRef.current = false
-            /* L'effet de soumission automatique ne se redéclenche pas tout seul
-               (paymentDone est déjà vrai) : on relance nous-mêmes, 3 fois, à
-               5, 15 puis 30 secondes. Le dossier est de toute façon sauvé par le
-               brouillon serveur et le webhook si le navigateur abandonne. */
-            const essai = ++essaisSoumissionRef.current
-            if (essai <= 3) {
-                setErrors([t('Le paiement a bien été reçu. L’enregistrement n’a pas encore abouti (réseau) : nouvel essai automatique dans quelques secondes. Ne fermez pas cette page.')])
-                setTimeout(() => { if (!autoSubmitRef.current) { autoSubmitRef.current = true; submit() } }, [5000, 15000, 30000][essai - 1])
-            } else {
-                setErrors([t('Le paiement a bien été reçu, mais l\'enregistrement a échoué. Ne fermez pas cette page : réessayez avec le bouton « Confirmer et Soumettre ». En cas de problème persistant, contactez-nous en gardant votre référence de paiement.')])
-            }
+            // Échec réseau : formulaire et pièces déposées restent en mémoire
+            // (brouillon local + serveur), le client peut renvoyer.
+            setErrors([t('L’envoi n’a pas abouti (connexion). Vos informations sont conservées : réessayez avec « Envoyer ma demande ».')])
         }
         setSubmitting(false)
     }
-
-    // ── Filet de sécurité : dès que le paiement est confirmé, on enregistre le
-    //    dossier automatiquement (upload + création de la fiche), sans dépendre
-    //    d'un clic manuel. C'est la faille qui avait fait perdre des clients ayant
-    //    pourtant payé. Le bouton « Confirmer » reste disponible comme relance.
-    useEffect(() => {
-        // En mode reprise, paymentDone est vrai dès le chargement : NE PAS
-        // auto-soumettre (le client doit d'abord re-déposer ses documents).
-        if (paymentDone && !resumeMode && !prepayeMyafro && !autoSubmitRef.current && !submitting && !showWelcome) {
-            autoSubmitRef.current = true
-            submit()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [paymentDone])
 
     // ═══ CONFIRMATION : « Bienvenue chez vous » ═══
     // Moment émotionnel (retour vers la terre des ancêtres) traité avec sobriété :
@@ -1161,11 +868,6 @@ export default function NationaliteFormPage() {
         <div className="min-h-screen relative py-8 px-4 overflow-hidden">
             <AnimatedBackground bgImageUrl={bgImageUrl} />
 
-            {/* Payment SDKs */}
-            <Script src="https://cdn.kkiapay.me/k.js" strategy="lazyOnload" />
-            <Script src="https://cdn.fedapay.com/checkout.js?v=1.1.7" strategy="lazyOnload" />
-            <div id="fedapay-nat-btn" className="hidden" />
-
             <div className="relative z-10 max-w-3xl mx-auto">
                 <div className="text-center mb-6">
                     <Link href="/nationalite" className="inline-flex items-center gap-2 text-xs text-slate-600 hover:text-slate-900 mb-3 transition-colors bg-white/80 px-3 py-1.5 rounded-full backdrop-blur-md border border-slate-200 shadow-sm"><ChevronLeft size={14} /> <T>Retour à l&apos;accueil</T></Link>
@@ -1175,7 +877,7 @@ export default function NationaliteFormPage() {
                                 {form.prenom ? `${t('Bonjour')} ${form.prenom},` : <T>Bonjour,</T>}
                             </h1>
                             <p className="text-sm text-slate-600 mt-2 font-semibold"><T>Déposez vos pièces justificatives pour finaliser votre dossier</T>{appRef ? ` : ${appRef}` : ''}.</p>
-                            <p className="text-xs text-emerald-700 mt-1 font-bold"><T>Vos frais sont déjà réglés : aucun paiement ne vous sera redemandé.</T></p>
+                            <p className="text-xs text-emerald-700 mt-1 font-bold"><T>Aucun frais ne vous sera demandé : déposez simplement vos pièces.</T></p>
                         </>
                     ) : (
                         <>
@@ -1193,7 +895,7 @@ export default function NationaliteFormPage() {
                                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${step > s.num ? 'bg-emerald-500 text-white' : step === s.num ? 'bg-emerald-500/10 border border-emerald-500 text-emerald-600' : 'bg-slate-50 border border-slate-200 text-slate-400'}`}>{step > s.num ? <CheckCircle2 size={12} /> : s.num}</div>
                                 <span className="text-[9px] font-bold uppercase tracking-wider hidden lg:block whitespace-nowrap">{t(s.label)}</span>
                             </div>
-                            {i < 5 && <div className={`w-6 lg:w-12 h-px mx-1.5 ${step > s.num ? 'bg-emerald-500/30' : 'bg-slate-200'}`} />}
+                            {i < STEPS.length - 1 && <div className={`w-6 lg:w-12 h-px mx-1.5 ${step > s.num ? 'bg-emerald-500/30' : 'bg-slate-200'}`} />}
                         </div>
                     ))}
                 </div>}
@@ -1223,7 +925,7 @@ export default function NationaliteFormPage() {
                                 <div><label className={LC}><T>Comment êtes-vous afro-descendant(e) ?</T><span className={RQ}>*</span></label><textarea rows={4} value={form.afro_descendant_description} onChange={e => u('afro_descendant_description', e.target.value)} placeholder={t("Décrivez en quelques mots votre ascendance...")} className={IC + ' resize-none'} /></div>
                                 <div className="border-t border-gray-200 pt-5"><h3 className="text-sm font-black text-slate-900 mb-4"><T>Informations sur votre Ascendance</T></h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{[1, 2].map(n => {
-                                        const f = form as Record<string, any>
+                                        const f = form as unknown as Record<string, string>
                                         return (
                                             <div key={n} className="space-y-3">
                                                 <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{n === 1 ? t('1ère') : t('2ème')} {t('Personne')}</span>
@@ -1231,7 +933,7 @@ export default function NationaliteFormPage() {
                                                 <div><label className={LC}><T>Prénom(s)</T></label><input title={`Prénom Ancêtre ${n}`} value={f[`ancestor${n}_prenom`] || ''} onChange={e => u(`ancestor${n}_prenom` as keyof NationaliteForm, e.target.value)} className={IC} placeholder={t('Prénom(s)')} /></div>
                                                 <div><label className={LC}><T>Date de naissance</T></label><input title={`Date de naissance Ancêtre ${n}`} type="date" value={f[`ancestor${n}_date_naissance`] || ''} onChange={e => u(`ancestor${n}_date_naissance` as keyof NationaliteForm, e.target.value)} className={IC} /></div>
                                                 <div><label className={LC}><T>Lien de parenté</T>{n === 1 && <span className={RQ}>*</span>}</label><select title={`Lien de parenté Ancêtre ${n}`} value={f[`ancestor${n}_lien_parente`] || ''} onChange={e => u(`ancestor${n}_lien_parente` as keyof NationaliteForm, e.target.value)} className={IC}><option value="">{t("Choisir")}</option>{LIENS.map(item => Object.assign(item, { translated: true })).map(l => <option key={l} value={l}>{l}</option>)}</select></div>
-                                                <div><label className={LC}><T>Vivant(e) ?</T></label><div className="flex gap-2">{[true, false].map(v => <button title={v ? t('Oui') : t('Non')} key={String(v)} onClick={() => u(`ancestor${n}_vivant` as keyof NationaliteForm, v)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${f[`ancestor${n}_vivant`] === v ? 'bg-emerald-50 border border-emerald-500/50 text-[#008751]' : 'bg-slate-50 border border-gray-200 text-gray-500 hover:bg-slate-100/50'}`}>{v ? t('Oui') : t('Non')}</button>)}</div></div>
+                                                <div><label className={LC}><T>Vivant(e) ?</T></label><div className="flex gap-2">{[true, false].map(v => <button title={v ? t('Oui') : t('Non')} key={String(v)} onClick={() => u(`ancestor${n}_vivant` as keyof NationaliteForm, v)} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${form[n === 1 ? 'ancestor1_vivant' : 'ancestor2_vivant'] === v ? 'bg-emerald-50 border border-emerald-500/50 text-[#008751]' : 'bg-slate-50 border border-gray-200 text-gray-500 hover:bg-slate-100/50'}`}>{v ? t('Oui') : t('Non')}</button>)}</div></div>
                                                 <div><label className={LC}><T>Nationalité</T></label><select title={`Nationalité Ancêtre ${n}`} value={f[`ancestor${n}_nationalite`] || ''} onChange={e => u(`ancestor${n}_nationalite` as keyof NationaliteForm, e.target.value)} className={IC}><option value="">{t("Pays")}</option>{COUNTRIES.map(item => Object.assign(item, { translated: true })).map(c => <option key={c} value={c}>{t(c)}</option>)}</select></div>
                                                 <div><label className={LC}><T>Pays de résidence</T></label><select title={`Pays de résidence Ancêtre ${n}`} value={f[`ancestor${n}_pays_residence`] || ''} onChange={e => u(`ancestor${n}_pays_residence` as keyof NationaliteForm, e.target.value)} className={IC}><option value="">{t("Pays")}</option>{COUNTRIES.map(item => Object.assign(item, { translated: true })).map(c => <option key={c} value={c}>{t(c)}</option>)}</select></div>
                                                 <div><label className={LC}><T>Autres informations</T></label><textarea title={`Autres informations Ancêtre ${n}`} rows={2} value={f[`ancestor${n}_autres_infos`] || ''} onChange={e => u(`ancestor${n}_autres_infos` as keyof NationaliteForm, e.target.value)} className={IC + ' resize-none'} placeholder={t('Informations complémentaires...')} /></div>
@@ -1254,7 +956,7 @@ export default function NationaliteFormPage() {
                                     <div><label className={LC}><T>Pays de résidence</T><span className={RQ}>*</span></label><select title={t("Pays de résidence")} value={form.pays_residence} onChange={e => u('pays_residence', e.target.value)} className={IC}><option value="">{t("Pays")}</option>{COUNTRIES.map(item => Object.assign(item, { translated: true })).map(c => <option key={c} value={c}>{t(c)}</option>)}</select></div>
                                     <div className="md:col-span-2"><label className={LC}><T>Adresse complète</T></label><input title={t("Adresse")} value={form.adresse_residence} onChange={e => u('adresse_residence', e.target.value)} className={IC} placeholder={t('Adresse')} /></div>
                                     <div><label className={LC}><T>Téléphone</T></label><input title={t("Téléphone")} value={form.telephone} onChange={e => u('telephone', e.target.value)} className={IC} placeholder={t("+229 XX XX XX XX")} /></div>
-                                    <div><label className={LC}><T>Email</T><span className={RQ}>*</span></label><input title={t("Email")} type="email" value={form.email} onChange={e => u('email', e.target.value)} readOnly={preInscriptionDone && !resumeMode && !myafroMode} className={`${IC} ${preInscriptionDone && !resumeMode && !myafroMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder={t("email@exemple.com")} />{preInscriptionDone && !resumeMode && !myafroMode && <p className="text-[10px] text-gray-400 mt-1"><T>L’adresse de votre pré-inscription identifie votre dossier et votre paiement : elle ne se modifie plus ici.</T></p>}</div>
+                                    <div><label className={LC}><T>Email</T><span className={RQ}>*</span></label><input title={t("Email")} type="email" value={form.email} onChange={e => u('email', e.target.value)} readOnly={preInscriptionDone && !resumeMode && !myafroMode} className={`${IC} ${preInscriptionDone && !resumeMode && !myafroMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`} placeholder={t("email@exemple.com")} />{preInscriptionDone && !resumeMode && !myafroMode && <p className="text-[10px] text-gray-400 mt-1"><T>L’adresse de votre pré-inscription identifie votre dossier : elle ne se modifie plus ici.</T></p>}</div>
                                     <div><label className={LC}><T>Profession</T></label><select title={t("Profession")} value={form.profession} onChange={e => u('profession', e.target.value)} className={IC}><option value="">{t("Choisir")}</option>{PROFESSIONS.map(p => <option key={p} value={p}>{t(p)}</option>)}</select></div>
                                 </div>
 
@@ -1298,7 +1000,7 @@ export default function NationaliteFormPage() {
 
                                 <div className="border-t border-gray-200 pt-5"><h3 className="text-sm font-black text-slate-900 mb-4"><T>Informations sur vos parents</T></h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{([['pere', 'Père'], ['mere', 'Mère']] as const).map(([k, p]) => {
-                                        const f = form as Record<string, any>
+                                        const f = form as unknown as Record<string, string>
                                         return (
                                             <div key={t(p)} className="space-y-3">
                                                 <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em]">{t(p)}</span>
@@ -1476,146 +1178,9 @@ export default function NationaliteFormPage() {
                                 )
                             })()}
 
-                            {step === 6 && <div className="space-y-5">
-                                <h2 className="text-lg font-black text-slate-900">{resumeMode || prepayeMyafro ? <T>Finalisation de votre dossier</T> : <T>Paiement des frais de traitement</T>}</h2>
-                                {!resumeMode && !prepayeMyafro && (
-                                    <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center shadow-sm">
-                                        <p className="text-3xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
-                                        <p className="text-xs text-gray-500 mt-1"><T>Frais de traitement de dossier</T>{TVA_ENABLED && <> · {`TVA ${TVA_RATE}% incluse`}</>}</p>
-                                    </div>
-                                )}
-
-                                {resumeMode ? (
-                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">
-                                        <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
-                                        <p className="text-sm font-bold text-emerald-700"><T>Vos frais de traitement sont déjà réglés.</T></p>
-                                        <p className="text-xs text-gray-500 mt-1"><T>Il ne vous reste plus qu&apos;à confirmer l&apos;envoi de vos pièces justificatives.</T></p>
-                                    </div>
-                                ) : prepayeMyafro ? (
-                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">
-                                        <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
-                                        <p className="text-sm font-bold text-emerald-700"><T>Vos frais de reprise sont déjà réglés.</T></p>
-                                        <p className="text-xs text-gray-500 mt-1"><T>Aucun paiement ne vous est demandé : confirmez simplement l&apos;envoi de votre dossier.</T></p>
-                                    </div>
-                                ) : paymentDone ? (
-                                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 text-center shadow-sm">
-                                        <CheckCircle2 size={32} className="text-emerald-600 mx-auto mb-2" />
-                                        <p className="text-sm font-bold text-emerald-700"><T>Paiement effectué via</T> {paymentProvider}</p>
-                                        {paymentTxId && <p className="text-[10px] text-gray-500 mt-1 font-mono">TX: {paymentTxId}</p>}
-                                    </div>
-                                ) : paymentProcessing ? (
-                                    <div className="flex flex-col items-center py-8">
-                                        <Loader2 size={32} className="animate-spin text-[#008751]" />
-                                        <p className="text-sm text-gray-500 mt-3"><T>Traitement en cours...</T></p>
-                                        <p className="text-xs text-gray-400 mt-2 text-center max-w-xs"><T>Finalisez le paiement dans la fenêtre sécurisée. Avec une carte bancaire hors zone UEMOA (Canada, Europe…), privilégiez le Mobile Money.</T></p>
-                                        <button
-                                            type="button"
-                                            onClick={() => { setPaymentProcessing(false); setPaymentError(t('Paiement annulé. Vous pouvez réessayer ou choisir un autre moyen de paiement.')) }}
-                                            className="mt-4 text-xs font-bold text-gray-500 underline hover:text-[#008751]"
-                                        >
-                                            <T>La fenêtre s&apos;est fermée ou reste bloquée ? Cliquez ici pour réessayer</T>
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <p className="text-xs text-gray-500 font-bold"><T>Sélectionnez votre moyen de paiement :</T></p>
-                                        {providers.length === 0 ? (
-                                            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center"><CreditCard size={24} className="text-gray-400 mx-auto mb-2" /><p className="text-xs text-amber-800"><T>Aucune passerelle de paiement active. Contactez l&apos;administrateur.</T></p></div>
-                                        ) : providers.map(p => (
-                                            <button key={p.id} title={`Payer avec ${p.name}`} onClick={payHandlers[p.id]} className={`w-full flex items-center gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 hover:bg-slate-100/50 transition-all group text-left`}>
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${p.color}`}><CreditCard size={22} /></div>
-                                                <div className="flex-1"><p className="text-sm font-bold text-gray-900 group-hover:text-[#008751] transition-colors">{p.name}</p><p className="text-[10px] text-gray-500 uppercase tracking-widest">{p.subtitle}</p></div>
-                                                <ChevronRight size={18} className="text-gray-400 group-hover:text-gray-900 transition-colors" />
-                                            </button>
-                                        ))}
-                                        {paymentError && <p className="text-xs text-red-700 flex items-center gap-2"><AlertCircle size={12} /> {paymentError}</p>}
-
-                                        {/* ── CODE D'INVITATION ──────────────────────────────
-                                            Pour qui ne peut pas payer en ligne : une carte émise
-                                            hors zone UEMOA est souvent refusée par la banque
-                                            émettrice avant même l'authentification. L'agence remet
-                                            alors un code, et le client garde son formulaire au lieu
-                                            qu'on le remplisse à sa place.
-
-                                            Ce que valide cet écran n'engage rien : la gratuité est
-                                            accordée par le serveur à la soumission. */}
-                                        <div className="pt-2 border-t border-slate-200">
-                                            {!codeInvitationOuvert && !codeInvitationValide ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setCodeInvitationOuvert(true)}
-                                                    className="text-xs font-bold text-slate-500 hover:text-[#008751] underline transition-colors"
-                                                >
-                                                    <T>Votre banque refuse le paiement ? Utiliser un code d&apos;invitation</T>
-                                                </button>
-                                            ) : (
-                                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                                    <p className="text-xs font-bold text-slate-700 mb-1">
-                                                        <T>Code d&apos;invitation</T>
-                                                    </p>
-                                                    <p className="text-[11px] text-slate-500 mb-3">
-                                                        <T>Remis par notre équipe. Il remplace le règlement des frais de dossier.</T>
-                                                    </p>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            value={codeInvitation}
-                                                            onChange={e => { setCodeInvitation(e.target.value.toUpperCase()); setCodeInvitationErreur(''); setCodeInvitationValide(null) }}
-                                                            placeholder="RGB-XXXX-XXXX-XXXX"
-                                                            disabled={!!codeInvitationValide}
-                                                            className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono tracking-wider text-slate-900 focus:outline-none focus:border-[#008751] transition-colors disabled:opacity-60"
-                                                        />
-                                                        {!codeInvitationValide && (
-                                                            <button
-                                                                type="button"
-                                                                onClick={verifierInvitation}
-                                                                disabled={codeInvitationBusy || codeInvitation.trim().length < 8}
-                                                                className="px-4 py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold disabled:opacity-40 transition-colors flex items-center gap-2"
-                                                            >
-                                                                {codeInvitationBusy ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                                                                <T>Vérifier</T>
-                                                            </button>
-                                                        )}
-                                                    </div>
-
-                                                    {codeInvitationErreur && (
-                                                        <p className="text-xs text-red-700 flex items-center gap-2 mt-2">
-                                                            <AlertCircle size={12} /> {codeInvitationErreur}
-                                                        </p>
-                                                    )}
-
-                                                    {codeInvitationValide && (
-                                                        <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                                                            <p className="text-xs font-bold text-emerald-800 flex items-center gap-2">
-                                                                <CheckCircle2 size={14} /> <T>Code accepté</T>
-                                                            </p>
-                                                            <p className="text-[11px] text-emerald-700 mt-1">
-                                                                <T>Les frais de dossier sont couverts.</T>
-                                                                {codeInvitationValide.couvre_ancestrale
-                                                                    ? <> <T>La recherche ancestrale l&apos;est également, si elle vous est proposée.</T></>
-                                                                    : null}
-                                                            </p>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => { setPaymentDone(true); setPaymentError('') }}
-                                                                className="mt-3 w-full py-2.5 rounded-xl bg-[#008751] hover:bg-[#00643C] text-white text-sm font-bold transition-colors"
-                                                            >
-                                                                <T>Continuer avec ce code</T>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <PaymentPrivacyNotice />
-                                        <div className="flex items-center gap-2 text-gray-400 justify-center mt-2"><Shield size={14} /><span className="text-[10px] font-bold uppercase tracking-widest"><T>Transaction 100% sécurisée</T></span></div>
-                                    </div>
-                                )}
-                            </div>}
-
                             {step === 5 && <div className="space-y-5">
                                 <h2 className="text-lg font-black text-slate-900"><T>Récapitulatif de votre demande</T></h2>
-                                <p className="text-xs text-gray-500"><T>Vérifiez attentivement vos informations avant de procéder au paiement.</T></p>
+                                <p className="text-xs text-gray-500"><T>Vérifiez attentivement vos informations avant d’envoyer votre demande.</T></p>
                                 {[
                                     { title: t('Identité'), items: [[t('Nom complet'), `${form.prenom} ${form.nom}`], [t('Genre'), form.genre && t(form.genre)], [t('Né(e) le'), form.date_naissance], [t('Nationalité'), form.nationalite], [t('Résidence'), `${form.adresse_residence ? form.adresse_residence + ', ' : ''}${form.pays_residence}`], [t('Email'), form.email], [t('Téléphone'), form.telephone], [t('Profession'), form.profession && t(form.profession)]] },
                                     { title: t('Afro-descendance'), items: [[t('Description'), form.afro_descendant_description], [t('Ancêtre 1'), `${form.ancestor1_prenom} ${form.ancestor1_nom} : ${form.ancestor1_lien_parente}`], ...(form.ancestor2_nom ? [[t('Ancêtre 2'), `${form.ancestor2_prenom} ${form.ancestor2_nom} : ${form.ancestor2_lien_parente}`]] : []), ...(myafroMode ? [[t('Date MyAfroOrigins'), form.myafro_date]] : [])] },
@@ -1648,11 +1213,17 @@ export default function NationaliteFormPage() {
                                         })}
                                     </div>
                                 </div>
-                                {/* Montant à régler */}
-                                <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-5 text-center">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-bold mb-1"><T>Montant à régler à l&apos;étape suivante</T>{TVA_ENABLED && <> · {`TVA ${TVA_RATE}% incluse`}</>}</p>
-                                    <p className="text-2xl font-black text-[#008751]"><Price amount={fromHt(formAmount, formCurrency).ttc} currency={formCurrency} showOriginal /></p>
-                                </div>
+                                {/* Demande gratuite (agence agréée) : aucun paiement, envoi direct */}
+                                {!resumeMode && (
+                                    <div className="bg-gradient-to-r from-emerald-50 to-amber-50/50 border border-emerald-100 rounded-2xl p-6 text-center">
+                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 border border-emerald-200 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-3">
+                                            <Shield size={12} /> <T>Agence agréée</T>
+                                        </span>
+                                        <p className="text-2xl font-black text-[#008751]"><T>Demande gratuite</T></p>
+                                        <p className="text-xs text-gray-600 mt-2 leading-relaxed max-w-md mx-auto"><T>Retour Gagnant Bénin est désormais agréée : votre demande de nationalité est traitée sans aucun frais de dossier. Aucun moyen de paiement ne vous sera demandé.</T></p>
+                                        <p className="text-xs text-gray-500 mt-2 leading-relaxed max-w-md mx-auto"><T>En cliquant sur « Envoyer ma demande », votre dossier part directement à notre équipe.</T></p>
+                                    </div>
+                                )}
                             </div>}
                         </div>
                     </motion.div>
@@ -1669,11 +1240,11 @@ export default function NationaliteFormPage() {
                         </>
                     ) : (<>
                         {step > 1 ? <button onClick={prev} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors font-bold"><ArrowLeft size={16} /> <T>Précédent</T></button> : <div />}
-                        {step < 6 ? (
+                        {step < 5 ? (
                             <button onClick={next} disabled={!!depotEnCours} className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm px-6 py-3 rounded-xl transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)] disabled:opacity-70">{depotEnCours ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi sécurisé de vos pièces</T> {depotEnCours.fait}/{depotEnCours.total}</> : <><T>Suivant</T> <ArrowRight size={16} /></>}</button>
                         ) : (
-                            <button onClick={submit} disabled={submitting || !paymentDone} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
-                                {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi...</T></> : !paymentDone ? <><CreditCard size={16} /> <T>Payez d&apos;abord</T></> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Confirmer et Soumettre</T></>}
+                            <button onClick={submit} disabled={submitting || !!depotEnCours} className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-sm px-8 py-3 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                                {submitting ? <><Loader2 size={16} className="animate-spin" /> <T>Envoi…</T></> : resumeMode ? <><Send size={16} /> <T>Envoyer mes documents</T></> : <><Send size={16} /> <T>Envoyer ma demande</T></>}
                             </button>
                         )}
                     </>)}

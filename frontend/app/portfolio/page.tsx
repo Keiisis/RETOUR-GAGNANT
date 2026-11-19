@@ -184,8 +184,8 @@ export default function PortfolioImmersivePage() {
                     >
                         <video
                             ref={videoRef}
-                            src="https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/videos/portfolio/video-cut.mp4"
-                            poster="https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/gallery/portfolio/image_RGB.jpg"
+                            src="/videos/logo animé.mp4"
+                            poster="/images/portfolio-rgb.webp"
                             autoPlay
                             muted
                             playsInline
@@ -313,7 +313,7 @@ export default function PortfolioImmersivePage() {
                 >
                     <div className="absolute inset-0 bg-gradient-to-tr from-[#008751]/20 to-[#FCD116]/20 z-10 mix-blend-overlay opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                     <Image
-                        src="https://ywvsfhqdtkgzavxsumnk.supabase.co/storage/v1/object/public/gallery/portfolio/image_RGB.jpg"
+                        src="/images/portfolio-rgb.webp"
                         alt="Retour Gagnant Bénin"
                         fill
                         className="object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"

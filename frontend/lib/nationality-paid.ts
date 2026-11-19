@@ -7,5 +7,6 @@ export function isPaidNationality(status?: string | null): boolean {
         .normalize('NFD')
         .replace(/[̀-ͯ]/g, '')
         .trim()
-    return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok'].includes(v)
+    // « gratuit » : demande sans frais depuis l'agrément (nov. 2026), même droits qu'un dossier réglé.
+    return ['paye', 'paid', 'success', 'reussi', 'completed', 'ok', 'gratuit'].includes(v)
 }

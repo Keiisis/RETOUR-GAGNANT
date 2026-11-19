@@ -3,11 +3,11 @@
 //
 //  GET    → la fiche
 //  PATCH  → mise à jour (agents et admins) ; numéro, client et source figés
-//  DELETE → suppression (admins seulement)
+//  Pas de DELETE : une fiche ne se supprime pas (décision de l'agence, 18/11/2026).
 // ══════════════════════════════════════════════════════════════
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { roleAutorise, verifyApiAuth } from '@/lib/api-auth'
+import { verifyApiAuth } from '@/lib/api-auth'
 import { nettoyerSaisie } from '@/lib/fiche-suivi'
 
 export const dynamic = 'force-dynamic'
@@ -41,17 +41,4 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!data) return NextResponse.json({ error: 'Fiche introuvable' }, { status: 404 })
     return NextResponse.json({ fiche: data })
-}
-
-export async function DELETE(request: NextRequest, { params }: Ctx) {
-    const auth = await verifyApiAuth(request, 'agent')
-    if (!auth.authenticated) return auth.error!
-    if (!roleAutorise(auth.role, 'admin')) return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 })
-    const { id } = await params
-    if (!UUID.test(id)) return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 })
-
-    const { data, error } = await db().from('fiches_suivi_client').delete().eq('id', id).select('id').maybeSingle()
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (!data) return NextResponse.json({ error: 'Fiche introuvable' }, { status: 404 })
-    return NextResponse.json({ ok: true })
 }

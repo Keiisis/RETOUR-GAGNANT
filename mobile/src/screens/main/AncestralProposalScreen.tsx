@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════
    Proposition Recherche Ancestrale.
 
-   Apparaît UNIQUEMENT après le paiement des frais de nationalité (260 €)
+   Apparaît UNIQUEMENT après l'envoi du dossier de nationalité
    quand il MANQUE les documents ancestraux (actes des grands-parents /
    arrière-grands-parents). Le client ACCEPTE (paie 250 €) ou DÉCLINE.
 

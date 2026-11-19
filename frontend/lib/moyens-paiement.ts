@@ -6,6 +6,9 @@
 
 /** Moyens de règlement acceptés hors passerelle en ligne. */
 export const MOYENS_PAIEMENT = {
+    /* Demande sans frais depuis l'agrément (nov. 2026) : cas par défaut.
+       Rien n'est encaissé, donc aucune facture. */
+    gratuit: 'Gratuit (agence agréée)',
     momo: 'Mobile Money',
     rib: 'Virement bancaire (RIB)',
     kkiapay: 'Kkiapay',
