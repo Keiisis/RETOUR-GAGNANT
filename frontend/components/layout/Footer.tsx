@@ -90,7 +90,7 @@ export default function Footer() {
                         <h4 className="text-xl font-semibold font-fraunces mb-6 text-[#FCD116]"><T>Services Clés</T></h4>
                         <ul className="space-y-4 text-gray-300">
                             {[
-                                { name: 'Obtention Passeport', href: '/services/passeport' },
+                                { name: 'Nationalité béninoise', href: '/services/nationalite-beninoise' },
                                 { name: 'Achat Immobilier', href: '/services/logement' },
                                 { name: 'Création Entreprise', href: '/services/business' },
                                 { name: 'Tourisme & Culture', href: '/services/culture' },

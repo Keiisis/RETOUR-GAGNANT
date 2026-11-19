@@ -3,7 +3,7 @@ import FAQClient from './FAQClient'
 
 export const metadata: Metadata = {
     title: 'Questions Fréquentes (FAQ)',
-    description: 'Trouvez les réponses à vos questions sur nos services d\'accompagnement : passeport, immobilier, création d\'entreprise, investissement au Bénin.',
+    description: 'Trouvez les réponses à vos questions sur nos services d\'accompagnement : nationalité béninoise, immobilier, création d\'entreprise, investissement au Bénin.',
     alternates: { canonical: '/faq' },
 }
 
@@ -11,8 +11,8 @@ export default function FAQPage() {
     // JSON-LD FAQPage schema
     const faqItems = [
         {
-            q: "Quels documents sont nécessaires pour obtenir un passeport béninois ?",
-            a: "Il vous faut : une copie intégrale du passeport en cours de validité, un acte de naissance certifié conforme, un certificat de nationalité béninoise, une CIP A, un extrait de casier judiciaire, un justificatif de domicile, 4 photos biométriques et le formulaire officiel rempli."
+            q: "Comment obtenir un passeport béninois ?",
+            a: "Le passeport est inclus dans la demande de nationalité et il est gratuit. L'État le remet directement lors de la cérémonie officielle de remise, au terme de la procédure : aucune démarche ni aucun frais séparés."
         },
         {
             q: "Combien coûte la création d'une entreprise au Bénin ?",
@@ -24,7 +24,7 @@ export default function FAQPage() {
         },
         {
             q: "Puis-je obtenir la nationalité béninoise en tant qu'afro-descendant ?",
-            a: "Oui, le Bénin offre des procédures facilitées pour les afro-descendants. Notre accompagnement inclut la constitution du dossier, la liaison avec le Ministère de la Justice et un suivi prioritaire avec référent dédié."
+            a: "Oui, le Bénin offre des procédures facilitées pour les afro-descendants. La demande est gratuite, tout comme notre accompagnement complet : Retour Gagnant Bénin est une agence agréée. Nous constituons le dossier, assurons la liaison avec le Ministère de la Justice et le suivi jusqu'à la cérémonie officielle de remise."
         },
         {
             q: "Comment se déroule un accompagnement immobilier ?",
@@ -32,7 +32,7 @@ export default function FAQPage() {
         },
         {
             q: "Quels sont vos délais de traitement ?",
-            a: "Les délais varient selon le service. Un passeport standard prend généralement 2-4 semaines, le Pack VIP est traité en une journée. La création d'entreprise prend 1-2 semaines. Nous vous communiquons un délai précis lors de la consultation initiale."
+            a: "Les délais varient selon le service. Pour la nationalité, ils dépendent du dossier et de l'administration. La création d'entreprise prend 1-2 semaines. Nous vous communiquons un délai précis lors de la consultation initiale."
         },
         {
             q: "La première consultation est-elle gratuite ?",

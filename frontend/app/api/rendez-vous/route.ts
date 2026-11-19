@@ -18,7 +18,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 const SERVICE_KNOWLEDGE: { match: string[]; brief: string }[] = [
     {
         match: ['passeport', 'document', 'administratif', 'cip', 'état civil', 'etat civil'],
-        brief: "Passeport & documents officiels : enrôlement, acte de naissance, CIP, passeport. Pièces utiles : pièce d'identité, justificatif d'état civil, justificatif de domicile. On accompagne la diaspora à distance et sur place à Cotonou.",
+        brief: "Passeport : inclus et gratuit dans la demande de nationalité, remis directement par l'État lors de la cérémonie officielle de remise ; aucune démarche ni aucun frais séparés, orienter vers /nationalite/formulaire. Autres documents officiels (acte de naissance, CIP) : pièces utiles : pièce d'identité, justificatif d'état civil, justificatif de domicile. On accompagne la diaspora à distance et sur place à Cotonou.",
     },
     {
         match: ['logement', 'immobilier', 'louer', 'acheter', 'foncier', 'terrain', 'bien'],
@@ -42,7 +42,7 @@ const SERVICE_KNOWLEDGE: { match: string[]; brief: string }[] = [
     },
     {
         match: ['nationalité', 'nationalite', 'vip', 'citoyenneté', 'citoyennete'],
-        brief: "Nationalité béninoise (afro-descendants) : accompagnement à l'obtention de la nationalité béninoise. Pièces souvent demandées : actes de naissance (et ascendants si possible), pièce d'identité, justificatifs de filiation/afro-descendance. Le test d'éligibilité gratuit (« L'Oracle ») permet une première analyse.",
+        brief: "Nationalité béninoise (afro-descendants) : demande et accompagnement complet gratuits (agence agréée), passeport inclus et remis par l'État lors de la cérémonie officielle. Pièces souvent demandées : actes de naissance (et ascendants si possible), pièce d'identité, justificatifs de filiation/afro-descendance. Le test d'éligibilité gratuit (« L'Oracle ») permet une première analyse.",
     },
     {
         match: ['ancestral', 'ancêtre', 'ancetre', 'généalogie', 'genealogie', 'recherche'],

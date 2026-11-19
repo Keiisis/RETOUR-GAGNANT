@@ -196,7 +196,7 @@ export default function ServiceCreatePage() {
                                 type="text"
                                 value={title}
                                 onChange={e => handleTitleChange(e.target.value)}
-                                placeholder={t("Ex: Passeport & Documents VIP")}
+                                placeholder={t("Ex: Création d'entreprise")}
                                 className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-white text-lg font-bold focus:outline-none focus:border-[#008751]/40 transition-colors"
                             />
                         </div>

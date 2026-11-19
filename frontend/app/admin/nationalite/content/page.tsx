@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
-import { FloppyDisk as Save, CircleNotch as Loader2, CheckCircle as CheckCircle2, ArrowLeft, Plus, Trash as Trash2, Layout, FileText, CreditCard, Info, WarningCircle, ListChecks, Crown, Question, ShieldCheck, ArrowsDownUp } from '@phosphor-icons/react';
+import { FloppyDisk as Save, CircleNotch as Loader2, CheckCircle as CheckCircle2, ArrowLeft, Plus, Trash as Trash2, Layout, FileText, Info, WarningCircle, ListChecks, Crown, Question, ShieldCheck, ArrowsDownUp } from '@phosphor-icons/react';
 import Link from 'next/link'
 import { DEFAULT_NATIONALITE_VIP as DEF, type NationaliteVipContent } from '@/lib/content/nationaliteVip'
 
@@ -193,15 +193,6 @@ export default function NationaliteVipContentPage() {
                 {/* FAQ */}
                 <Section icon={<Question size={18} />} color="#8b5cf6" title="Questions fréquentes" sub={`${c.faq.length} question(s)`}>
                     <ObjList items={c.faq} onChange={v => up('faq', v)} blank={{ q: '', r: '' }} fields={[{ key: 'q', ph: 'Question' }, { key: 'r', ph: 'Réponse', ta: true }]} />
-                </Section>
-
-                {/* TARIFS */}
-                <Section icon={<CreditCard size={18} />} color="#FCD116" title="Options tarifaires (calculateur)" sub="Affiché seulement si le calculateur est activé globalement">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <div onClick={() => up('pricing_show_calculator', !c.pricing_show_calculator)} className={`w-11 h-6 rounded-full transition-all cursor-pointer relative ${c.pricing_show_calculator ? 'bg-emerald-500' : 'bg-white/10'}`}><div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform shadow ${c.pricing_show_calculator ? 'translate-x-5' : ''}`} /></div>
-                        <span className="text-sm text-white font-bold">Afficher le calculateur de prix</span>
-                    </label>
-                    <ObjList items={c.pricing_options} onChange={v => up('pricing_options', v)} blank={{ label: '', price: '' }} fields={[{ key: 'label', ph: 'Label (ex : Pack VIP)' }, { key: 'price', ph: 'Prix (ex : 350.000 FCFA)' }]} />
                 </Section>
 
                 {/* CTA 1 */}

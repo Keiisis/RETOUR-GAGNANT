@@ -93,12 +93,10 @@ const generateVirtualAssistantRecap = (apps: MyafroApp[]) => {
         }
     })
 
-    if (unpaid > 0) {
-        suggestions.push(`Paiement manquant : **${unpaid}** client(s) n'ont pas encore finalisé les frais de reprise de 50 €.`);
-    }
-
+    /* Le récap est gratuit depuis novembre 2026 (agence agréée) : plus aucun
+       frais de reprise à réclamer. Les règlements comptés ici sont antérieurs. */
     if (paid > 0) {
-        suggestions.push(`Instruction : **${paid}** client(s) ont payé les 50 € de reprise et attendent la validation de leurs documents.`);
+        suggestions.push(`Instruction : **${paid}** client(s) ont réglé la reprise avant la gratuité et attendent la validation de leurs documents.`);
     }
 
     return {
@@ -331,14 +329,15 @@ export default function MyafroRepriseSection() {
                         </div>
                     </div>
 
-                    {/* Option de paiement manuel lié à une facture */}
+                    {/* Lien « déjà réglé » : client ayant payé la reprise avant la
+                        gratuité (novembre 2026), facture à l'appui. */}
                     <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 mb-6">
                         <p className="text-sm font-black text-white flex items-center gap-2 mb-2">
                             <ShieldCheck size={18} className="text-emerald-400" />
-                            Paiement manuel préalable des 50 € de reprise
+                            Client ayant réglé la reprise avant la gratuité
                         </p>
                         <p className="text-[11px] text-gray-500 mb-4">
-                            Si le client a déjà réglé ces frais de façon manuelle, cochez cette case et sélectionnez la facture associée. Le formulaire ne lui demandera aucun paiement, et la facture sera rattachée à sa demande.
+                            Le récap est gratuit depuis novembre 2026. Si le client avait réglé les frais de reprise avant cette date, cochez cette case et sélectionnez la facture associée : elle sera rattachée à sa demande.
                         </p>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-300">
@@ -377,7 +376,7 @@ export default function MyafroRepriseSection() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                         <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-5">
                             <p className="text-sm font-black text-white flex items-center gap-2 mb-1"><Mail size={16} className="text-emerald-400" /> Inviter un client par email</p>
-                            <p className="text-[11px] text-gray-500 mb-4">Le client reçoit un lien personnel vers le formulaire de vérification MyAfroOrigins{linkPaid ? ' (frais déjà réglés)' : ' (frais de reprise : 50 €)'}.</p>
+                            <p className="text-[11px] text-gray-500 mb-4">Le client reçoit un lien personnel vers le formulaire de vérification MyAfroOrigins{linkPaid ? ' (frais déjà réglés)' : ' (gratuit)'}.</p>
                             <div className="space-y-3">
                                 <input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Nom du client (optionnel)" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500/50" />
                                 <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Email du client" type="email" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500/50" />
@@ -513,8 +512,8 @@ export default function MyafroRepriseSection() {
                                                 </p>
                                                 <p className="text-[11px] text-gray-500 mt-0.5">{a.email}{a.telephone ? ` · ${a.telephone}` : ''}{a.pays_residence ? ` · ${a.pays_residence}` : ''}</p>
                                                 <div className="flex items-center gap-2 mt-2 text-[10px]">
-                                                    <span className={`px-2 py-0.5 rounded-full font-black ${a.payment_status === 'payé' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                                                        {a.payment_status === 'payé' ? `Payé ${a.amount} ${a.currency}` : 'Paiement en attente'}
+                                                    <span className={`px-2 py-0.5 rounded-full font-black ${a.payment_status === 'payé' || a.payment_status === 'gratuit' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+                                                        {a.payment_status === 'gratuit' ? 'Gratuit' : a.payment_status === 'payé' ? `Payé ${a.amount} ${a.currency}` : 'Non réglé'}
                                                     </span>
                                                     <span className="px-2 py-0.5 rounded-full bg-white/5 text-gray-400 font-bold">{(a.documents_uploaded || []).length} pièce(s)</span>
                                                     {a.recherche_ancestrale_paid ? (

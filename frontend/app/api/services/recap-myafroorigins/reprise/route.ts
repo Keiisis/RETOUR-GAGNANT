@@ -2,11 +2,13 @@
 //  Lecture d'un LIEN DE REPRISE MyAfroOrigins (envoyé par l'équipe).
 //
 //  Le navigateur ne décode plus le jeton lui-même : il le demande ici. C'est
-//  le serveur, qui connaît le secret, qui dit si le lien est valide et si le
-//  règlement est déjà fait — un jeton recopié à la main et modifié ne peut
-//  donc pas faire disparaître l'étape de paiement.
+//  le serveur, qui connaît le secret, qui dit si le lien est valide.
 //
-//  GET ?t=<jeton> → { valide, prepaye, facture, email, nom, tarif }
+//  Le récap est gratuit depuis novembre 2026 (agence agréée). Les liens émis
+//  avant, marqués « déjà payé », restent honorés : leur facture est vérifiée
+//  et rattachée à la demande.
+//
+//  GET ?t=<jeton> → { valide, prepaye, facture, deja_utilise, email, nom }
 // ══════════════════════════════════════════════════════════════
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -35,12 +37,6 @@ export async function GET(request: NextRequest) {
             { status: 400 },
         )
     }
-
-    const { data: reglage } = await supabase
-        .from('page_sections').select('content')
-        .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').maybeSingle()
-    const c = (reglage?.content || {}) as Record<string, unknown>
-    const tarif = { montant: Number(c.amount) > 0 ? Number(c.amount) : 50, devise: String(c.currency || 'EUR').toUpperCase() }
 
     /* Règlement annoncé : on vérifie DÈS L'OUVERTURE que la facture tient
        toujours, pour que le client ne remplisse pas tout un formulaire avant
@@ -71,6 +67,5 @@ export async function GET(request: NextRequest) {
         deja_utilise: dejaUtilise,
         email: r.email,
         nom: r.nom,
-        tarif,
     })
 }

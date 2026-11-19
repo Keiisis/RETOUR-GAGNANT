@@ -1,15 +1,16 @@
 /* ═══════════════════════════════════════════════════════════
    Récap de dossier MyAfroOrigins — écran de service.
 
-   Le service arrivait dans l'application par la fiche GÉNÉRIQUE : un titre,
-   un prix de 50 €, un bouton « payer ». Deux fautes graves.
-   · On encaissait sans recueillir le CONSENTEMENT au traitement des données
-     (loi n° 2017-20, Code du numérique béninois) — ce que le site exige.
-   · On encaissait sans le RÉCIT de la situation, qui est la matière même de
-     l'analyse : sans lui, la prestation ne peut pas être rendue.
+   Service GRATUIT depuis l'agrément de l'agence (décision du 18/11/2026) :
+   le client décrit sa situation, consent au traitement de ses données, et
+   la demande part directement, sans paiement.
+   · Le CONSENTEMENT au traitement des données (loi n° 2017-20, Code du
+     numérique béninois) reste exigé, comme sur le site.
+   · Le RÉCIT de la situation reste obligatoire : c'est la matière même de
+     l'analyse.
 
    Cet écran suit la structure éditoriale des autres services (Fa, Permis) et
-   porte le parcours complet : comprendre, décrire, consentir, régler, suivre.
+   porte le parcours complet : comprendre, décrire, consentir, envoyer, suivre.
 
    Charte v2 : blanc porteur, tricolore en accent, aucun fond sombre.
 ═══════════════════════════════════════════════════════════ */
@@ -30,15 +31,12 @@ import {
 import { supabase } from '../../config/supabase'
 import { screenColors as C, radius, shadows, fonts } from '../../config/theme'
 import { FlagBar } from '../../components/ui'
-import KkiapayModal from '../../components/KkiapayModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { useLang } from '../../contexts/LangContext'
 import { toast } from '../../lib/feedback'
 import { fetchWithTimeout } from '../../lib/fetch'
 import { aEnMemoire, avecMemoire, cleDuClient, etatMemorise } from '../../lib/memoire'
 import { authHeaders } from '../../config/api'
-import { envoyerOuMettreEnFile } from '../../lib/file-envois'
-import { montantAEncaisserXof } from '../../lib/tarif'
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'https://www.retourgagnantbenin.bj'
 const VERT_PROFOND = '#00643C'
@@ -67,7 +65,7 @@ const ETATS: Record<string, { label: string; Icone: typeof Clock }> = {
     clos: { label: 'Clos', Icone: Archive },
 }
 
-/* Ce que contient la fiche — annoncé avant l'achat, tenu après. */
+/* Ce que contient la fiche — annoncé avant la demande, tenu après. */
 const LIVRABLE = [
     { Icone: FileSearch, titre: 'Votre situation, reformulée', desc: 'Ce que nous avons compris, écrit noir sur blanc. Vous corrigez si nous nous trompons.' },
     { Icone: AlertTriangle, titre: 'Ce qui bloque', desc: 'Par ordre de gravité : la plateforme, vos pièces, ou l’état civil béninois.' },
@@ -95,16 +93,6 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
     const [rafraichit, setRafraichit] = useState(false)
     const [depotEnCours, setDepotEnCours] = useState<string | null>(null)
 
-    // Tarif officiel : `null` tant que la base n'a pas répondu. Aucun montant
-    // d'attente n'est affiché ni facturé (incident du 2026-08-19).
-    const [tarif, setTarif] = useState<number | null>(null)
-    /* Le tarif peut venir de la memoire locale pour que l'ecran s'affiche
-       plein tout de suite. Mais un montant memorise ne doit JAMAIS servir a
-       encaisser : tant que le serveur n'a pas confirme, le bouton reste
-       verrouille. C'est la lecon de l'incident du 2026-08-19, tenue sans
-       renoncer a l'affichage immediat. */
-    const [tarifConfirme, setTarifConfirme] = useState(false)
-    const [devise, setDevise] = useState('EUR')
     const [delai, setDelai] = useState('48 heures ouvrées')
 
     const [form, setForm] = useState({
@@ -113,7 +101,6 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
         situation: '', attentes: '',
     })
     const [consentement, setConsentement] = useState(false)
-    const [kkiapayVisible, setKkiapayVisible] = useState(false)
     const [envoi, setEnvoi] = useState(false)
 
     /* ── Chargement ─────────────────────────────────────────── */
@@ -138,34 +125,19 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
 
     useEffect(() => { if (profile) charger(); else setChargement(false) }, [profile, charger])
 
-    /* Tarif du service. Fraicheur zero : c'est un MONTANT, il est peint depuis
-       la derniere valeur connue pour eviter le clignotement, mais le reseau est
-       toujours consulte et remplace la valeur. */
+    /* Délai de remise annoncé, réglé depuis l'admin. Le service étant
+       gratuit, aucun montant n'est lu ici. */
     useEffect(() => {
-        void avecMemoire<{ amount: number; currency?: string; delai?: string }>(
-            'recap-myafro-tarif',
+        void avecMemoire<{ delai?: string }>(
+            'recap-myafro-delai',
             async () => {
                 const { data, error } = await supabase.from('page_sections').select('content')
                     .eq('page', 'recap-myafroorigins').eq('section_key', 'form_settings').maybeSingle()
-                /* Lecture en échec : on lève, le bouton reste verrouillé. Avant,
-                   l'erreur passait pour une réponse fraîche et le repli (50)
-                   devenait « confirmé ». Section absente : repli 50, identique
-                   au serveur (tarifRecapXof). */
                 if (error) throw new Error(error.message)
                 const c = (data?.content || {}) as Record<string, unknown>
-                return {
-                    amount: Number(c.amount) > 0 ? Number(c.amount) : 50,
-                    currency: c.currency ? String(c.currency) : undefined,
-                    delai: c.delai ? String(c.delai) : undefined,
-                }
+                return { delai: c.delai ? String(c.delai) : undefined }
             },
-            (v, depuisCache) => {
-                setTarif(v.amount)
-                if (v.currency) setDevise(v.currency)
-                if (v.delai) setDelai(v.delai)
-                if (!depuisCache) setTarifConfirme(true)
-            },
-            { fraicheurMs: 0 },
+            (v) => { if (v.delai) setDelai(v.delai) },
         )
     }, [])
 
@@ -184,18 +156,15 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
         }))
     }, [profile])
 
-    /* TTC en XOF (TVA en sus, lib/tarif). L'ancien calcul multipliait toute
-       devise non-XOF par la parité EUR : un tarif en USD ou GBP était faux.
-       `null` = devise sans parité fixe → paiement bloqué. */
-    const montantEncaisse = tarif === null ? null : montantAEncaisserXof(tarif, devise)
-    const montantXof = montantEncaisse ?? 0
-
     const champsOk = !!(form.prenom.trim() && form.nom.trim() && form.email.trim()
         && form.telephone.trim() && form.situation.trim().length >= MINI_SITUATION)
-    const pretAPayer = champsOk && consentement && tarif !== null && tarifConfirme && montantEncaisse !== null
+    const pret = champsOk && consentement
 
-    /* ── Paiement puis enregistrement ───────────────────────── */
-    const surTransaction = async (transactionId: string) => {
+    /* ── Envoi de la demande (gratuite, aucun paiement) ────────
+       Aucun argent n'est engagé : en cas d'échec, la demande reste à
+       l'écran et le client renvoie. Pas de file d'envoi ici : sans
+       référence de paiement, la route ne peut pas dédoublonner un rejeu. */
+    const envoyer = async () => {
         setEnvoi(true)
         try {
             const res = await fetchWithTimeout(`${API_BASE}/api/services/recap-myafroorigins`, {
@@ -205,8 +174,9 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                 body: JSON.stringify({
                     ...form,
                     consentement,
-                    payment_provider: 'kkiapay',
-                    payment_ref: transactionId,
+                    payment_method: 'gratuit',
+                    payment_status: 'gratuit',
+                    amount: 0,
                     source: 'mobile',
                 }),
             })
@@ -218,45 +188,12 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
             setForm(f => ({ ...f, situation: '', attentes: '', myafro_reference: '', depuis_quand: '' }))
             setConsentement(false)
             charger()
-            navigation.navigate('ResultatPaiement', {
-                etat: 'succes',
-                objet: t('Récap de dossier MyAfroOrigins'),
-                message: t('Un analyste reprend votre situation. Vous recevez votre fiche sous {d}.', { d: delai }),
-                reference: String(json.reference || transactionId),
-                // La référence affichée est celle de la DEMANDE : la facture,
-                // elle, se retrouve par la transaction.
-                tx: transactionId,
-                montant: montantXof,
-                devise: 'XOF',
-                actionLabel: t('Voir ma demande'),
-                actionRoute: 'RecapMyafro',
-            })
+            toast(
+                t('Demande envoyée'),
+                t('Un analyste reprend votre situation. Vous recevez votre fiche sous {d}.', { d: delai }),
+            )
         } catch (e) {
-            /* L'argent est parti : la demande est conservée sur le téléphone et
-               renvoyée toute seule au retour du réseau. La route dédoublonne
-               par `payment_ref`, rejouer ne peut pas créer deux demandes. */
-            await envoyerOuMettreEnFile({
-                chemin: '/api/services/recap-myafroorigins',
-                besoinJeton: false,
-                service: 'Récap MyAfroOrigins',
-                reference: transactionId,
-                corps: {
-                    ...form,
-                    consentement,
-                    payment_provider: 'kkiapay',
-                    payment_ref: transactionId,
-                    source: 'mobile',
-                },
-            })
-            navigation.navigate('ResultatPaiement', {
-                etat: 'succes',
-                objet: t('Récap de dossier MyAfroOrigins'),
-                message: t('Votre paiement est enregistré. La connexion étant instable, votre demande partira automatiquement dès le retour du réseau — vous n’avez rien à refaire.'),
-                reference: transactionId,
-                montant: montantXof,
-                devise: 'XOF',
-                motif: e instanceof Error ? e.message : undefined,
-            })
+            toast(t('Envoi impossible'), e instanceof Error ? e.message : t('Réessayez dans un instant.'))
         } finally { setEnvoi(false) }
     }
 
@@ -291,8 +228,6 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
             toast(t('Dépôt impossible'), e instanceof Error ? e.message : t('Réessayez dans un instant.'))
         } finally { setDepotEnCours(null) }
     }
-
-    const prix = tarif === null ? '…' : `${tarif} ${devise.toUpperCase() === 'EUR' ? '€' : devise}`
 
     /* ══ FORMULAIRE ══ */
     if (vue === 'formulaire') {
@@ -424,12 +359,12 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                 <View style={[styles.barre, { paddingBottom: insets.bottom + 12 }]}>
                     <View style={styles.barreHaut}>
                         <View>
-                            <Text style={styles.barreLabel}>{t('Montant à régler')}</Text>
-                            <Text style={styles.barreMontant}>{prix}</Text>
+                            <Text style={styles.barreLabel}>{t('Fiche d’analyse')}</Text>
+                            <Text style={styles.barreMontant}>{t('Gratuit')}</Text>
                         </View>
                         <View style={styles.securise}>
                             <ShieldCheck size={13} color={C.primary} strokeWidth={2.2} />
-                            <Text style={styles.securiseText}>{t('Vérifié avant validation')}</Text>
+                            <Text style={styles.securiseText}>{t('Agence agréée')}</Text>
                         </View>
                     </View>
 
@@ -440,36 +375,26 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                         </View>
                     ) : (
                         <Pressable
-                            onPress={() => setKkiapayVisible(true)}
-                            disabled={!pretAPayer}
+                            onPress={envoyer}
+                            disabled={!pret}
                             style={({ pressed }) => [
-                                styles.ctaLarge, !pretAPayer && { opacity: 0.4 },
-                                pressed && pretAPayer && { transform: [{ scale: 0.98 }] },
+                                styles.ctaLarge, !pret && { opacity: 0.4 },
+                                pressed && pret && { transform: [{ scale: 0.98 }] },
                             ]}
                             accessibilityRole="button"
                         >
-                            <Text style={styles.ctaLargeText}>{t('Régler {p}', { p: prix })}</Text>
+                            <Text style={styles.ctaLargeText}>{t('Envoyer ma demande')}</Text>
                         </Pressable>
                     )}
 
-                    {!pretAPayer && !envoi && (
+                    {!pret && !envoi && (
                         <Text style={styles.barreNote}>
-                            {tarif === null
-                                ? t('Chargement du tarif…')
-                                : !champsOk
-                                    ? t('Complétez les champs obligatoires pour continuer.')
-                                    : t('Votre consentement est nécessaire pour poursuivre.')}
+                            {!champsOk
+                                ? t('Complétez les champs obligatoires pour continuer.')
+                                : t('Votre consentement est nécessaire pour poursuivre.')}
                         </Text>
                     )}
                 </View>
-
-                <KkiapayModal
-                    visible={kkiapayVisible}
-                    amount={String(montantXof)}
-                    serviceName={t('Récap de dossier MyAfroOrigins')}
-                    onClose={() => setKkiapayVisible(false)}
-                    onSuccess={surTransaction}
-                />
             </View>
         )
     }
@@ -534,7 +459,7 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                     ) : recaps.length === 0 ? (
                         <View style={styles.vide}>
                             <Text style={styles.videText}>
-                                {t('Aucune demande pour l’instant. Une fois réglée, votre demande apparaît ici et vous pouvez y joindre vos pièces.')}
+                                {t('Aucune demande pour l’instant. Une fois envoyée, votre demande apparaît ici et vous pouvez y joindre vos pièces.')}
                             </Text>
                         </View>
                     ) : (
@@ -550,8 +475,12 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                                             <Text style={styles.carteEtat}>{t(etat.label)}</Text>
                                             <Text style={styles.carteRef}>{r.reference}</Text>
                                         </View>
+                                        {/* Demandes réglées avant l'agrément : montant
+                                            conservé ; les suivantes sont gratuites. */}
                                         <Text style={styles.cartePrix}>
-                                            {r.montant} {r.devise === 'XOF' ? 'FCFA' : r.devise}
+                                            {Number(r.montant) > 0
+                                                ? `${r.montant} ${r.devise === 'XOF' ? 'FCFA' : r.devise}`
+                                                : t('Gratuit')}
                                         </Text>
                                     </View>
 
@@ -606,7 +535,7 @@ export default function RecapMyafroDemandeScreen({ navigation }: { navigation: a
                 <View style={styles.barreHaut}>
                     <View>
                         <Text style={styles.barreLabel}>{t('Fiche d’analyse')}</Text>
-                        <Text style={styles.barreMontant}>{prix}</Text>
+                        <Text style={styles.barreMontant}>{t('Gratuit')}</Text>
                     </View>
                     <View style={styles.securise}>
                         <Clock size={13} color={C.primary} strokeWidth={2.2} />

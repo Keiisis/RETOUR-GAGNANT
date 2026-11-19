@@ -284,11 +284,12 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
             'Service Premium', 'Détails du Service', 'Délai moyen', 'Tarif',
             'Support', 'Dédié', 'Sur devis',
             'Pièces à fournir pour les afro-descendants', 'Ce que nous proposons',
-            'Pack VIP Retour Gagnant',
-            "Un accompagnement intégral en une seule journée : de l'état civil à la délivrance de votre passeport.",
-            'Enrôlement État Civil', "Obtention de votre extrait de naissance certifié conforme auprès des autorités de l'état civil béninois.",
-            "Carte d'Identité Personnelle (CIP A)", "Constitution du dossier et enrôlement biométrique pour votre titre d'identité officiel béninois.",
-            'Passeport Express Jour-J', "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même.",
+            'Passeport inclus et gratuit',
+            "Depuis l'agrément de Retour Gagnant Bénin, votre passeport est inclus dans la demande de nationalité : l'État vous le remet lors de la cérémonie officielle de remise.",
+            'Demande de nationalité', 'Votre dossier est envoyé gratuitement depuis le formulaire, sans aucun frais.',
+            'Accompagnement complet', "Notre équipe agréée suit votre dossier jusqu'à la décision.",
+            'Cérémonie officielle de remise', "L'État vous remet votre passeport béninois, sans démarche supplémentaire.",
+            'Faire ma demande de nationalité',
             'Tarification', 'Comment ça marche ?',
             'Commandez le service', 'Déposez vos documents', 'Suivi en temps réel', 'Résultat final',
             'Documents requis', 'Prêt à démarrer ?',
@@ -549,35 +550,39 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
                         </View>
                     </AnimatedSection>
 
-                    {/* PACK VIP (uniquement passeport) */}
+                    {/* PASSEPORT : inclus dans la demande de nationalité, remis par l'État */}
                     {serviceId === 'passeport' && (
                         <AnimatedSection delay={320}>
-                            <View style={styles.vipCard}>
-                                <View style={styles.vipHeader}>
-                                    <View style={styles.vipBadgeIcon}>
+                            <View style={styles.inclusCard}>
+                                <View style={styles.inclusHeader}>
+                                    <View style={styles.inclusBadgeIcon}>
                                         <BadgeCheck size={14} color={C.primaryText} strokeWidth={2.4} />
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.vipTitle}>{t('Pack VIP Retour Gagnant')}</Text>
-                                        <Text style={styles.vipSubtitle}>
-                                            {t("Un accompagnement intégral en une seule journée : de l'état civil à la délivrance de votre passeport.")}
+                                        <Text style={styles.inclusTitle}>{t('Passeport inclus et gratuit')}</Text>
+                                        <Text style={styles.inclusSubtitle}>
+                                            {t("Depuis l'agrément de Retour Gagnant Bénin, votre passeport est inclus dans la demande de nationalité : l'État vous le remet lors de la cérémonie officielle de remise.")}
                                         </Text>
                                     </View>
                                 </View>
 
                                 {[
-                                    { num: '01', title: 'Enrôlement État Civil', desc: "Obtention de votre extrait de naissance certifié conforme auprès des autorités de l'état civil béninois." },
-                                    { num: '02', title: "Carte d'Identité Personnelle (CIP A)", desc: "Constitution du dossier et enrôlement biométrique pour votre titre d'identité officiel béninois." },
-                                    { num: '03', title: 'Passeport Express Jour-J', desc: "Prise en charge prioritaire de votre demande de passeport biométrique : déposée et traitée le jour même." },
+                                    { num: '01', title: 'Demande de nationalité', desc: 'Votre dossier est envoyé gratuitement depuis le formulaire, sans aucun frais.' },
+                                    { num: '02', title: 'Accompagnement complet', desc: "Notre équipe agréée suit votre dossier jusqu'à la décision." },
+                                    { num: '03', title: 'Cérémonie officielle de remise', desc: "L'État vous remet votre passeport béninois, sans démarche supplémentaire." },
                                 ].map((step) => (
-                                    <View key={step.num} style={styles.vipStep}>
-                                        <Text style={styles.vipStepNum}>{step.num}</Text>
+                                    <View key={step.num} style={styles.inclusStep}>
+                                        <Text style={styles.inclusStepNum}>{step.num}</Text>
                                         <View style={{ flex: 1 }}>
-                                            <Text style={styles.vipStepTitle}>{t(step.title)}</Text>
-                                            <Text style={styles.vipStepDesc}>{t(step.desc)}</Text>
+                                            <Text style={styles.inclusStepTitle}>{t(step.title)}</Text>
+                                            <Text style={styles.inclusStepDesc}>{t(step.desc)}</Text>
                                         </View>
                                     </View>
                                 ))}
+                                <InteractiveButton onPress={() => navigation.navigate('NationaliteForm')} style={styles.inclusBouton}
+                                    accessibilityLabel={t('Faire ma demande de nationalité')}>
+                                    <Text style={styles.inclusBoutonTexte}>{t('Faire ma demande de nationalité')}</Text>
+                                </InteractiveButton>
                             </View>
                         </AnimatedSection>
                     )}
@@ -1000,51 +1005,56 @@ const styles = StyleSheet.create({
         color: C.text, fontFamily: 'Inter_500Medium',
     },
 
-    /* VIP Card */
-    vipCard: {
+    /* Encart passeport inclus */
+    inclusCard: {
         borderRadius: radius.xl,
         padding: spacing.lg,
         overflow: 'hidden',
         backgroundColor: C.surfaceSoft,
         borderWidth: 1, borderColor: C.border,
     },
-    vipHeader: {
+    inclusHeader: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
         marginBottom: spacing.md,
     },
-    vipBadgeIcon: {
+    inclusBadgeIcon: {
         width: 36, height: 36, borderRadius: radius.xs,
         backgroundColor: C.primary,
         alignItems: 'center', justifyContent: 'center',
     },
-    vipTitle: {
+    inclusTitle: {
         fontSize: 16, fontFamily: fonts.bodyBold,
         color: C.textPrimary, marginBottom: spacing.xs,
     },
-    vipSubtitle: {
+    inclusSubtitle: {
         fontSize: 12, lineHeight: 17,
         color: C.textMuted,
         fontFamily: 'Inter_400Regular',
     },
-    vipStep: {
+    inclusStep: {
         flexDirection: 'row', alignItems: 'flex-start', gap: 12,
         backgroundColor: C.surface,
         borderRadius: radius.md, padding: 12, marginBottom: spacing.sm,
         borderWidth: 1, borderColor: C.border,
     },
-    vipStepNum: {
+    inclusStepNum: {
         fontSize: 24, fontFamily: 'Inter_800ExtraBold',
         color: C.primary, lineHeight: 26, width: 36,
     },
-    vipStepTitle: {
+    inclusStepTitle: {
         fontSize: 13, fontFamily: 'Inter_700Bold',
         color: C.textPrimary, marginBottom: spacing.xxs,
     },
-    vipStepDesc: {
+    inclusStepDesc: {
         fontSize: 12, lineHeight: 16,
         color: C.textMuted,
         fontFamily: 'Inter_400Regular',
     },
+    inclusBouton: {
+        marginTop: spacing.md, borderRadius: radius.lg, paddingVertical: 14,
+        alignItems: 'center', backgroundColor: C.primary,
+    },
+    inclusBoutonTexte: { color: '#FFFFFF', fontSize: 14, fontFamily: 'Inter_600SemiBold' },
 
     /* Pricing */
     pricingList: { gap: 10 },

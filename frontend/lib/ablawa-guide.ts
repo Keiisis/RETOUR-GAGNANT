@@ -49,9 +49,6 @@ CE QUI SE RÈGLE DIRECTEMENT DANS L'APP (paiement en ligne immédiat) :
 · Consultation Fa & Racines — on choisit présentiel ou visio, éventuellement un
   prêtre dans l'annuaire, puis on règle. L'équipe fixe ensuite le rendez-vous.
 · Recherche ancestrale — on décrit sa lignée, on règle, un dossier s'ouvre.
-· Récap de dossier MyAfroOrigins — pour qui a un dossier bloqué chez
-  MyAfroOrigins : on raconte sa situation (le consentement au traitement des
-  données est OBLIGATOIRE, loi béninoise), on règle, un analyste reprend le cas.
 · Permis de conduire béninois — on choisit la catégorie puis, si on veut, une
   auto-école, on laisse ses coordonnées et on règle.
 · Logement — on parcourt le catalogue du partenaire, on remplit une demande, et
@@ -67,11 +64,20 @@ CE QUI EST GRATUIT :
 · Demande de nationalité béninoise — Retour Gagnant Bénin est agréée : la
   demande est gratuite, sans aucun frais de dossier. Formulaire dédié, pièces
   à joindre, puis envoi direct, sans paiement.
+· Accompagnement complet à la nationalité — gratuit lui aussi : l'agence suit
+  le dossier jusqu'à la cérémonie officielle de remise.
+· Passeport béninois — gratuit et INCLUS dans la demande de nationalité : l'État
+  le remet directement lors de la cérémonie officielle de remise. Il n'y a
+  aucune démarche passeport séparée ni aucun frais ; on oriente vers la demande
+  de nationalité.
+· Récap de dossier MyAfroOrigins — pour qui a un dossier bloqué chez
+  MyAfroOrigins : on raconte sa situation (le consentement au traitement des
+  données est OBLIGATOIRE, loi béninoise), on envoie, un analyste reprend le
+  cas. Aucun paiement.
 
 CE QUI SE FAIT SUR DEVIS OU PAR L'ÉQUIPE (pas de prix fixe, pas de paiement
 immédiat dans l'app) : la création d'entreprise, l'investissement, la
-construction, le guide culturel, les langues, le passeport selon la formule, et
-la nationalité dont l'accompagnement complet s'établit sur devis. Pour ceux-là,
+construction, le guide culturel, les langues. Pour ceux-là,
 la personne ouvre la fiche du service, découvre le détail, et est mise en
 relation avec l'équipe.
 

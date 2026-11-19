@@ -72,12 +72,12 @@ export const SERVICES_DATA: ServiceFull[] = [
     {
         id: 'passeport',
         icon: 'document-text-outline',
-        title: 'Passeport & Documents',
-        subtitle: 'Documents officiels et accompagnement pour la diaspora béninoise',
-        desc: 'Obtention et renouvellement de passeport, acte de naissance, légalisation et apostille : accompagnement complet pour vos démarches officielles.',
-        fullDescription: "Nous prenons en charge l'ensemble des démarches liées à l'obtention ou au renouvellement de votre passeport biométrique béninois. Constitution du dossier, coordination avec les autorités compétentes et suivi jusqu'à la remise de votre titre : un accompagnement structuré, sans improvisation.",
-        duration: '2 à 4 semaines',
-        price: 'À partir de 50 000 FCFA',
+        title: 'Passeport béninois',
+        subtitle: 'Inclus dans la demande de nationalité, sans frais',
+        desc: "Le passeport béninois est inclus dans votre demande de nationalité : l'État vous le remet directement lors de la cérémonie officielle de remise.",
+        fullDescription: "Depuis l'agrément de Retour Gagnant Bénin, le passeport n'est plus une démarche séparée. Il est inclus dans votre demande de nationalité, entièrement gratuite : au terme de la procédure, l'État vous remet votre passeport béninois lors de la cérémonie officielle de remise. Aucune démarche ni aucun frais supplémentaires.",
+        duration: 'Remis à la cérémonie officielle',
+        price: 'Gratuit',
         color: C.primary,
         features: [
             "Copie intégrale du passeport en cours de validité",
@@ -100,9 +100,7 @@ export const SERVICES_DATA: ServiceFull[] = [
             "Formulaire officiel de demande de passeport rempli et signé",
         ],
         pricing_options: [
-            { label: 'Pack Standard : Passeport ordinaire', price: '75 000 FCFA' },
-            { label: 'Pack VIP : Traitement express jour-J', price: '350 000 FCFA' },
-            { label: 'Renouvellement accompagné', price: '50 000 FCFA' },
+            { label: 'Passeport inclus dans la demande de nationalité', price: 'Gratuit' },
         ],
     },
     {
@@ -266,17 +264,17 @@ export const SERVICES_DATA: ServiceFull[] = [
         icon: 'ribbon-outline',
         title: 'Nationalité béninoise',
         subtitle: 'Obtenir la nationalité béninoise pour la diaspora afro-descendante',
-        desc: "Accompagnement personnalisé pour l'obtention de la nationalité béninoise : dossier complet, suivi administratif et prise en charge prioritaire.",
-        fullDescription: "Accompagnement personnalisé pour les membres de la diaspora souhaitant obtenir la nationalité béninoise. Suivi de dossier, coordination avec les autorités compétentes et prise en charge prioritaire.",
+        desc: "Accompagnement complet et gratuit pour l'obtention de la nationalité béninoise : dossier, suivi administratif et passeport remis à la cérémonie officielle.",
+        fullDescription: "Retour Gagnant Bénin est désormais une agence agréée : la demande de nationalité et son accompagnement complet sont gratuits. Suivi de dossier, coordination avec les autorités compétentes et remise du passeport béninois par l'État lors de la cérémonie officielle.",
         duration: '3 à 6 mois',
-        price: 'À partir de 150 000 FCFA',
+        price: 'Gratuit',
         color: C.primary,
         features: [
             'Constitution et vérification du dossier complet',
             'Liaison avec le Ministère de la Justice',
             'Suivi administratif pas à pas',
             "Accompagnement pour l'apostille et traductions certifiées",
-            'Formule prioritaire : suivi avec référent dédié',
+            "Passeport béninois remis par l'État lors de la cérémonie officielle",
         ],
         documents: [
             'Acte de naissance + apostille (moins de 6 mois)',
@@ -287,9 +285,8 @@ export const SERVICES_DATA: ServiceFull[] = [
             "Photos d'identité récentes (fond blanc, norme ICAO)",
         ],
         pricing_options: [
-            { label: 'Accompagnement dossier standard', price: '150 000 FCFA' },
-            { label: 'Formule prioritaire : suivi complet', price: '350 000 FCFA' },
-            { label: 'Consultation initiale', price: 'Gratuit' },
+            { label: 'Demande et accompagnement complet (agence agréée)', price: 'Gratuit' },
+            { label: 'Passeport remis à la cérémonie officielle', price: 'Inclus' },
         ],
     },
     {
@@ -726,8 +723,8 @@ export default function ServicesScreen({ navigation }: any) {
                         fullDescription: s.description || staticMatch?.fullDescription || '',
                         duration: staticMatch?.duration || '4-8 semaines',
                         // Prix = base uniquement (services.price_display). Le repli
-                        // statique ANNONÇAIT un montant codé dans l'app (« À partir
-                        // de 150 000 FCFA ») que l'admin n'avait jamais saisi.
+                        // statique ANNONÇAIT un montant codé dans l'app que l'admin
+                        // n'avait jamais saisi.
                         price: s.price_display || 'Sur devis',
                         documents: staticMatch?.documents || ["Pièce d'identité valide", 'Documents selon le service'],
                         features: (Array.isArray(s.features) && s.features.length > 0)
@@ -778,7 +775,7 @@ export default function ServicesScreen({ navigation }: any) {
             'En savoir plus',
             'LE PLUS POPULAIRE',
             'Nationalité Béninoise',
-            'Accompagnement complet de A à Z · À partir de 150 000 FCFA',
+            'Accompagnement complet de A à Z · Gratuit',
             'Traduction en cours...',
         )
         console.log(`[Services] Pre-loading ${textsToPreload.length} grid-visible texts`)
@@ -1080,7 +1077,7 @@ const styles = StyleSheet.create({
 
     /* ── Service Card ── */
 
-    /* ── VIP Banner (Bleu massif, accent Or : comme bouton RegisterScreen) ── */
+    /* ── Bannière mise en avant (Bleu massif, accent Or : comme bouton RegisterScreen) ── */
 
     /* ── Skeleton ── */
     skeletonCard: {

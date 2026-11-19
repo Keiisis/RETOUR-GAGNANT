@@ -6,7 +6,6 @@
 //  section_key='page_content').content (JSONB).
 // ══════════════════════════════════════════════════════════════
 
-export interface PricingOption { label: string; price: string }
 export interface Pilier { title: string; desc: string }
 export interface Etape { num: string; title: string; desc: string }
 export interface Reassurance { title: string; desc: string }
@@ -46,9 +45,6 @@ export interface NationaliteVipContent {
     reassurance: Reassurance[]
     // FAQ
     faq: FaqQA[]
-    // Tarifs (calculateur : gardé, gated par les réglages globaux)
-    pricing_show_calculator: boolean
-    pricing_options: PricingOption[]
     // CTA 1 (formulaire) + CTA 2 (rendez-vous)
     cta1_title: string
     cta1_description: string
@@ -64,16 +60,16 @@ export interface NationaliteVipContent {
 }
 
 export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
-    hero_badge: "Service phare : Nationalité béninoise",
+    hero_badge: "Gratuit — agence agréée",
     hero_title: "Nationalité Béninoise : Accompagnement complet",
-    hero_subtitle: "Procédure personnalisée et accompagnée de A à Z pour obtenir la nationalité béninoise.",
-    hero_chips: ["De A à Z", "Suivi transparent", "Diaspora afro-descendante", "Réponse 48 h"],
+    hero_subtitle: "Procédure personnalisée et accompagnée de A à Z par une agence agréée, sans frais. Votre passeport béninois est inclus : l'État vous le remet lors de la cérémonie officielle.",
+    hero_chips: ["Gratuit", "Agence agréée", "Passeport inclus", "Réponse 48 h"],
 
     piliers: [
         { title: "Accompagnement complet", desc: "Pris en charge de A à Z" },
         { title: "Suivi personnalisé", desc: "Un conseiller dédié, transparent" },
         { title: "Pensé pour la diaspora", desc: "Tout géré à distance" },
-        { title: "Réponse sous 48 h", desc: "Sans engagement" },
+        { title: "Gratuit", desc: "Sans frais, passeport inclus" },
     ],
 
     accompagnement_eyebrow: "Notre métier",
@@ -82,7 +78,7 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     etapes: [
         { num: "01", title: "Constitution du dossier", desc: "Nous réunissons et fiabilisons chaque pièce : la vôtre et celle de votre lignée." },
         { num: "02", title: "Suivi personnalisé", desc: "Un conseiller dédié vous accompagne, étape par étape, en toute transparence." },
-        { num: "03", title: "Remise des documents", desc: "Nous vous accompagnons jusqu'à la remise de vos documents officiels." },
+        { num: "03", title: "Cérémonie officielle de remise", desc: "L'État vous remet vos documents officiels, passeport compris, lors de la cérémonie." },
     ],
 
     contrast_title: "Une procédure exigeante.",
@@ -125,7 +121,7 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
     elig_q2: "Pouvez-vous documenter un lien avec le Bénin (ascendance, actes) ?",
 
     reassurance: [
-        { title: "Sans engagement", desc: "Le premier échange n'engage à rien." },
+        { title: "Gratuit", desc: "La demande et l'accompagnement sont sans frais." },
         { title: "Un conseiller dédié", desc: "La même personne vous suit du début à la fin." },
         { title: "Confidentialité", desc: "Vos documents et informations restent privés." },
     ],
@@ -135,14 +131,8 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
         { q: "Dois-je résider au Bénin pour lancer la démarche ?", r: "Non. Nous accompagnons la diaspora à distance : la constitution du dossier et le suivi se font sans que vous ayez à vous déplacer." },
         { q: "Et si des documents de mes parents ou grands-parents manquent ?", r: "C'est fréquent sur plusieurs générations. Nous vous indiquons les pièces alternatives acceptées et vous aidons à reconstituer ce qui manque." },
         { q: "Combien de temps prend la procédure ?", r: "Les délais dépendent de votre dossier et de l'administration. Nous vous donnons une estimation réaliste dès l'analyse de votre situation." },
-        { q: "Comment se passe le premier échange ?", r: "Un premier échange sans engagement permet d'évaluer votre situation et de préparer la suite. Le détail de l'accompagnement vous est présenté ensuite." },
-    ],
-
-    pricing_show_calculator: false,
-    pricing_options: [
-        { label: "Accompagnement dossier standard", price: "150.000 FCFA" },
-        { label: "Formule prioritaire : suivi complet", price: "350.000 FCFA" },
-        { label: "Consultation initiale", price: "Gratuit" },
+        { q: "Combien coûte l'accompagnement ?", r: "Rien. La demande de nationalité et l'accompagnement complet par notre agence agréée sont gratuits." },
+        { q: "Et le passeport ?", r: "Il est inclus dans la demande de nationalité et gratuit : l'État vous le remet lors de la cérémonie officielle de remise. Aucune démarche séparée." },
     ],
 
     cta1_title: "Commencer ma demande",
@@ -155,5 +145,5 @@ export const DEFAULT_NATIONALITE_VIP: NationaliteVipContent = {
 
     final_title: "La nationalité se gagne sur un dossier impeccable.",
     final_text: "Un dossier mal monté, c'est un rejet et des mois perdus. Nous montons le vôtre pour qu'il passe : et nous vous suivons jusqu'à la remise de vos documents.",
-    final_note: "Sans engagement · réponse sous 48 h · premier échange gratuit.",
+    final_note: "Gratuit · agence agréée · passeport inclus.",
 }

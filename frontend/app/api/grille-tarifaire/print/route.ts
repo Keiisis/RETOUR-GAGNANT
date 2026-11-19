@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
                 title: 'DOCUMENTS & IDENTITÉ',
                 rows: [
                     { no: '1', service: 'Acte de naissance béninois (sécurisé)', details: 'Copie intégrale certifiée conforme', unit: 'Par document', price: '15 000 FCFA / 23 €', delay: '72h' },
-                    { no: '2', service: 'Passeport Biométrique Béninois', details: 'Demande complète, photos, suivi', unit: 'Par demande', price: '75 000 FCFA / 115 €', delay: '10 à 15 jours' },
+                    { no: '2', service: 'Passeport Biométrique Béninois', details: 'Inclus dans la demande de nationalité, remis par l\'État lors de la cérémonie officielle', unit: 'Par demande', price: 'Gratuit / Gratuit', delay: 'Cérémonie officielle' },
                     { no: '3', service: 'Carte Nationale d\'Identité (CNIB)', details: 'Inscription, prise d\'empreintes, retrait', unit: 'Par demande', price: '30 000 FCFA / 46 €', delay: '5 à 7 jours' },
                     { no: '4', service: 'Certificat d\'Identification Personnelle (CIP)', details: 'Vérification d\'identité officielle', unit: 'Par document', price: '10 000 FCFA / 15 €', delay: '48h' },
                     { no: '5', service: 'Casier Judiciaire Béninois', details: 'Extrait de casier judiciaire B3', unit: 'Par document', price: '12 000 FCFA / 18 €', delay: '72h' }

@@ -10,7 +10,6 @@ import {
     GlobeHemisphereWest as Globe, Clock, CalendarDots as Calendar,
     ClipboardText, Certificate, Sparkle,
 } from '@phosphor-icons/react';
-import PricingCalculator3D from '@/components/services/PricingCalculator3D';
 import { supabase } from '@/lib/supabase';
 import { T, useTranslation } from '@/lib/translation';
 import { DEFAULT_NATIONALITE_VIP as DEF, type NationaliteVipContent } from '@/lib/content/nationaliteVip';
@@ -23,7 +22,6 @@ const REASSURE_ICONS = [ShieldCheck, UsersThree, Certificate];
 export default function NationaliteVipPage() {
     const { t } = useTranslation();
     const [c, setC] = useState<NationaliteVipContent>(DEF);
-    const [globalCalcEnabled, setGlobalCalcEnabled] = useState(true);
     const reduce = useReducedMotion();
     const { scrollY } = useScroll();
     const heroY = useTransform(scrollY, [0, 600], reduce ? [0, 0] : [0, 110]);
@@ -41,10 +39,6 @@ export default function NationaliteVipPage() {
                 if (data?.content) setC(prev => ({ ...prev, ...(data.content as Partial<NationaliteVipContent>) }));
             } catch { /* fallback defaults */ }
         })();
-        fetch('/api/settings/frontend')
-            .then(r => r.json())
-            .then(json => { if (json.settings?.services_show_calculator === 'false') setGlobalCalcEnabled(false); })
-            .catch(() => { });
     }, []);
 
     return (
@@ -208,13 +202,8 @@ export default function NationaliteVipPage() {
                 </section>
             )}
 
-            {/* ═══ DÉMARRER : 2 CTA (+ calculateur gated) ═══ */}
+            {/* ═══ DÉMARRER : 2 CTA ═══ */}
             <section id="demarrer" className="max-w-6xl mx-auto px-5 md:px-8 pb-4">
-                {c.pricing_show_calculator && globalCalcEnabled && (
-                    <div className="mb-8 max-w-xl">
-                        <PricingCalculator3D options={c.pricing_options} baseColor="#FCD116" serviceName="Nationalité Béninoise" />
-                    </div>
-                )}
                 <div className="grid md:grid-cols-2 gap-5">
                     <div className="rounded-3xl border border-slate-200 bg-white overflow-hidden">
                         <div className="h-1 w-full bg-gradient-to-r from-[#008751] via-[#FCD116] to-[#E8112D]" />

@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════════════
 //  ADMIN/DOCUMENTS : Récap génératif de l'Assistant Virtuel
 //  Analyse RÉELLE des dossiers MyAfroOrigins (ancienneté déclarée,
-//  paiement 50 €, recherche ancestrale 250 €, documents) puis
+//  reprise gratuite, recherche ancestrale 250 €, documents) puis
 //  synthèse opérationnelle par Groq (LLaMA 3.3 70B) pour la
 //  direction : priorités, relances à faire, risques.
 //  Fallback règles si l'IA est indisponible : jamais d'échec.
@@ -95,7 +95,8 @@ export async function POST(request: NextRequest) {
                 anciennete_myafroorigins: raw || 'non renseignée',
                 anciennete_mois: months === null ? null : Math.round(months * 10) / 10,
                 urgence: urgencyLabel(months),
-                frais_reprise_50e: a.payment_status === 'payé' ? 'payés' : 'NON payés',
+                // Reprise gratuite depuis l'agrément (nov. 2026) ; « payée » pour les dossiers antérieurs.
+                reprise: a.payment_status === 'gratuit' ? 'gratuite' : a.payment_status === 'payé' ? 'payée' : 'gratuite (dossier antérieur non réglé)',
                 recherche_ancestrale_250e: a.recherche_ancestrale_paid
                     ? 'payée' : (a.needs_recherche_ancestrale ? 'demandée, EN ATTENTE de paiement' : 'pas encore proposée'),
                 nb_documents: Array.isArray(a.documents_uploaded) ? a.documents_uploaded.length : 0,
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
         })
 
         const fallback = facts
-            .map(f => `• ${f.client} (${f.dossier}) : urgence ${f.urgence}, dossier MyAfroOrigins depuis ${f.anciennete_myafroorigins}, 50 € ${f.frais_reprise_50e}, recherche ancestrale : ${f.recherche_ancestrale_250e}.`)
+            .map(f => `• ${f.client} (${f.dossier}) : urgence ${f.urgence}, dossier MyAfroOrigins depuis ${f.anciennete_myafroorigins}, reprise ${f.reprise}, recherche ancestrale : ${f.recherche_ancestrale_250e}.`)
             .join('\n')
 
         if (GROQ_KEYS.length === 0) {
@@ -117,9 +118,9 @@ export async function POST(request: NextRequest) {
                 messages: [
                     {
                         role: 'system',
-                        content: `Tu es l'assistant de direction de Retour Gagnant Bénin. On te donne l'état FACTUEL des dossiers clients bloqués sur MyAfroOrigins repris par l'agence (frais de reprise 50 €, puis recherche ancestrale 250 €). Rédige un récapitulatif opérationnel ULTRA PRÉCIS en français pour la présidente, pour piloter les relances :
+                        content: `Tu es l'assistant de direction de Retour Gagnant Bénin. On te donne l'état FACTUEL des dossiers clients bloqués sur MyAfroOrigins repris par l'agence (reprise gratuite depuis l'agrément, puis recherche ancestrale 250 €). Rédige un récapitulatif opérationnel ULTRA PRÉCIS en français pour la présidente, pour piloter les relances :
 1) Une phrase de vue d'ensemble chiffrée.
-2) « À FAIRE EN PRIORITÉ » : les actions concrètes classées par urgence (qui relancer, pour quoi : 50 € impayés, recherche ancestrale 250 € à proposer ou relancer, documents à valider), en citant nom + référence.
+2) « À FAIRE EN PRIORITÉ » : les actions concrètes classées par urgence (qui relancer, pour quoi : recherche ancestrale 250 € à proposer ou relancer, documents à valider), en citant nom + référence.
 3) « À SURVEILLER » : le reste, en une ligne chacun.
 Règles : uniquement les faits fournis, aucun chiffre inventé, pas de blabla, puces commençant par « - », pas de markdown gras, maximum 18 lignes.`,
                     },

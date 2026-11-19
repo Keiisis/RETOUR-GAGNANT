@@ -149,7 +149,7 @@ export default function PaymentLinksManager({ role }: { role: 'admin' | 'agent' 
                                     <div className="relative">
                                         <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" style={labelStyle} />
                                         <input type="text" value={form.label} onChange={e => setForm({ ...form, label: e.target.value })}
-                                            placeholder={t('Frais de dossier : Accompagnement passeport')}
+                                            placeholder={t("Frais de dossier : Création d'entreprise")}
                                             className="w-full border rounded-xl py-3 pl-9 pr-4 text-sm focus:outline-none" style={inputStyle} />
                                     </div>
                                 </div>

@@ -37,6 +37,7 @@ interface Recap {
     devise: string
     paiement_ref: string | null
     paiement_moyen: string | null
+    paiement_statut?: string | null
     statut: string
     recap_ia: string | null
     notes_agent: string | null
@@ -45,6 +46,10 @@ interface Recap {
     purge_apres: string | null
     created_at: string
 }
+
+/* Gratuit depuis novembre 2026 (agence agréée). Une base pas encore migrée
+   enregistre 'paye' avec paiement_moyen 'gratuit' : les deux marques valent. */
+const estGratuit = (d: Recap) => d.paiement_statut === 'gratuit' || d.paiement_moyen === 'gratuit'
 
 const STATUTS: Record<string, { label: string; classe: string; Icone: typeof Clock }> = {
     nouveau: { label: 'Nouveau', classe: 'text-amber-400 bg-amber-500/10 border-amber-500/30', Icone: Clock },
@@ -296,7 +301,7 @@ export default function RecapMyafroSection() {
                                             </span>
                                             <span className="font-mono text-[11px] text-gray-500">{d.reference}</span>
                                             <span className="text-[11px] text-emerald-400 font-bold">
-                                                {d.montant} {d.devise === 'XOF' ? 'FCFA' : d.devise}
+                                                {estGratuit(d) ? 'Gratuit' : `${d.montant} ${d.devise === 'XOF' ? 'FCFA' : d.devise}`}
                                             </span>
                                             <BadgeMyafro e={myafro.parDossier[d.id]} />
                                         </div>
@@ -370,7 +375,7 @@ export default function RecapMyafroSection() {
                                     ['Déposé le', dateFr(ouverte.created_at)],
                                     ['Réf. MyAfroOrigins', ouverte.myafro_reference || 'non communiquée'],
                                     ['Pays de résidence', ouverte.pays_residence || '—'],
-                                    ['Paiement', `${ouverte.paiement_moyen || '—'} · ${ouverte.paiement_ref || '—'}`],
+                                    ['Paiement', estGratuit(ouverte) ? 'Gratuit' : `${ouverte.paiement_moyen || '—'} · ${ouverte.paiement_ref || '—'}`],
                                     ['Consentement', dateFr(ouverte.consentement_le)],
                                     ['Conservation jusqu’au', ouverte.purge_apres || '—'],
                                 ].map(([k, v]) => (
@@ -386,11 +391,12 @@ export default function RecapMyafroSection() {
                                 DECLARES : cocher « paye » suffisait a faire entrer la somme
                                 dans les recettes, sans qu'aucune piece n'existe. Tant qu'une
                                 facture emise n'est pas rattachee, le dossier reste hors
-                                comptabilite — et cela se voit. */}
+                                comptabilite — et cela se voit. Une demande gratuite n'a
+                                rien a encaisser : aucune facture a rattacher. */}
                             <div className="rounded-xl border p-3.5 flex items-center gap-3 flex-wrap"
                                 style={{
-                                    background: ouverte.facture_id ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
-                                    borderColor: ouverte.facture_id ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)',
+                                    background: ouverte.facture_id || estGratuit(ouverte) ? 'rgba(16,185,129,0.08)' : 'rgba(245,158,11,0.08)',
+                                    borderColor: ouverte.facture_id || estGratuit(ouverte) ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)',
                                 }}>
                                 {ouverte.facture_id ? (
                                     <>
@@ -402,6 +408,13 @@ export default function RecapMyafroSection() {
                                             className="text-[11px] font-bold text-gray-400 hover:text-red-400 underline">
                                             Détacher
                                         </button>
+                                    </>
+                                ) : estGratuit(ouverte) ? (
+                                    <>
+                                        <CheckCircle size={16} className="text-emerald-500 shrink-0" />
+                                        <p className="text-xs flex-1 min-w-[12rem]" style={{ color: 'var(--panel-text)' }}>
+                                            Gratuit — agence agréée, aucune facture à rattacher.
+                                        </p>
                                     </>
                                 ) : (
                                     <>

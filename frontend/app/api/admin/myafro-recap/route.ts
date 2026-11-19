@@ -165,6 +165,14 @@ export async function POST(request: NextRequest) {
 
     const reference = `RG-RECAP-${maintenant.getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`
 
+    /* Le recap est gratuit depuis novembre 2026 (agence agreee) : une saisie
+       manuelle l'est par defaut. « paye » ou « en_attente » restent possibles
+       pour reprendre un ancien dossier payant, sur declaration de l'agent. */
+    const paiementStatut = body.paiement_statut === 'paye' || body.paiement_statut === 'en_attente'
+        ? body.paiement_statut as 'paye' | 'en_attente'
+        : 'gratuit'
+    const gratuit = paiementStatut === 'gratuit'
+
     const ligne = {
         reference,
         nom, prenom, email, telephone,
@@ -174,15 +182,14 @@ export async function POST(request: NextRequest) {
         situation,
         attentes: texte(body.attentes, 2000) || null,
 
-        /* Un dossier saisi a la main n'est PAS repute paye. Le statut de
-           reglement est declare par l'agent ; par defaut il est en attente,
-           pour ne pas gonfler les recettes d'un encaissement qui n'a pas eu
-           lieu. */
-        montant: Number(body.montant) > 0 ? Number(body.montant) : 50,
+        /* Un dossier saisi a la main n'est jamais repute paye sans
+           declaration de l'agent : les recettes ne comptent que les factures
+           rattachees. */
+        montant: gratuit ? 0 : Math.max(0, Number(body.montant) || 0),
         devise: texte(body.devise, 8).toUpperCase() || 'EUR',
-        paiement_statut: body.paiement_statut === 'paye' ? 'paye' : 'en_attente',
-        paiement_ref: texte(body.paiement_ref, 120) || null,
-        paiement_moyen: texte(body.paiement_moyen, 60) || null,
+        paiement_statut: paiementStatut,
+        paiement_ref: gratuit ? null : texte(body.paiement_ref, 120) || null,
+        paiement_moyen: gratuit ? 'gratuit' : texte(body.paiement_moyen, 60) || null,
 
         statut: 'nouveau',
         agent_id: garde.userId,
@@ -195,11 +202,21 @@ export async function POST(request: NextRequest) {
         purge_apres: purge.toISOString().slice(0, 10),
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from('myafro_recap_requests')
         .insert(ligne)
         .select('*')
         .single()
+
+    /* Base pas encore migree (CHECK sans 'gratuit') : meme repli que le
+       formulaire public, 'paye' a 0 avec paiement_moyen 'gratuit'. */
+    if (error && gratuit && (error.code === '23514' || error.message?.includes('paiement_statut'))) {
+        ({ data, error } = await supabase
+            .from('myafro_recap_requests')
+            .insert({ ...ligne, paiement_statut: 'paye' })
+            .select('*')
+            .single())
+    }
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ success: true, demande: data })
