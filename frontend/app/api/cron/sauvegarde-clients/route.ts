@@ -1,5 +1,7 @@
 // ══════════════════════════════════════════════════════════════
-//  CRON : collecte et classement des dossiers clients, chaque nuit.
+//  CRON : collecte et classement des dossiers clients, une fois par mois
+//  (le 1er, quota de stockage Supabase, 19/11/2026). « Actualiser
+//  maintenant » dans l'admin la relance à la demande.
 //
 //  01h00 UTC — volontairement AVANT `data-lifecycle` (02h00), qui efface
 //  les pièces traitées de plus de 90 jours : elles sont archivées avant

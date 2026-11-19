@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   ARCHIVE PERMANENTE DES CLIENTS — la collecte qui tourne seule, chaque nuit
+   ARCHIVE PERMANENTE DES CLIENTS — la collecte qui tourne seule, chaque mois
 
    Le bouton « Exporter » refaisait TOUT à chaque clic : relire la base,
    retélécharger chaque fichier, regénérer chaque PDF, puis renvoyer le ZIP
@@ -9,7 +9,7 @@
        complète pèse déjà ~60 Mo, et cinq clients dépassent seuls 4 Mo —
        leur export ne pouvait pas aboutir.
 
-   Désormais, chaque nuit (01h00 UTC, AVANT la purge des pièces traitées de
+   Désormais, le 1er de chaque mois (01h00 UTC, AVANT la purge des pièces traitées de
    02h00) :
      1. collecte complète (aggregate.ts) ;
      2. EMPREINTE de chaque client : seuls les nouveaux ou modifiés voient
@@ -42,7 +42,8 @@ import {
 
 export const BUCKET_SAUVEGARDES = 'sauvegardes'
 const CHEMIN_MANIFESTE = 'manifeste.json'
-const JOURS_HISTORIQUE = 7
+// Collecte mensuelle : deux mois d'instantanés (environ 1 Mo chacun).
+const JOURS_HISTORIQUE = 62
 /** Taille brute maximale d'une partie. Le stockage refuse au-delà de 50 Mo. */
 const TAILLE_PARTIE = 38 * 1024 * 1024
 /** Durée de validité d'un lien de téléchargement. */

@@ -16,9 +16,9 @@ import { T } from '@/lib/translation'
    Vue complète de tous les clients reçus depuis le début +
    export ZIP (un dossier par client, tout dedans).
 
-   Une collecte automatique tourne chaque nuit (01h00 UTC) : elle relit
+   Une collecte automatique tourne le 1er de chaque mois (01h00 UTC) : elle relit
    toute la base, range le dossier de chaque client nouveau ou modifié, et
-   garde un instantané quotidien 7 jours. Le panneau « Collecte
+   garde deux mois d'instantanés. Le panneau « Collecte
    automatique » en rend compte ; « Exporter » reprend les dossiers rangés.
 ═══════════════════════════════════════════════════════════ */
 
@@ -669,7 +669,7 @@ function CollectePanel({ onActualise }: { onActualise: () => void }) {
     const erreurs = etat?.rapport.filter(r => r.erreur) || []
     const nonRatt = Object.values(etat?.non_rattachees || {}).reduce((n, v) => n + v, 0)
     const depuis = etat ? (Date.now() - new Date(etat.derniere_collecte).getTime()) / 3_600_000 : null
-    const perime = depuis !== null && depuis > 30
+    const perime = depuis !== null && depuis > 32 * 24
 
     return (
         <div className="rounded-2xl border p-4" style={{ borderColor: 'var(--panel-border)', background: 'var(--panel-surface)' }}>
@@ -684,7 +684,7 @@ function CollectePanel({ onActualise }: { onActualise: () => void }) {
                             <p className="text-xs text-[var(--panel-text-muted)]">…</p>
                         ) : etat ? (
                             <p className="text-xs text-[var(--panel-text-muted)]">
-                                <T>Chaque nuit à 02h00 (heure du Bénin).</T>{' '}
+                                <T>Le 1er de chaque mois à 02h00 (heure du Bénin).</T>{' '}
                                 <T>Dernière :</T> <span className={perime ? 'font-bold text-amber-400' : 'font-bold text-[var(--panel-text)]'}>{new Date(etat.derniere_collecte).toLocaleString('fr-FR')}</span>
                                 {' · '}{etat.origine === 'nuit' ? 'automatique' : 'manuelle'} · {etat.clients} <T>dossiers rangés</T> · {Math.round(etat.duree_ms / 1000)} s
                             </p>
@@ -748,9 +748,9 @@ function CollectePanel({ onActualise }: { onActualise: () => void }) {
                     </div>
                     <div>
                         <p className="mb-2 flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-[var(--panel-text)]">
-                            <ClockCounterClockwise size={14} /> <T>Instantanés quotidiens</T>
+                            <ClockCounterClockwise size={14} /> <T>Instantanés</T>
                         </p>
-                        <p className="mb-2 text-[11px] text-[var(--panel-text-muted)]"><T>Toutes les données, telles qu’elles étaient ce jour-là. Conservés 7 jours.</T></p>
+                        <p className="mb-2 text-[11px] text-[var(--panel-text-muted)]"><T>Toutes les données, telles qu’elles étaient ce jour-là. Conservés 2 mois.</T></p>
                         <div className="max-h-64 space-y-1 overflow-y-auto">
                             {historique.length === 0 && <p className="text-[11px] text-[var(--panel-text-muted)]">—</p>}
                             {historique.map(h => (
